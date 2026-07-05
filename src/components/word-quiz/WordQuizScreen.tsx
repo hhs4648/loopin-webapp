@@ -1,4 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  EXERCISE_HEADWORD_CLASS,
+  exerciseOptionEnStateClass,
+} from '../exercise/exercise-typography'
+import { ExerciseProgressBar, BakedProgressBarMask } from '../exercise/ExerciseProgressBar'
 import { FigmaAssetFrame } from '../FigmaAssetFrame'
 import {
   FEEDBACK_MS,
@@ -8,17 +13,23 @@ import {
   preloadEnglishWordAudio,
   WORD_QUIZ_ASSETS,
   WORD_QUIZ_OPTIONS,
-  WORD_QUIZ_PROGRESS_BAR,
-  WORD_QUIZ_PROGRESS_LABEL,
   WORD_QUIZ_PROMPT_WORD,
   WORD_QUIZ_QUESTIONS,
   WORD_QUIZ_SPEAKER_HIT,
 } from './word-quiz'
+import { sessionWordQuizId } from '../exercise/session-results'
+import { playAnswerSfx, playTapSfx } from '../exercise/answer-sfx'
+import type { WordQuizQuestion } from './word-quiz'
+import { RetryWrongCompleteSheet } from '../exercise/RetryWrongCompleteSheet'
+import type { RetryWrongExerciseProps } from '../exercise/retry-wrong-ui'
 
 type WordQuizScreenProps = {
+  sessionOffset: number
+  questions?: WordQuizQuestion[]
+  onAnswer?: (stepId: string, isCorrect: boolean) => void
   onComplete?: () => void
   skipInitialSpeak?: boolean
-}
+} & RetryWrongExerciseProps
 
 type OptionVisualState = 'idle' | 'correct' | 'wrong'
 
@@ -36,18 +47,22 @@ function optionFrameClass(state: OptionVisualState) {
 }
 
 function optionLabelClass(state: OptionVisualState) {
-  switch (state) {
-    case 'correct':
-      return 'text-[17px] font-semibold leading-snug text-[#22C55E]'
-    case 'wrong':
-      return 'text-[17px] font-semibold leading-snug text-[#EF4444]'
-    default:
-      return 'text-[17px] font-semibold leading-snug text-[#1E1E1E]'
-  }
+  return exerciseOptionEnStateClass(state)
 }
 
-export function WordQuizScreen({ onComplete, skipInitialSpeak = false }: WordQuizScreenProps) {
+export function WordQuizScreen({
+  sessionOffset,
+  questions,
+  onAnswer,
+  onComplete,
+  skipInitialSpeak = false,
+  hideProgressBar = false,
+  isFinalRetrySection = false,
+  onRetryFlowHome,
+}: WordQuizScreenProps) {
+  const activeQuestions = questions ?? WORD_QUIZ_QUESTIONS
   const [questionIndex, setQuestionIndex] = useState(0)
+  const [showRetryComplete, setShowRetryComplete] = useState(false)
   const [feedback, setFeedback] = useState<{
     kind: 'correct' | 'wrong'
     option: string
@@ -55,13 +70,12 @@ export function WordQuizScreen({ onComplete, skipInitialSpeak = false }: WordQui
   const [locked, setLocked] = useState(false)
   const feedbackTimerRef = useRef<number | null>(null)
 
-  const question = WORD_QUIZ_QUESTIONS[questionIndex]
+  const question = activeQuestions[questionIndex]
   const shuffledOptions = useMemo(
     () => shuffleOptions(question.options),
     [question.id],
   )
-  const questionNumber = questionIndex + 1
-  const progressRatio = questionNumber / WORD_QUIZ_QUESTIONS.length
+  const completedInSection = questionIndex + (feedback ? 1 : 0)
 
   useEffect(() => {
     void preloadEnglishWordAudio()
@@ -88,7 +102,11 @@ export function WordQuizScreen({ onComplete, skipInitialSpeak = false }: WordQui
   const handleOptionClick = (option: string) => {
     if (locked) return
 
+    playTapSfx()
+
     const isCorrect = option === question.correctAnswer
+    onAnswer?.(sessionWordQuizId(question.id), isCorrect)
+    playAnswerSfx(isCorrect)
     setLocked(true)
     setFeedback({ kind: isCorrect ? 'correct' : 'wrong', option })
 
@@ -96,7 +114,11 @@ export function WordQuizScreen({ onComplete, skipInitialSpeak = false }: WordQui
       setFeedback(null)
       setLocked(false)
 
-      if (questionIndex + 1 >= WORD_QUIZ_QUESTIONS.length) {
+      if (questionIndex + 1 >= activeQuestions.length) {
+        if (isFinalRetrySection) {
+          setShowRetryComplete(true)
+          return
+        }
         onComplete?.()
         return
       }
@@ -108,27 +130,20 @@ export function WordQuizScreen({ onComplete, skipInitialSpeak = false }: WordQui
   return (
     <FigmaAssetFrame src={WORD_QUIZ_ASSETS.base} alt="단어 퀴즈" bgClassName="bg-white">
       <div className="absolute inset-0 z-10">
-        <div
-          className="pointer-events-none absolute overflow-hidden rounded-[9px] bg-[#E3E7EA]"
-          style={figmaRectStyle(WORD_QUIZ_PROGRESS_BAR)}
-        >
-          <div
-            className="h-full rounded-[9px] bg-[#3C86FF]"
-            style={{ width: `${progressRatio * 100}%` }}
+        {hideProgressBar ? (
+          <BakedProgressBarMask />
+        ) : (
+          <ExerciseProgressBar
+            sessionOffset={sessionOffset}
+            completedInSection={completedInSection}
           />
-        </div>
-        <p
-          className="pointer-events-none absolute flex items-center justify-center text-[11px] font-medium text-[#9E9FA7]"
-          style={figmaRectStyle(WORD_QUIZ_PROGRESS_LABEL)}
-        >
-          {questionNumber}/{WORD_QUIZ_QUESTIONS.length}
-        </p>
+        )}
 
         <div
           className="pointer-events-none absolute flex items-center justify-center bg-white"
           style={figmaRectStyle(WORD_QUIZ_PROMPT_WORD)}
         >
-          <span className="text-[28px] font-bold tracking-[-0.02em] text-[#1E1E1E]">
+          <span className={EXERCISE_HEADWORD_CLASS}>
             {question.word}
           </span>
         </div>
@@ -138,7 +153,10 @@ export function WordQuizScreen({ onComplete, skipInitialSpeak = false }: WordQui
           aria-label={`${question.word} 발음 듣기`}
           className="absolute cursor-pointer rounded-full bg-transparent"
           style={figmaRectStyle(WORD_QUIZ_SPEAKER_HIT)}
-          onClick={() => speakEnglishWord(question.word, { force: true })}
+          onClick={() => {
+            playTapSfx()
+            speakEnglishWord(question.word, { force: true })
+          }}
         />
 
         {shuffledOptions.map((option, index) => {
@@ -160,6 +178,7 @@ export function WordQuizScreen({ onComplete, skipInitialSpeak = false }: WordQui
           )
         })}
       </div>
+      {showRetryComplete && <RetryWrongCompleteSheet onHome={onRetryFlowHome} />}
     </FigmaAssetFrame>
   )
 }

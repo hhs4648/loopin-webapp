@@ -88,6 +88,14 @@ export const WORD_PRONUNCIATION_AUDIO: Record<string, string | readonly string[]
   latest: '/assets/audio/latest.wav',
 }
 
+/** 본문 A 예문 — 단어 wav와 동일 Windows TTS 녹음 */
+export const BODY_TEXT_A_EXAMPLE_AUDIO: Record<string, string> = {
+  various: '/assets/audio/sentence-various.wav',
+  wave: '/assets/audio/sentence-wave.wav',
+  'run-errands': '/assets/audio/sentence-run-errands.wav',
+  latest: '/assets/audio/sentence-latest.wav',
+}
+
 const audioCache = new Map<string, HTMLAudioElement>()
 
 let activePlayToken = 0
@@ -98,7 +106,11 @@ const activeAudios: HTMLAudioElement[] = []
 function getAudioSources(word: string): string[] {
   const source = WORD_PRONUNCIATION_AUDIO[word]
   if (!source) return []
-  return Array.isArray(source) ? [...source] : [source]
+  return typeof source === 'string' ? [source] : [...source]
+}
+
+function getExampleAudioSource(audioKey: string): string | undefined {
+  return BODY_TEXT_A_EXAMPLE_AUDIO[audioKey]
 }
 
 function getCachedAudio(url: string): HTMLAudioElement {
@@ -284,6 +296,8 @@ export function stopEnglishWordAudio() {
   activePlayToken += 1
   lastSpeakWord = ''
   lastSpeakAt = 0
+  lastSpeakText = ''
+  lastSpeakTextAt = 0
 
   for (const audio of activeAudios.splice(0)) {
     audio.pause()
@@ -301,6 +315,10 @@ export function preloadEnglishWordAudio(): Promise<void> {
   for (const source of Object.values(WORD_PRONUNCIATION_AUDIO)) {
     const items = Array.isArray(source) ? source : [source]
     for (const url of items) urls.add(url)
+  }
+
+  for (const url of Object.values(BODY_TEXT_A_EXAMPLE_AUDIO)) {
+    urls.add(url)
   }
 
   const loads = [...urls].map(async (url) => {
@@ -321,6 +339,8 @@ export function speakEnglishWord(word: string, options?: { force?: boolean }) {
 
   lastSpeakWord = word
   lastSpeakAt = now
+  lastSpeakText = ''
+  lastSpeakTextAt = 0
 
   const token = ++activePlayToken
   for (const audio of activeAudios.splice(0)) {
@@ -336,4 +356,56 @@ export function speakEnglishWord(word: string, options?: { force?: boolean }) {
     if (token !== activePlayToken) return
     if (!played) speakWithSynth(word)
   })()
+}
+
+let lastSpeakText = ''
+let lastSpeakTextAt = 0
+
+async function playRecordedEnglish(url: string, token: number): Promise<boolean> {
+  if (token !== activePlayToken) return false
+
+  const audio = getCachedAudio(url)
+  try {
+    await waitForAudioReady(audio)
+  } catch {
+    return false
+  }
+
+  if (token !== activePlayToken) return false
+  return playAudioUrl(url, token)
+}
+
+/** 영어 문장·구절 — 단어 wav와 동일 녹음 파일 재생 */
+export function speakEnglishText(
+  text: string,
+  options?: { force?: boolean; audioKey?: string },
+) {
+  const now = Date.now()
+  const cacheKey = options?.audioKey ? `audio:${options.audioKey}` : text
+  if (!options?.force && cacheKey === lastSpeakText && now - lastSpeakTextAt < 200) return
+
+  lastSpeakText = cacheKey
+  lastSpeakTextAt = now
+  lastSpeakWord = ''
+  lastSpeakAt = 0
+
+  const token = ++activePlayToken
+  for (const audio of activeAudios.splice(0)) {
+    audio.pause()
+    audio.currentTime = 0
+    audio.onended = null
+    audio.onerror = null
+  }
+  window.speechSynthesis?.cancel()
+
+  const recorded = options?.audioKey
+    ? getExampleAudioSource(options.audioKey)
+    : undefined
+
+  if (recorded) {
+    void playRecordedEnglish(recorded, token)
+    return
+  }
+
+  speakWithSynth(text)
 }

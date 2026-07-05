@@ -13,6 +13,7 @@
   --color-loopin-text: #111111;
   --color-loopin-text-muted: #666666;
   --font-sans: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-en: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 @layer base {

@@ -71,6 +71,28 @@ export const TEST_STARS: MapStar[] = [
 
 const MARKER_SIZE = 46
 
+export function frameRectStyle(x: number, y: number, w: number, h: number) {
+  return {
+    left: `${(x / FRAME_W) * 100}%`,
+    top: `${(y / FRAME_H) * 100}%`,
+    width: `${(w / FRAME_W) * 100}%`,
+    height: `${(h / FRAME_H) * 100}%`,
+  }
+}
+
+export function frameMarkerStyle(cx: number, cy: number) {
+  const half = MARKER_SIZE / 2
+  return frameRectStyle(cx - half, cy - half, MARKER_SIZE, MARKER_SIZE)
+}
+
+/** 과제 미부여 성 — 회색 성 오버레이 */
+export function getGrayCastleOverlays(): MapCastle[] {
+  return [
+    ...TEST_STARS.filter((star) => star.castle).map((star) => star.castle!),
+    ...EXTRA_GRAY_CASTLES,
+  ]
+}
+
 export function grassRectStyle(x: number, y: number, w: number, h: number) {
   return {
     left: `${(x / FRAME_W) * 100}%`,
