@@ -33,6 +33,7 @@ export function BodyTextCompleteScreen({
     <FigmaAssetFrame
       src={BODY_TEXT_COMPLETE_ASSET}
       alt="본문 학습 완료"
+      backButton="labeled"
       bgClassName="bg-gradient-to-b from-[#D3EFFE] to-[#F0FAFF]"
     >
       <div

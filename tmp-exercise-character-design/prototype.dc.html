@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics="">
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f0eee9;font-family:'Noto Sans KR',system-ui,sans-serif}
+a{color:#3D7EF0}a:hover{color:#2b63c9}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'Noto Sans KR',sans-serif;color:#1a1a1a}
+.dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 'Noto Sans KR',sans-serif;color:rgba(0,0,0,.55)}
+.dv-card{max-width:100%;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}
+.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}
+.dv-next{margin:22px 0 0;font:12px/1.5 'Noto Sans KR',sans-serif;color:rgba(0,0,0,.5)}
+@keyframes om-bounce{0%{transform:translateY(0)}30%{transform:translateY(-14px) scale(1.06)}55%{transform:translateY(0)}75%{transform:translateY(-6px)}100%{transform:translateY(0)}}
+@keyframes om-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(4px)}}
+@keyframes om-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+</style>
+</helmet>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">캐릭터(루핀) 문제풀이 화면 · 3가지 방향 — 청크를 탭해서 직접 풀어볼 수 있어요</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>대화형 — 루핀이 말풍선으로 문제를 읽어줌 (기본 추천)</div>
+<div class="dv-card" style="width:375px">
+<div data-screen-label="1a 대화형" style="min-height:780px;display:flex;flex-direction:column;background:#fff">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 4px;font-size:14px;font-weight:700;color:#1F2937"><span>18:00</span><svg width="44" height="12" viewBox="0 0 44 12" fill="#1F2937"><rect x="0" y="7" width="3" height="5" rx="1"></rect><rect x="5" y="5" width="3" height="7" rx="1"></rect><rect x="10" y="3" width="3" height="9" rx="1"></rect><rect x="15" y="1" width="3" height="11" rx="1"></rect><rect x="24" y="2" width="16" height="9" rx="2.5" fill="none" stroke="#1F2937" stroke-width="1.2"></rect><rect x="26" y="4" width="10" height="5" rx="1"></rect><rect x="41" y="4.5" width="2" height="4" rx="1"></rect></svg></div>
+  <div style="display:flex;align-items:center;gap:10px;padding:12px 20px 4px"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 4 L7 10 L12.5 16" stroke="#9AA5B5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="font-size:16px;font-weight:700;color:#1F2937">영어 청크 배열</span></div>
+  <div style="display:flex;align-items:center;gap:10px;padding:12px 20px 0"><div style="flex:1;height:10px;background:#ECF1F8;border-radius:99px;overflow:hidden"><div style="width:48%;height:100%;border-radius:99px;background:linear-gradient(90deg,#5EA0FF,#3D7EF0)"></div></div><span style="font-size:12px;font-weight:700;color:#8A94A6">48%</span></div>
+  <div style="display:flex;align-items:flex-start;gap:12px;padding:24px 20px 0">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:none">
+      <div style="{{ aAnim }}"><div role="img" aria-label="루핀" style="width:76px;height:76px;background:url(assets/loopin-blush.png) center/contain no-repeat;{{ aImgBg }}"></div></div>
+      <span style="font-size:11px;font-weight:700;color:#3D7EF0">{{ name }}</span>
+    </div>
+    <div style="position:relative;flex:1;background:#F2F7FF;border-radius:18px;border-top-left-radius:6px;padding:14px 16px" style-after="content:''; position:absolute; left:-5px; top:22px; width:12px; height:12px; background:#F2F7FF; transform:rotate(45deg); border-radius:2px">
+      <div style="font-size:12.5px;font-weight:700;color:#3D7EF0;margin-bottom:6px;line-height:1.45">{{ aLine }}</div>
+      <div style="font-size:17px;font-weight:700;color:#1F2937;line-height:1.55;text-wrap:pretty">당신은 십대로서 NGO들과 일할 수 있습니다.</div>
+    </div>
+  </div>
+  <div style="padding:26px 20px 0">
+    <div style="font-size:12px;font-weight:700;color:#8A94A6;margin-bottom:8px">순서대로 탭해서 문장 만들기</div>
+    <div style="border:2px dashed #D9E1EC;background:#FAFBFD;border-radius:16px;min-height:118px;padding:12px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;{{ aStrip }}">
+      <sc-if value="{{ aEmpty }}" hint-placeholder-val="{{ true }}"><span style="font-size:13px;color:#B7C1CE;padding:8px 4px">아래 단어 카드를 눌러봐</span></sc-if>
+      <sc-for list="{{ aPicked }}" as="c" hint-placeholder-count="1">
+        <button onClick="{{ c.tap }}" style="border:none;background:#3D7EF0;color:#fff;font:600 15px 'Noto Sans KR',sans-serif;padding:11px 16px;border-radius:99px;cursor:pointer;height:fit-content" style-hover="background:#2b63c9">{{ c.t }}</button>
+      </sc-for>
+    </div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;padding:18px 20px 0">
+    <sc-for list="{{ aPool }}" as="c" hint-placeholder-count="4">
+      <button onClick="{{ c.tap }}" style="background:#fff;border:1.5px solid #E3E8F0;color:#1F2937;font:600 15px 'Noto Sans KR',sans-serif;padding:11px 18px;border-radius:99px;cursor:pointer;box-shadow:0 1px 2px rgba(31,41,55,.04)" style-hover="border-color:#3D7EF0;background:#F2F7FF">{{ c.t }}</button>
+    </sc-for>
+  </div>
+  <div style="flex:1"></div>
+  <div style="padding:16px 20px 24px">
+    <button onClick="{{ aBtnTap }}" style="width:100%;border:none;border-radius:16px;padding:16px;font:700 16px 'Noto Sans KR',sans-serif;cursor:pointer;background:#E4E9F2;color:#9AA5B5;{{ aBtn }}">{{ aBtnLabel }}</button>
+  </div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>무대형 — 루핀 비중 크게, 반응이 제일 잘 보임</div>
+<div class="dv-card" style="width:375px">
+<div data-screen-label="1b 무대형" style="min-height:780px;display:flex;flex-direction:column;background:linear-gradient(180deg,#EAF1FE 0%,#FFFFFF 42%)">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 4px;font-size:14px;font-weight:700;color:#1F2937"><span>18:00</span><svg width="44" height="12" viewBox="0 0 44 12" fill="#1F2937"><rect x="0" y="7" width="3" height="5" rx="1"></rect><rect x="5" y="5" width="3" height="7" rx="1"></rect><rect x="10" y="3" width="3" height="9" rx="1"></rect><rect x="15" y="1" width="3" height="11" rx="1"></rect><rect x="24" y="2" width="16" height="9" rx="2.5" fill="none" stroke="#1F2937" stroke-width="1.2"></rect><rect x="26" y="4" width="10" height="5" rx="1"></rect><rect x="41" y="4.5" width="2" height="4" rx="1"></rect></svg></div>
+  <div style="display:flex;align-items:center;gap:10px;padding:12px 20px 4px"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 4 L7 10 L12.5 16" stroke="#8A94A6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="font-size:16px;font-weight:700;color:#1F2937">영어 청크 배열</span><div style="flex:1"></div><span style="font-size:12px;font-weight:700;color:#3D7EF0;background:#fff;border-radius:99px;padding:4px 10px;box-shadow:0 1px 3px rgba(61,126,240,.15)">12/25</span></div>
+  <div style="padding:12px 20px 0"><div style="height:10px;background:rgba(255,255,255,.9);border-radius:99px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(31,41,55,.06)"><div style="width:48%;height:100%;border-radius:99px;background:linear-gradient(90deg,#5EA0FF,#3D7EF0)"></div></div></div>
+  <div style="display:flex;flex-direction:column;align-items:center;padding:20px 24px 0">
+    <div style="position:relative;background:#fff;border-radius:20px;padding:16px 18px;box-shadow:0 6px 20px rgba(61,126,240,.14);max-width:320px" style-after="content:''; position:absolute; left:50%; bottom:-6px; width:14px; height:14px; background:#fff; transform:translateX(-50%) rotate(45deg); border-radius:3px">
+      <div style="font-size:12.5px;font-weight:700;color:#3D7EF0;margin-bottom:6px;line-height:1.45;text-align:center">{{ bLine }}</div>
+      <div style="font-size:17px;font-weight:700;color:#1F2937;line-height:1.55;text-align:center;text-wrap:pretty">당신은 십대로서 NGO들과 일할 수 있습니다.</div>
+    </div>
+    <div style="animation:om-float 3s ease-in-out infinite;margin-top:14px">
+      <div style="{{ bAnim }}"><div role="img" aria-label="루핀" style="width:132px;height:132px;background:url(assets/loopin-wave.png) center/contain no-repeat;{{ bImgBg }}"></div></div>
+    </div>
+    <div style="width:90px;height:12px;background:radial-gradient(ellipse at center,rgba(61,126,240,.18),transparent 70%);margin-top:-6px"></div>
+  </div>
+  <div style="padding:18px 20px 0">
+    <div style="border:2px dashed #D9E1EC;background:#FAFBFD;border-radius:16px;min-height:104px;padding:12px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;{{ bStrip }}">
+      <sc-if value="{{ bEmpty }}" hint-placeholder-val="{{ true }}"><span style="font-size:13px;color:#B7C1CE;padding:8px 4px">여기에 문장이 만들어져!</span></sc-if>
+      <sc-for list="{{ bPicked }}" as="c" hint-placeholder-count="1">
+        <button onClick="{{ c.tap }}" style="border:none;background:#3D7EF0;color:#fff;font:600 15px 'Noto Sans KR',sans-serif;padding:11px 16px;border-radius:99px;cursor:pointer;height:fit-content" style-hover="background:#2b63c9">{{ c.t }}</button>
+      </sc-for>
+    </div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:18px 20px 0">
+    <sc-for list="{{ bPool }}" as="c" hint-placeholder-count="4">
+      <button onClick="{{ c.tap }}" style="background:#fff;border:1.5px solid #E3E8F0;color:#1F2937;font:600 15px 'Noto Sans KR',sans-serif;padding:11px 18px;border-radius:99px;cursor:pointer;box-shadow:0 2px 6px rgba(31,41,55,.06)" style-hover="border-color:#3D7EF0;background:#F2F7FF">{{ c.t }}</button>
+    </sc-for>
+  </div>
+  <div style="flex:1"></div>
+  <div style="padding:16px 20px 24px">
+    <button onClick="{{ bBtnTap }}" style="width:100%;border:none;border-radius:16px;padding:16px;font:700 16px 'Noto Sans KR',sans-serif;cursor:pointer;background:#E4E9F2;color:#9AA5B5;{{ bBtn }}">{{ bBtnLabel }}</button>
+  </div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>미니 코치형 — 기존 레이아웃 유지, 루핀은 응원 역할만</div>
+<div class="dv-card" style="width:375px">
+<div data-screen-label="1c 미니 코치형" style="min-height:780px;display:flex;flex-direction:column;background:#fff">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 4px;font-size:14px;font-weight:700;color:#1F2937"><span>18:00</span><svg width="44" height="12" viewBox="0 0 44 12" fill="#1F2937"><rect x="0" y="7" width="3" height="5" rx="1"></rect><rect x="5" y="5" width="3" height="7" rx="1"></rect><rect x="10" y="3" width="3" height="9" rx="1"></rect><rect x="15" y="1" width="3" height="11" rx="1"></rect><rect x="24" y="2" width="16" height="9" rx="2.5" fill="none" stroke="#1F2937" stroke-width="1.2"></rect><rect x="26" y="4" width="10" height="5" rx="1"></rect><rect x="41" y="4.5" width="2" height="4" rx="1"></rect></svg></div>
+  <div style="display:flex;align-items:center;gap:10px;padding:12px 20px 4px"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 4 L7 10 L12.5 16" stroke="#9AA5B5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="font-size:16px;font-weight:700;color:#1F2937">영어 청크 배열</span></div>
+  <div style="display:flex;align-items:center;gap:10px;padding:12px 20px 0"><div style="flex:1;height:10px;background:#ECF1F8;border-radius:99px;overflow:hidden"><div style="width:48%;height:100%;border-radius:99px;background:linear-gradient(90deg,#5EA0FF,#3D7EF0)"></div></div><span style="font-size:12px;font-weight:700;color:#8A94A6">48%</span></div>
+  <div style="padding:28px 20px 0;font-size:18px;font-weight:700;color:#1F2937;line-height:1.6;text-wrap:pretty">당신은 십대로서 NGO들과 일할 수 있습니다.</div>
+  <div style="padding:24px 20px 0">
+    <div style="border:2px dashed #D9E1EC;background:#FAFBFD;border-radius:16px;min-height:110px;padding:12px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;{{ cStrip }}">
+      <sc-if value="{{ cEmpty }}" hint-placeholder-val="{{ true }}"><span style="font-size:13px;color:#B7C1CE;padding:8px 4px">아래 단어 카드를 눌러봐</span></sc-if>
+      <sc-for list="{{ cPicked }}" as="c" hint-placeholder-count="1">
+        <button onClick="{{ c.tap }}" style="border:none;background:#3D7EF0;color:#fff;font:600 15px 'Noto Sans KR',sans-serif;padding:11px 16px;border-radius:99px;cursor:pointer;height:fit-content" style-hover="background:#2b63c9">{{ c.t }}</button>
+      </sc-for>
+    </div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;padding:18px 20px 0">
+    <sc-for list="{{ cPool }}" as="c" hint-placeholder-count="4">
+      <button onClick="{{ c.tap }}" style="background:#fff;border:1.5px solid #E3E8F0;color:#1F2937;font:600 15px 'Noto Sans KR',sans-serif;padding:11px 18px;border-radius:99px;cursor:pointer;box-shadow:0 1px 2px rgba(31,41,55,.04)" style-hover="border-color:#3D7EF0;background:#F2F7FF">{{ c.t }}</button>
+    </sc-for>
+  </div>
+  <div style="flex:1"></div>
+  <div style="display:flex;align-items:flex-end;justify-content:flex-end;gap:8px;padding:0 20px 10px">
+    <div style="position:relative;background:#F2F7FF;border-radius:14px;border-bottom-right-radius:4px;padding:10px 12px;max-width:220px;font-size:13px;font-weight:600;color:#3D7EF0;line-height:1.5" style-after="content:''; position:absolute; right:-4px; bottom:10px; width:10px; height:10px; background:#F2F7FF; transform:rotate(45deg)">{{ cLine }}</div>
+    <div style="{{ cAnim }}"><div role="img" aria-label="루핀" style="width:64px;height:64px;flex:none;background:url(assets/loopin-blush.png) center/contain no-repeat;{{ cImgBg }}"></div></div>
+  </div>
+  <div style="padding:6px 20px 24px">
+    <button onClick="{{ cBtnTap }}" style="width:100%;border:none;border-radius:16px;padding:16px;font:700 16px 'Noto Sans KR',sans-serif;cursor:pointer;background:#E4E9F2;color:#9AA5B5;{{ cBtn }}">{{ cBtnLabel }}</button>
+  </div>
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">다음 시도: "<a class="dv-oid" href="#1b">1b</a> 캐릭터로 <a class="dv-oid" href="#1a">1a</a> 레이아웃 합쳐줘" · "정답 시 축하 효과 더 크게" · "오답용 루핀 표정 이미지 주면 반영해줘"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;name&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;루핀&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;캐릭터&quot;},&quot;tone&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;반말&quot;,&quot;존댓말&quot;],&quot;default&quot;:&quot;반말&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;캐릭터&quot;}}">
+class Component extends DCLogic {
+  state = { a: { p: [], st: 'idle' }, b: { p: [], st: 'idle' }, c: { p: [], st: 'idle' } };
+  CHUNKS = ['with NGOs', 'You', 'as a teenager', 'can work'];
+  ANSWER = 'You|can work|with NGOs|as a teenager';
+
+  lines(tone) {
+    if (tone === '존댓말') return {
+      idle: '제가 문장을 읽어드릴게요! 영어로 배열해 보세요.',
+      go: '좋아요, 잘하고 있어요!',
+      half: '절반 왔어요! 이 느낌 그대로!',
+      ready: '다 됐으면 제출을 눌러 보세요!',
+      correct: '정답이에요! 정말 잘했어요!',
+      wrong: '음… 순서가 살짝 꼬였어요. 카드를 다시 눌러 고쳐 볼까요?'
+    };
+    return {
+      idle: '이 문장, 영어로 배열해봐!',
+      go: '좋아 좋아, 잘하고 있어!',
+      half: '절반 왔어! 그 느낌 그대로!',
+      ready: '다 됐으면 제출 눌러봐!',
+      correct: '정답이야! 완전 잘했는데?',
+      wrong: '음… 순서가 살짝 꼬였어. 카드를 다시 눌러서 고쳐봐!'
+    };
+  }
+
+  upd(k, fn) {
+    this.setState(s => ({ [k]: fn(s[k]) }));
+  }
+
+  optVals(k, L) {
+    const o = this.state[k];
+    const picked = o.p.map((t, i) => ({
+      t,
+      tap: () => this.upd(k, s => ({ p: s.p.filter((_, j) => j !== i), st: 'idle' }))
+    }));
+    const pool = this.CHUNKS.filter(t => !o.p.includes(t)).map(t => ({
+      t,
+      tap: () => this.upd(k, s => s.st === 'correct' ? s : ({ p: [...s.p, t], st: 'idle' }))
+    }));
+    let line = L.idle;
+    if (o.st === 'correct') line = L.correct;
+    else if (o.st === 'wrong') line = L.wrong;
+    else if (o.p.length === 4) line = L.ready;
+    else if (o.p.length === 2) line = L.half;
+    else if (o.p.length > 0) line = L.go;
+    let strip = '';
+    if (o.st === 'correct') strip = 'border-color:#35C77B;background:#E9F9F0';
+    if (o.st === 'wrong') strip = 'border-color:#F28B8B;background:#FEF1F1';
+    let anim = '';
+    if (o.st === 'correct') anim = 'animation:om-bounce .8s ease';
+    if (o.st === 'wrong') anim = 'animation:om-shake .5s ease';
+    const ready = o.p.length === 4;
+    let btn = '', btnLabel = '제출하기';
+    if (o.st === 'correct') { btn = 'background:#35C77B;color:#fff'; btnLabel = '다음 문제'; }
+    else if (ready) btn = 'background:#3D7EF0;color:#fff';
+    const btnTap = () => {
+      const cur = this.state[k];
+      if (cur.st === 'correct') { this.upd(k, () => ({ p: [], st: 'idle' })); return; }
+      if (cur.p.length < 4) return;
+      this.upd(k, s => ({ p: s.p, st: s.p.join('|') === this.ANSWER ? 'correct' : 'wrong' }));
+    };
+    let imgBg = '';
+    if (o.st === 'wrong') imgBg = 'background:url(assets/loopin-sad.png) center/contain no-repeat';
+    if (o.st === 'correct') imgBg = 'background:url(assets/loopin-wave.png) center/contain no-repeat';
+    return {
+      [k + 'ImgBg']: imgBg,
+      [k + 'Picked']: picked, [k + 'Pool']: pool, [k + 'Empty']: o.p.length === 0,
+      [k + 'Line']: line, [k + 'Strip']: strip, [k + 'Anim']: anim,
+      [k + 'Btn']: btn, [k + 'BtnLabel']: btnLabel, [k + 'BtnTap']: btnTap
+    };
+  }
+
+  renderVals() {
+    const name = this.props.name ?? '루핀';
+    const L = this.lines(this.props.tone ?? '반말');
+    return Object.assign({ name },
+      this.optVals('a', L), this.optVals('b', L), this.optVals('c', L));
+  }
+}
+</script>
+</body>
+</html>

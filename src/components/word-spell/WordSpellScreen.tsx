@@ -1,29 +1,29 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { shuffleArray } from '../../lib/shuffle'
 import {
-  COLOR_CORRECT_BG,
-  COLOR_WRONG_BG,
   EXERCISE_CTA_CLASS,
-  EXERCISE_FEEDBACK_HINT_CLASS,
   EXERCISE_OPTION_EN_CLASS,
   EXERCISE_PASSAGE_EN_CLASS,
   EXERCISE_PASSAGE_KO_MUTED_CLASS,
-  exerciseFeedbackTitleClass,
 } from '../exercise/exercise-typography'
 import { ExerciseProgressBar, BakedProgressBarMask } from '../exercise/ExerciseProgressBar'
+import { ExerciseContinueButton } from '../exercise/ExerciseContinueButton'
 import { FigmaAssetFrame } from '../FigmaAssetFrame'
 import {
-  buildQuestionTiles,
+  buildQuestionState,
   buildWordFromSlots,
   figmaRectStyle,
-  getSlotLayouts,
+  getAnswerWordGroups,
   getSpaceAfterSlotIndices,
   getSpellingLength,
   getWordSpellTile,
+  isPrefilledSlotIndex,
+  isPrefilledTileId,
   matchesSpellAnswer,
   WORD_SPELL_ASSETS,
-  WORD_SPELL_FEEDBACK_SHEET,
-  WORD_SPELL_KOREAN_PROMPT,
-  WORD_SPELL_PROMPT,
+  WORD_SPELL_CARD,
+  WORD_SPELL_CARD_TEXT,
+  WORD_SPELL_CONTENT_BAKE_MASK,
   WORD_SPELL_QUESTIONS,
   WORD_SPELL_SLOTS_MASK,
   WORD_SPELL_SUBMIT_BTN,
@@ -33,13 +33,17 @@ import {
 } from './word-spell'
 import { sessionWordSpellId } from '../exercise/session-results'
 import { playAnswerSfx, playTapSfx } from '../exercise/answer-sfx'
+import { speakEnglishWord, stopEnglishWordAudio } from '../word-quiz/word-quiz'
 import { RetryWrongCompleteSheet } from '../exercise/RetryWrongCompleteSheet'
-import { useEnterToContinue } from '../exercise/use-enter-to-continue'
-import type { RetryWrongExerciseProps } from '../exercise/retry-wrong-ui'
+import {
+  useAdvanceWhenNoQuestions,
+  type RetryWrongExerciseProps,
+} from '../exercise/retry-wrong-ui'
 
 type WordSpellScreenProps = {
   sessionOffset: number
   questions?: WordSpellQuestion[]
+  answerIdForQuestion?: (questionId: string) => string
   onAnswer?: (stepId: string, isCorrect: boolean) => void
   onComplete?: () => void
 } & RetryWrongExerciseProps
@@ -52,64 +56,6 @@ function trayTileClass() {
 
 function trayLabelClass() {
   return EXERCISE_OPTION_EN_CLASS
-}
-
-function emptySlotClass() {
-  return 'box-border rounded-2xl border border-[#E2E8F2] bg-[#F4F7FB]'
-}
-
-function filledSlotClass() {
-  return 'box-border rounded-2xl border-[3px] border-[#3C86FF] bg-white'
-}
-
-function slotLabelClass() {
-  return EXERCISE_OPTION_EN_CLASS
-}
-
-function WordSpellFeedbackSheet({
-  kind,
-  answerHint,
-  onContinue,
-}: {
-  kind: 'correct' | 'wrong'
-  answerHint?: string
-  onContinue?: () => void
-}) {
-  const isCorrect = kind === 'correct'
-
-  const handleContinue = () => {
-    playTapSfx()
-    onContinue?.()
-  }
-
-  useEnterToContinue(onContinue ? handleContinue : undefined)
-
-  return (
-    <div className="absolute z-20" style={figmaRectStyle(WORD_SPELL_FEEDBACK_SHEET)}>
-      <div className="flex h-full flex-col rounded-t-[24px] border-t border-[#E4E7EA] bg-white px-[30px] pb-[41px] pt-[30px] shadow-[0_-10px_24px_rgba(0,0,0,0.06)]">
-        <p className={exerciseFeedbackTitleClass(isCorrect)}>
-          {isCorrect ? '정답입니다.' : '오답입니다.'}
-        </p>
-        {answerHint && (
-          <p className={EXERCISE_FEEDBACK_HINT_CLASS}>
-            정답은 {answerHint}에요
-          </p>
-        )}
-        {onContinue && (
-          <button
-            type="button"
-            aria-label="계속하기"
-            className={`mt-auto flex h-[60px] w-full cursor-pointer items-center justify-center rounded-2xl border border-white ${EXERCISE_CTA_CLASS} text-white ${
-              isCorrect ? COLOR_CORRECT_BG : COLOR_WRONG_BG
-            }`}
-            onClick={handleContinue}
-          >
-            계속하기
-          </button>
-        )}
-      </div>
-    </div>
-  )
 }
 
 function InlineAnswerLine({
@@ -128,76 +74,109 @@ function InlineAnswerLine({
   onSlotClick: (slotIndex: number) => void
 }) {
   const slotWidthClass =
-    slotCount >= 10 ? 'min-w-[10px]' : slotCount >= 8 ? 'min-w-[11px]' : 'min-w-[13px]'
+    slotCount >= 12
+      ? 'min-w-[9px]'
+      : slotCount >= 9
+        ? 'min-w-[10px]'
+        : 'min-w-[12px]'
+
+  const wordGroups = getAnswerWordGroups(slotCount, spaceAfterSlotIndices)
 
   return (
-    <span className="inline-flex items-baseline border-b-2 border-[#1E1E1E] pb-[1px]">
-      {Array.from({ length: slotCount }, (_, slotIndex) => {
-        const tileId = slots[slotIndex]
-        const letter = tileId ? getWordSpellTile(tiles, tileId)?.letter : null
-        const isFilled = Boolean(letter)
+    <span className="inline-flex max-w-full flex-wrap items-baseline justify-center gap-x-[0.85em] gap-y-1.5 align-baseline">
+      {wordGroups.map((group, groupIndex) => (
+        <span
+          key={`blank-word-${groupIndex}`}
+          className="inline-flex shrink items-baseline border-b-2 border-[#1E1E1E] pb-0.5"
+        >
+          {group.map((slotIndex) => {
+            const tileId = slots[slotIndex]
+            const letter = tileId ? getWordSpellTile(tiles, tileId)?.letter : null
+            const isFilled = Boolean(letter)
+            const isPrefilled = isPrefilledSlotIndex(slotIndex, slots)
 
-        return (
-          <span key={`inline-${slotIndex}`} className="inline-flex items-baseline">
-            {slotIndex > 0 && spaceAfterSlotIndices.includes(slotIndex - 1) && (
-              <span aria-hidden className="min-w-[4px] px-[1px]">
-                {' '}
-              </span>
-            )}
-            <button
-              type="button"
-              disabled={disabled || !isFilled}
-              aria-label={
-                isFilled
-                  ? `${slotIndex + 1}번째 글자 ${letter}`
-                  : `${slotIndex + 1}번째 빈칸`
-              }
-              className={`${slotWidthClass} px-[1px] text-center ${EXERCISE_OPTION_EN_CLASS} leading-none ${
-                isFilled ? 'cursor-pointer' : 'cursor-default text-[#9CA3AF]'
-              }`}
-              onClick={() => {
-                if (isFilled) onSlotClick(slotIndex)
-              }}
-            >
-              {isFilled ? letter : '_'}
-            </button>
-          </span>
-        )
-      })}
+            return (
+              <button
+                key={`inline-${slotIndex}`}
+                type="button"
+                disabled={disabled || !isFilled || isPrefilled}
+                aria-label={
+                  isFilled
+                    ? `${slotIndex + 1}번째 글자 ${letter}${isPrefilled ? ' (힌트)' : ''}`
+                    : `${slotIndex + 1}번째 빈칸`
+                }
+                className={`${slotWidthClass} px-px text-center ${EXERCISE_OPTION_EN_CLASS} leading-none ${
+                  isPrefilled
+                    ? 'cursor-default text-[#64748B]'
+                    : isFilled
+                      ? 'cursor-pointer'
+                      : 'cursor-default text-[#9CA3AF]'
+                }`}
+                onClick={() => {
+                  if (isFilled && !isPrefilled) onSlotClick(slotIndex)
+                }}
+              >
+                {isFilled ? letter : '_'}
+              </button>
+            )
+          })}
+        </span>
+      ))}
     </span>
   )
 }
 
-function createEmptySlots(count: number) {
-  return Array.from({ length: count }, () => null)
+function resetSpellState(question: WordSpellQuestion) {
+  return buildQuestionState(question)
 }
 
 export function WordSpellScreen({
   sessionOffset,
   questions,
+  answerIdForQuestion = sessionWordSpellId,
   onAnswer,
   onComplete,
   hideProgressBar = false,
   isFinalRetrySection = false,
+  sessionTotalSteps,
   onRetryFlowHome,
 }: WordSpellScreenProps) {
-  const activeQuestions = questions ?? WORD_SPELL_QUESTIONS
+  // questions === undefined → 전체 은행 / [] → 오답 없음(스킵)
+  const [activeQuestions] = useState(() =>
+    shuffleArray([...(questions ?? WORD_SPELL_QUESTIONS)]),
+  )
   const [questionIndex, setQuestionIndex] = useState(0)
   const question = activeQuestions[questionIndex]
   const isLastQuestion = questionIndex + 1 >= activeQuestions.length
 
-  const spellingLength = getSpellingLength(question.answer)
-  const spaceAfterSlotIndices = getSpaceAfterSlotIndices(question.answer)
+  useAdvanceWhenNoQuestions(activeQuestions.length, () => {
+    onComplete?.()
+  })
 
-  const [tiles, setTiles] = useState(() => buildQuestionTiles(question))
-  const [slots, setSlots] = useState<(string | null)[]>(() => createEmptySlots(spellingLength))
+  const spellingLength = question ? getSpellingLength(question.answer) : 0
+  const spaceAfterSlotIndices = question
+    ? getSpaceAfterSlotIndices(question.answer)
+    : []
+
+  const [{ tiles, slots }, setSpellState] = useState(() => {
+    const first = activeQuestions[0]
+    return first
+      ? buildQuestionState(first)
+      : { tiles: [], slots: [] as (string | null)[] }
+  })
   const [result, setResult] = useState<SpellResult>('playing')
 
-  const slotLayouts = useMemo(() => getSlotLayouts(spellingLength), [spellingLength])
+  useEffect(() => {
+    if (!question) return
+    setSpellState(buildQuestionState(question))
+    setResult('playing')
+  }, [question])
 
   const tilesInTray = useMemo(() => {
     const usedIds = new Set(slots.filter((tileId): tileId is string => tileId !== null))
-    return tiles.filter((tile) => !usedIds.has(tile.id))
+    return tiles.filter(
+      (tile) => !usedIds.has(tile.id) && !isPrefilledTileId(tile.id),
+    )
   }, [slots, tiles])
 
   const allFilled = slots.every((tileId) => tileId !== null)
@@ -206,8 +185,7 @@ export function WordSpellScreen({
   const completedInSection = questionIndex + (showFeedback ? 1 : 0)
 
   const resetQuestionState = (nextQuestion: WordSpellQuestion) => {
-    setTiles(buildQuestionTiles(nextQuestion))
-    setSlots(createEmptySlots(getSpellingLength(nextQuestion.answer)))
+    setSpellState(resetSpellState(nextQuestion))
     setResult('playing')
   }
 
@@ -219,23 +197,31 @@ export function WordSpellScreen({
     const firstEmptyIndex = slots.findIndex((tileId) => tileId === null)
     if (firstEmptyIndex === -1) return
 
-    setSlots((prev) => {
-      const next = [...prev]
-      next[firstEmptyIndex] = tile.id
-      return next
-    })
+    setSpellState((prev) => ({
+      ...prev,
+      slots: (() => {
+        const next = [...prev.slots]
+        next[firstEmptyIndex] = tile.id
+        return next
+      })(),
+    }))
   }
 
   const handleSlotClick = (slotIndex: number) => {
-    if (!isPlaying || slots[slotIndex] === null) return
+    if (!isPlaying || slots[slotIndex] === null || isPrefilledSlotIndex(slotIndex, slots)) {
+      return
+    }
 
     playTapSfx()
 
-    setSlots((prev) => {
-      const next = [...prev]
-      next[slotIndex] = null
-      return next
-    })
+    setSpellState((prev) => ({
+      ...prev,
+      slots: (() => {
+        const next = [...prev.slots]
+        next[slotIndex] = null
+        return next
+      })(),
+    }))
   }
 
   const handleSubmit = () => {
@@ -244,18 +230,20 @@ export function WordSpellScreen({
     playTapSfx()
 
     if (matchesSpellAnswer(buildWordFromSlots(slots, tiles), question.answer)) {
-      onAnswer?.(sessionWordSpellId(question.id), true)
+      onAnswer?.(answerIdForQuestion(question.id), true)
       playAnswerSfx(true)
+      speakEnglishWord(question.answer, { force: true })
       setResult('correct')
       return
     }
 
-    onAnswer?.(sessionWordSpellId(question.id), false)
+    onAnswer?.(answerIdForQuestion(question.id), false)
     playAnswerSfx(false)
     setResult('wrong')
   }
 
   const handleFeedbackContinue = () => {
+    stopEnglishWordAudio()
     playTapSfx()
     if (isLastQuestion) {
       if (!isFinalRetrySection) {
@@ -271,6 +259,10 @@ export function WordSpellScreen({
 
   const showRetryComplete = showFeedback && isLastQuestion && isFinalRetrySection
 
+  if (!question) {
+    return null
+  }
+
   return (
     <FigmaAssetFrame src={WORD_SPELL_ASSETS.base} alt="단어 스펠링" bgClassName="bg-white">
       <div className={`absolute inset-0 z-10 ${showFeedback ? 'pointer-events-none' : ''}`}>
@@ -280,72 +272,64 @@ export function WordSpellScreen({
           <ExerciseProgressBar
             sessionOffset={sessionOffset}
             completedInSection={completedInSection}
+            totalSteps={sessionTotalSteps}
           />
         )}
 
-        <div
-          className="pointer-events-none absolute bg-[#F7FAFF]"
-          style={figmaRectStyle(WORD_SPELL_KOREAN_PROMPT)}
-        />
-        <div className="absolute z-[1]" style={figmaRectStyle(WORD_SPELL_KOREAN_PROMPT)}>
-          <p className={EXERCISE_PASSAGE_KO_MUTED_CLASS}>
-            {question.korean}
-          </p>
-        </div>
-
-        <div
-          className="pointer-events-none absolute bg-[#F7FAFF]"
-          style={figmaRectStyle(WORD_SPELL_PROMPT)}
-        />
-        <div className="absolute z-[1]" style={figmaRectStyle(WORD_SPELL_PROMPT)}>
-          <p className={EXERCISE_PASSAGE_EN_CLASS}>
-            {question.englishBefore}
-            <InlineAnswerLine
-              slotCount={spellingLength}
-              slots={slots}
-              tiles={tiles}
-              spaceAfterSlotIndices={spaceAfterSlotIndices}
-              disabled={!isPlaying}
-              onSlotClick={handleSlotClick}
-            />
-            {question.englishAfter}
-          </p>
-        </div>
-
+        {/* SVG 데모 본문·빈칸·잔상 전부 가림 (매 문제 공통) */}
         <div
           aria-hidden
-          className="pointer-events-none absolute bg-white"
+          className="pointer-events-none absolute z-[1] bg-white"
+          style={figmaRectStyle(WORD_SPELL_CONTENT_BAKE_MASK)}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute z-[1] rounded-[22px] bg-[#F7FAFF]"
+          style={figmaRectStyle(WORD_SPELL_CARD)}
+        />
+        <div
+          key={question.id}
+          className="absolute z-[2] overflow-y-auto overflow-x-hidden px-1"
+          style={figmaRectStyle(WORD_SPELL_CARD_TEXT)}
+        >
+          <div className="flex min-h-full flex-col items-center justify-center gap-3 py-3 text-center">
+            <p
+              className={`${EXERCISE_PASSAGE_KO_MUTED_CLASS} w-full shrink-0 leading-[1.35]`}
+              style={{
+                display: '-webkit-box',
+                WebkitBoxOrient: 'vertical',
+                WebkitLineClamp: 3,
+                overflow: 'hidden',
+                overflowWrap: 'anywhere',
+                wordBreak: 'keep-all',
+              }}
+            >
+              {question.korean}
+            </p>
+            <p
+              className={`${EXERCISE_PASSAGE_EN_CLASS} w-full whitespace-normal leading-[1.55]`}
+              style={{ overflowWrap: 'anywhere' }}
+            >
+              {question.englishBefore}
+              <InlineAnswerLine
+                slotCount={spellingLength}
+                slots={slots}
+                tiles={tiles}
+                spaceAfterSlotIndices={spaceAfterSlotIndices}
+                disabled={!isPlaying}
+                onSlotClick={handleSlotClick}
+              />
+              {question.englishAfter}
+            </p>
+          </div>
+        </div>
+
+        {/* SVG 데모 슬롯만 가림 — 별도 빈칸 줄은 문장 인라인으로 대체 */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute z-[1] bg-white"
           style={figmaRectStyle(WORD_SPELL_SLOTS_MASK)}
         />
-
-        {slotLayouts.map((layout, slotIndex) => {
-          const tileId = slots[slotIndex]
-          const tile = tileId ? getWordSpellTile(tiles, tileId) : null
-
-          if (!tile) {
-            return (
-              <div
-                key={`slot-empty-${question.id}-${slotIndex}`}
-                aria-hidden
-                className={`absolute z-[2] ${emptySlotClass()}`}
-                style={figmaRectStyle(layout)}
-              />
-            )
-          }
-
-          return (
-            <button
-              key={`slot-${question.id}-${slotIndex}`}
-              type="button"
-              aria-label={`${slotIndex + 1}번째 칸 ${tile.letter}`}
-              className={`absolute z-[2] flex cursor-pointer items-center justify-center ${filledSlotClass()}`}
-              style={figmaRectStyle(layout)}
-              onClick={() => handleSlotClick(slotIndex)}
-            >
-              <span className={slotLabelClass()}>{tile.letter}</span>
-            </button>
-          )
-        })}
 
         <div
           aria-hidden
@@ -366,30 +350,38 @@ export function WordSpellScreen({
           </button>
         ))}
 
-        <button
-          type="button"
-          aria-label="제출하기"
-          disabled={!allFilled}
-          className={`absolute flex items-center justify-center rounded-2xl ${EXERCISE_CTA_CLASS} text-white ${
-            allFilled
-              ? 'cursor-pointer border border-white bg-[#3C86FF]'
-              : 'cursor-default bg-transparent'
-          }`}
-          style={figmaRectStyle(WORD_SPELL_SUBMIT_BTN)}
-          onClick={handleSubmit}
-        >
-          {allFilled && '제출하기'}
-        </button>
+        {!showFeedback ? (
+          <button
+            type="button"
+            aria-label="제출하기"
+            disabled={!allFilled}
+            className={`absolute flex items-center justify-center rounded-2xl ${EXERCISE_CTA_CLASS} text-white ${
+              allFilled
+                ? 'cursor-pointer border border-white bg-[#3C86FF]'
+                : 'cursor-default bg-transparent'
+            }`}
+            style={figmaRectStyle(WORD_SPELL_SUBMIT_BTN)}
+            onClick={handleSubmit}
+          >
+            {allFilled && '제출하기'}
+          </button>
+        ) : null}
       </div>
 
       {showRetryComplete && <RetryWrongCompleteSheet onHome={onRetryFlowHome} />}
-      {showFeedback && !showRetryComplete && (
-        <WordSpellFeedbackSheet
+      {showFeedback && !showRetryComplete ? (
+        <ExerciseContinueButton
           kind={result === 'correct' ? 'correct' : 'wrong'}
-          answerHint={question.answerHint}
+          rect={WORD_SPELL_SUBMIT_BTN}
+          title={result === 'correct' ? '정답입니다.' : '오답입니다.'}
+          hint={
+            result === 'wrong' && question.answerHint
+              ? `정답은 ${question.answerHint}에요`
+              : undefined
+          }
           onContinue={handleFeedbackContinue}
         />
-      )}
+      ) : null}
     </FigmaAssetFrame>
   )
 }

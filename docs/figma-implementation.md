@@ -1,7 +1,8 @@
 # Loopin 피그마 → 코드 구현 가이드
 
-> 피그마 시안을 코드로 옮길 때 따르는 **공통 규칙**과 **화면별 구현 명세** 템플릿입니다.  
-> 서비스 기획은 [`loopin-b2g-service-planning.md`](../../loopin-b2g-service-planning.md) 참고.
+> **레거시 문서.** 신규 작업은 [`figma.md`](./figma.md)를 우선한다.  
+> 피그마 시안을 코드로 옮길 때 따르던 초기 규칙·템플릿이다.  
+> (구 기획 문서 `loopin-b2g-service-planning.md`는 이 저장소에 없음.)
 
 ---
 

@@ -1,19 +1,26 @@
+import {
+  preloadLoopinTts,
+  preloadLoopinEnglishTexts,
+  speakLoopinEnglish,
+  stopLoopinTts,
+} from '../../lib/tts/loopin-tts'
+
 export const FRAME_W = 393
 export const FRAME_H = 852
 
 export const WORD_QUIZ_ASSETS = {
-  base: '/assets/단어B_시작.svg',
+  base: '/assets/word-b-start.svg',
 } as const
 
 export const FEEDBACK_MS = 500
 
-export type WordQuizId = 'various' | 'wave' | 'run-errands' | 'latest'
+export type WordQuizId = string
 
 export type WordQuizQuestion = {
   id: WordQuizId
   word: string
   correctAnswer: string
-  options: [string, string, string]
+  options: string[]
 }
 
 export const WORD_QUIZ_QUESTIONS: WordQuizQuestion[] = [
@@ -21,33 +28,38 @@ export const WORD_QUIZ_QUESTIONS: WordQuizQuestion[] = [
     id: 'various',
     word: 'various',
     correctAnswer: '다양한',
-    options: ['다양한', '최신의', '심부름하다'],
+    options: ['최신의', '다양한', '심부름하다'],
   },
   {
     id: 'wave',
     word: 'wave',
     correctAnswer: '손을 흔들다',
-    options: ['손을 흔들다', '다양한', '최신의'],
+    options: ['다양한', '최신의', '손을 흔들다'],
   },
   {
     id: 'run-errands',
     word: 'run errands',
     correctAnswer: '심부름하다',
-    options: ['심부름하다', '손을 흔들다', '다양한'],
+    options: ['손을 흔들다', '심부름하다', '다양한'],
   },
   {
     id: 'latest',
     word: 'latest',
     correctAnswer: '최신의',
-    options: ['최신의', '다양한', '심부름하다'],
+    options: ['다양한', '심부름하다', '최신의'],
   },
 ]
 
-/** Figma — 스피커 버튼 */
-export const WORD_QUIZ_SPEAKER_HIT = { x: 87, y: 232, w: 46.5, h: 45.875 }
+/** 예문 듣기 스피커 — 앱 왼쪽 정렬 */
+export const WORD_QUIZ_SPEAKER_HIT = { x: 24, y: 230, w: 48, h: 48 }
 
-/** Figma — 영어 단어 표시 영역 */
-export const WORD_QUIZ_PROMPT_WORD = { x: 130, y: 238, w: 140, h: 36 }
+/**
+ * 영어 단어 — 앱 프레임 기준 가운데(스피커와 묶여 가운데 맞추지 않음).
+ */
+export const WORD_QUIZ_PROMPT_WORD = { x: 24, y: 230, w: 345, h: 48 }
+
+/** 에셋에 박힌 옛 스피커·단어 자리 가림 */
+export const WORD_QUIZ_PROMPT_BAKE_MASK = { x: 70, y: 220, w: 260, h: 68 }
 
 /** Figma — 진행률 바 (1/4 기준 x=31.6172 w=326) */
 export const WORD_QUIZ_PROGRESS_BAR = { x: 31.6172, y: 142, w: 326, h: 18 }
@@ -70,6 +82,24 @@ export function shuffleOptions<T>(items: readonly T[]): T[] {
   return next
 }
 
+/**
+ * 3지선다 선택지 — 정답을 0/1/2번 슬롯에 균등 확률로 배치.
+ * (원본 배열에서 정답이 맨 앞에 있어도 위치에 치우치지 않음)
+ */
+export function shuffleChoicesWithRandomCorrect(
+  options: readonly string[],
+  correctAnswer: string,
+): string[] {
+  const distractors = shuffleOptions([
+    ...new Set(options.filter((option) => option !== correctAnswer)),
+  ]).slice(0, 2)
+
+  const slot = Math.floor(Math.random() * (distractors.length + 1))
+  const next = [...distractors]
+  next.splice(slot, 0, correctAnswer)
+  return next
+}
+
 export function figmaRectStyle(rect: { x: number; y: number; w: number; h: number }) {
   return {
     left: `${(rect.x / FRAME_W) * 100}%`,
@@ -79,333 +109,27 @@ export function figmaRectStyle(rect: { x: number; y: number; w: number; h: numbe
   }
 }
 
-const PHRASE_GAP_MS = 100
-
-export const WORD_PRONUNCIATION_AUDIO: Record<string, string | readonly string[]> = {
-  various: '/assets/audio/various.wav',
-  wave: '/assets/audio/wave.wav',
-  'run errands': '/assets/audio/run-errands.wav',
-  latest: '/assets/audio/latest.wav',
-}
-
-/** 본문 A 예문 — 단어 wav와 동일 Windows TTS 녹음 */
-export const BODY_TEXT_A_EXAMPLE_AUDIO: Record<string, string> = {
-  various: '/assets/audio/sentence-various.wav',
-  wave: '/assets/audio/sentence-wave.wav',
-  'run-errands': '/assets/audio/sentence-run-errands.wav',
-  latest: '/assets/audio/sentence-latest.wav',
-}
-
-const audioCache = new Map<string, HTMLAudioElement>()
-
-let activePlayToken = 0
-let lastSpeakWord = ''
-let lastSpeakAt = 0
-const activeAudios: HTMLAudioElement[] = []
-
-function getAudioSources(word: string): string[] {
-  const source = WORD_PRONUNCIATION_AUDIO[word]
-  if (!source) return []
-  return typeof source === 'string' ? [source] : [...source]
-}
-
-function getExampleAudioSource(audioKey: string): string | undefined {
-  return BODY_TEXT_A_EXAMPLE_AUDIO[audioKey]
-}
-
-function getCachedAudio(url: string): HTMLAudioElement {
-  let audio = audioCache.get(url)
-  if (!audio) {
-    audio = new Audio(url)
-    audio.preload = 'auto'
-    audioCache.set(url, audio)
-  }
-  return audio
-}
-
-function waitForAudioReady(audio: HTMLAudioElement): Promise<void> {
-  if (audio.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
-    return Promise.resolve()
-  }
-
-  return new Promise((resolve, reject) => {
-    const onReady = () => {
-      cleanup()
-      resolve()
-    }
-    const onError = () => {
-      cleanup()
-      reject(new Error('audio load failed'))
-    }
-    const cleanup = () => {
-      audio.removeEventListener('canplaythrough', onReady)
-      audio.removeEventListener('loadeddata', onReady)
-      audio.removeEventListener('error', onError)
-    }
-
-    audio.addEventListener('canplaythrough', onReady)
-    audio.addEventListener('loadeddata', onReady)
-    audio.addEventListener('error', onError)
-    audio.load()
-  })
-}
-
-function delay(ms: number, token: number): Promise<void> {
-  return new Promise((resolve) => {
-    window.setTimeout(() => {
-      if (token === activePlayToken) resolve()
-    }, ms)
-  })
-}
-
-function pickEnglishVoice(synth: SpeechSynthesis): SpeechSynthesisVoice | undefined {
-  const voices = synth.getVoices()
-  const preferredNames = ['Microsoft Zira', 'Microsoft Aria', 'Google US English', 'Samantha']
-
-  for (const name of preferredNames) {
-    const voice = voices.find((item) => item.name.includes(name))
-    if (voice) return voice
-  }
-
-  return (
-    voices.find((voice) => voice.lang === 'en-US') ??
-    voices.find((voice) => voice.lang.startsWith('en'))
-  )
-}
-
-function speakWithSynth(word: string) {
-  if (!('speechSynthesis' in window)) return
-
-  const synth = window.speechSynthesis
-  const utterance = new SpeechSynthesisUtterance(word)
-  utterance.lang = 'en-US'
-  utterance.rate = 0.95
-
-  const voice = pickEnglishVoice(synth)
-  if (voice) utterance.voice = voice
-
-  let resumeTimer: number | null = null
-
-  const clearResumeTimer = () => {
-    if (resumeTimer !== null) {
-      window.clearInterval(resumeTimer)
-      resumeTimer = null
-    }
-  }
-
-  utterance.onstart = () => {
-    synth.resume()
-    clearResumeTimer()
-    resumeTimer = window.setInterval(() => {
-      if (!synth.speaking) {
-        clearResumeTimer()
-        return
-      }
-      synth.pause()
-      synth.resume()
-    }, 120)
-  }
-
-  utterance.onend = clearResumeTimer
-  utterance.onerror = clearResumeTimer
-
-  if (synth.speaking || synth.pending) {
-    synth.cancel()
-    window.setTimeout(() => synth.speak(utterance), 120)
-    return
-  }
-
-  synth.speak(utterance)
-}
-
-async function playAudioUrl(url: string, token: number): Promise<boolean> {
-  if (token !== activePlayToken) return false
-
-  const audio = getCachedAudio(url)
-  audio.currentTime = 0
-
-  const tryPlay = async (): Promise<boolean> => {
-    if (token !== activePlayToken) return false
-
-    try {
-      await audio.play()
-      return true
-    } catch {
-      return false
-    }
-  }
-
-  if (await tryPlay()) {
-    return new Promise((resolve) => {
-      activeAudios.push(audio)
-
-      const finish = (success: boolean) => {
-        audio.onended = null
-        audio.onerror = null
-        resolve(success)
-      }
-
-      audio.onended = () => finish(true)
-      audio.onerror = () => finish(false)
-    })
-  }
-
-  try {
-    await waitForAudioReady(audio)
-  } catch {
-    return false
-  }
-
-  if (token !== activePlayToken) return false
-  if (!(await tryPlay())) return false
-
-  return new Promise((resolve) => {
-    activeAudios.push(audio)
-
-    const finish = (success: boolean) => {
-      audio.onended = null
-      audio.onerror = null
-      resolve(success)
-    }
-
-    audio.onended = () => finish(true)
-    audio.onerror = () => finish(false)
-  })
-}
-
-async function playWordAudio(word: string, token: number): Promise<boolean> {
-  const sources = getAudioSources(word)
-  if (sources.length === 0) return false
-
-  for (let index = 0; index < sources.length; index += 1) {
-    if (token !== activePlayToken) return false
-
-    const played = await playAudioUrl(sources[index], token)
-    if (!played) return false
-
-    if (index < sources.length - 1) {
-      await delay(PHRASE_GAP_MS, token)
-      if (token !== activePlayToken) return false
-    }
-  }
-
-  return true
-}
-
+/** Loopin 제공 TTS — 번들 wav + Edge Aria/SunHi (Supabase Function) */
 export function stopEnglishWordAudio() {
-  activePlayToken += 1
-  lastSpeakWord = ''
-  lastSpeakAt = 0
-  lastSpeakText = ''
-  lastSpeakTextAt = 0
-
-  for (const audio of activeAudios.splice(0)) {
-    audio.pause()
-    audio.currentTime = 0
-    audio.onended = null
-    audio.onerror = null
-  }
-
-  window.speechSynthesis?.cancel()
+  stopLoopinTts()
 }
 
 export function preloadEnglishWordAudio(): Promise<void> {
-  const urls = new Set<string>()
+  return preloadLoopinTts()
+}
 
-  for (const source of Object.values(WORD_PRONUNCIATION_AUDIO)) {
-    const items = Array.isArray(source) ? source : [source]
-    for (const url of items) urls.add(url)
-  }
-
-  for (const url of Object.values(BODY_TEXT_A_EXAMPLE_AUDIO)) {
-    urls.add(url)
-  }
-
-  const loads = [...urls].map(async (url) => {
-    const audio = getCachedAudio(url)
-    try {
-      await waitForAudioReady(audio)
-    } catch {
-      // Preload failure is non-fatal; playback will retry or fall back.
-    }
-  })
-
-  return Promise.all(loads).then(() => undefined)
+export function preloadEnglishWords(texts: readonly string[]): Promise<void> {
+  return preloadLoopinEnglishTexts(texts)
 }
 
 export function speakEnglishWord(word: string, options?: { force?: boolean }) {
-  const now = Date.now()
-  if (!options?.force && word === lastSpeakWord && now - lastSpeakAt < 200) return
-
-  lastSpeakWord = word
-  lastSpeakAt = now
-  lastSpeakText = ''
-  lastSpeakTextAt = 0
-
-  const token = ++activePlayToken
-  for (const audio of activeAudios.splice(0)) {
-    audio.pause()
-    audio.currentTime = 0
-    audio.onended = null
-    audio.onerror = null
-  }
-  window.speechSynthesis?.cancel()
-
-  void (async () => {
-    const played = await playWordAudio(word, token)
-    if (token !== activePlayToken) return
-    if (!played) speakWithSynth(word)
-  })()
+  speakLoopinEnglish(word, options)
 }
 
-let lastSpeakText = ''
-let lastSpeakTextAt = 0
-
-async function playRecordedEnglish(url: string, token: number): Promise<boolean> {
-  if (token !== activePlayToken) return false
-
-  const audio = getCachedAudio(url)
-  try {
-    await waitForAudioReady(audio)
-  } catch {
-    return false
-  }
-
-  if (token !== activePlayToken) return false
-  return playAudioUrl(url, token)
-}
-
-/** 영어 문장·구절 — 단어 wav와 동일 녹음 파일 재생 */
 export function speakEnglishText(
   text: string,
   options?: { force?: boolean; audioKey?: string },
 ) {
-  const now = Date.now()
-  const cacheKey = options?.audioKey ? `audio:${options.audioKey}` : text
-  if (!options?.force && cacheKey === lastSpeakText && now - lastSpeakTextAt < 200) return
-
-  lastSpeakText = cacheKey
-  lastSpeakTextAt = now
-  lastSpeakWord = ''
-  lastSpeakAt = 0
-
-  const token = ++activePlayToken
-  for (const audio of activeAudios.splice(0)) {
-    audio.pause()
-    audio.currentTime = 0
-    audio.onended = null
-    audio.onerror = null
-  }
-  window.speechSynthesis?.cancel()
-
-  const recorded = options?.audioKey
-    ? getExampleAudioSource(options.audioKey)
-    : undefined
-
-  if (recorded) {
-    void playRecordedEnglish(recorded, token)
-    return
-  }
-
-  speakWithSynth(text)
+  void options?.audioKey
+  speakLoopinEnglish(text, options)
 }

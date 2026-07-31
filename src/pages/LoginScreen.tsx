@@ -27,7 +27,7 @@ export function LoginScreen() {
       data-node-id="2917:6018"
       data-name="로그인화면"
     >
-      <div className="relative aspect-[393/852] w-full max-w-[393px] self-center">
+      <div className="relative aspect-[393/852] w-full max-w-[540px] self-center">
         <img
           src={LOGIN_ASSET}
           alt="Loopin 로그인"

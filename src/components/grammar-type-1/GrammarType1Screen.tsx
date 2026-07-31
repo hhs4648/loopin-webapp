@@ -1,13 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { shuffleArray } from '../../lib/shuffle'
 import { FigmaAssetFrame } from '../FigmaAssetFrame'
 import { ExerciseProgressBar, BakedProgressBarMask } from '../exercise/ExerciseProgressBar'
-import {
-  COLOR_CORRECT_BG,
-  COLOR_WRONG_BG,
-  EXERCISE_CTA_CLASS,
-  exerciseFeedbackTitleClass,
-  exerciseOptionEnStateClass,
-} from '../exercise/exercise-typography'
+import { exerciseOptionEnStateClass } from '../exercise/exercise-typography'
+import { ExerciseContinueButton } from '../exercise/ExerciseContinueButton'
 import {
   GRAMMAR_PASSAGE_BLANK_CLASS,
   GRAMMAR_PASSAGE_TEXT_CLASS,
@@ -15,7 +11,6 @@ import {
 import {
   figmaRectStyle,
   GRAMMAR_TYPE_1_ASSET,
-  GRAMMAR_TYPE_1_FEEDBACK_SHEET,
   GRAMMAR_TYPE_1_OPTION_BOXES,
   GRAMMAR_TYPE_1_PASSAGE,
   GRAMMAR_TYPE_1_PASSAGE_ENGLISH,
@@ -23,9 +18,14 @@ import {
   type GrammarType1Question,
 } from './grammar-type-1'
 import { RetryWrongCompleteSheet } from '../exercise/RetryWrongCompleteSheet'
-import { useEnterToContinue } from '../exercise/use-enter-to-continue'
 import { playAnswerSfx, playTapSfx } from '../exercise/answer-sfx'
-import type { RetryWrongExerciseProps } from '../exercise/retry-wrong-ui'
+import {
+  useAdvanceWhenNoQuestions,
+  type RetryWrongExerciseProps,
+} from '../exercise/retry-wrong-ui'
+
+/** 정답 시 효과음 후 자동 진행 */
+const CORRECT_AUTO_ADVANCE_MS = 1000
 
 type GrammarType1ScreenProps = {
   sessionOffset: number
@@ -45,45 +45,12 @@ function optionFrameClass(state: OptionVisualState) {
     case 'wrong':
       return `${base} border-[#EF4444] bg-[#FEF2F2]`
     default:
-      return `${base} border-black bg-white`
+      return `${base} border-[#1E1E1E] bg-white`
   }
 }
 
 function optionLabelClass(state: OptionVisualState) {
   return exerciseOptionEnStateClass(state)
-}
-
-function GrammarType1FeedbackSheet({
-  kind,
-  onContinue,
-}: {
-  kind: 'correct' | 'wrong'
-  onContinue?: () => void
-}) {
-  const isCorrect = kind === 'correct'
-  useEnterToContinue(onContinue)
-
-  return (
-    <div className="absolute z-20" style={figmaRectStyle(GRAMMAR_TYPE_1_FEEDBACK_SHEET)}>
-      <div className="flex h-full flex-col rounded-t-[24px] border-t border-[#E4E7EA] bg-white px-[30px] pb-[41px] pt-[30px] shadow-[0_-10px_24px_rgba(0,0,0,0.06)]">
-        <p className={exerciseFeedbackTitleClass(isCorrect)}>
-          {isCorrect ? '정답입니다.' : '오답입니다.'}
-        </p>
-        {onContinue && (
-          <button
-            type="button"
-            aria-label="계속하기"
-            className={`mt-auto flex h-[60px] w-full cursor-pointer items-center justify-center rounded-2xl border border-white ${EXERCISE_CTA_CLASS} text-white ${
-              isCorrect ? COLOR_CORRECT_BG : COLOR_WRONG_BG
-            }`}
-            onClick={onContinue}
-          >
-            계속하기
-          </button>
-        )}
-      </div>
-    </div>
-  )
 }
 
 function GrammarPassage({
@@ -123,28 +90,73 @@ export function GrammarType1Screen({
   onComplete,
   hideProgressBar = false,
   isFinalRetrySection = false,
+  sessionTotalSteps,
   onRetryFlowHome,
 }: GrammarType1ScreenProps) {
-  const activeQuestions = questions ?? GRAMMAR_TYPE_1_QUESTIONS
+  const [activeQuestions] = useState(() =>
+    shuffleArray([...(questions ?? GRAMMAR_TYPE_1_QUESTIONS)]),
+  )
   const [questionIndex, setQuestionIndex] = useState(0)
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null)
   const [result, setResult] = useState<'correct' | 'wrong' | null>(null)
+  const autoAdvanceRef = useRef<number | null>(null)
 
   const question = activeQuestions[questionIndex]
+  const displayOptions = useMemo(
+    () => (question ? shuffleArray(question.options) : []),
+    [question],
+  )
   const isLastQuestion = questionIndex + 1 >= activeQuestions.length
   const locked = result !== null
   const showFeedback = result !== null
   const completedInSection = questionIndex + (showFeedback ? 1 : 0)
 
-  const selectedOption = question.options.find((option) => option.id === selectedOptionId)
+  useAdvanceWhenNoQuestions(activeQuestions.length, () => {
+    onComplete?.()
+  })
+
+  const correctOption = question?.options.find(
+    (option) => option.id === question.correctOptionId,
+  )
+  const selectedOption = displayOptions.find((option) => option.id === selectedOptionId)
 
   const getOptionState = (optionId: string): OptionVisualState => {
-    if (!selectedOptionId || selectedOptionId !== optionId) return 'idle'
-    return result === 'correct' ? 'correct' : 'wrong'
+    if (!result || !question) return 'idle'
+    if (optionId === question.correctOptionId) return 'correct'
+    if (selectedOptionId === optionId) return 'wrong'
+    return 'idle'
+  }
+
+  const resetQuestionState = () => {
+    setSelectedOptionId(null)
+    setResult(null)
+  }
+
+  const handleFeedbackContinue = () => {
+    if (autoAdvanceRef.current != null) {
+      window.clearTimeout(autoAdvanceRef.current)
+      autoAdvanceRef.current = null
+    }
+
+    if (isLastQuestion) {
+      if (!isFinalRetrySection) {
+        onComplete?.()
+      }
+      return
+    }
+
+    setQuestionIndex((prev) => prev + 1)
+    resetQuestionState()
+  }
+
+  // 정답 자동 진행이 끊겨도 수동 「계속하기」로 탈출 가능
+  const continueAfterFeedback = () => {
+    playTapSfx()
+    handleFeedbackContinue()
   }
 
   const handleOptionClick = (optionId: string) => {
-    if (locked) return
+    if (!question || locked) return
 
     playTapSfx()
     setSelectedOptionId(optionId)
@@ -161,25 +173,29 @@ export function GrammarType1Screen({
     setResult('wrong')
   }
 
-  const resetQuestionState = () => {
-    setSelectedOptionId(null)
-    setResult(null)
-  }
+  useEffect(() => {
+    if (!question || result !== 'correct') return
+    if (isLastQuestion && isFinalRetrySection) return
 
-  const handleFeedbackContinue = () => {
-    playTapSfx()
-    if (isLastQuestion) {
-      if (!isFinalRetrySection) {
-        onComplete?.()
+    autoAdvanceRef.current = window.setTimeout(() => {
+      autoAdvanceRef.current = null
+      handleFeedbackContinue()
+    }, CORRECT_AUTO_ADVANCE_MS)
+
+    return () => {
+      if (autoAdvanceRef.current != null) {
+        window.clearTimeout(autoAdvanceRef.current)
+        autoAdvanceRef.current = null
       }
-      return
     }
-
-    setQuestionIndex((prev) => prev + 1)
-    resetQuestionState()
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 정답 직후 1회만
+  }, [result, question?.id])
 
   const showRetryComplete = showFeedback && isLastQuestion && isFinalRetrySection
+
+  if (!question) {
+    return null
+  }
 
   return (
     <FigmaAssetFrame src={GRAMMAR_TYPE_1_ASSET} alt="문법 유형 1" bgClassName="bg-white">
@@ -190,15 +206,20 @@ export function GrammarType1Screen({
           <ExerciseProgressBar
             sessionOffset={sessionOffset}
             completedInSection={completedInSection}
+            totalSteps={sessionTotalSteps}
           />
         )}
 
         <GrammarPassage
           question={question}
-          selectedLabel={locked ? (selectedOption?.label ?? null) : null}
+          selectedLabel={
+            locked
+              ? (correctOption?.label ?? selectedOption?.label ?? null)
+              : null
+          }
         />
 
-        {question.options.map((option, index) => {
+        {displayOptions.map((option, index) => {
           const state = getOptionState(option.id)
           const box = GRAMMAR_TYPE_1_OPTION_BOXES[index]
 
@@ -221,12 +242,18 @@ export function GrammarType1Screen({
       </div>
 
       {showRetryComplete && <RetryWrongCompleteSheet onHome={onRetryFlowHome} />}
-      {showFeedback && result && !showRetryComplete && (
-        <GrammarType1FeedbackSheet
+      {showFeedback && result && !showRetryComplete ? (
+        <ExerciseContinueButton
           kind={result}
-          onContinue={handleFeedbackContinue}
+          title={result === 'correct' ? '정답입니다.' : '오답입니다.'}
+          hint={
+            result === 'wrong' && correctOption?.label
+              ? `정답은 ${correctOption.label}에요`
+              : undefined
+          }
+          onContinue={continueAfterFeedback}
         />
-      )}
+      ) : null}
     </FigmaAssetFrame>
   )
 }

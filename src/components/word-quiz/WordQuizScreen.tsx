@@ -10,9 +10,11 @@ import {
   figmaRectStyle,
   speakEnglishWord,
   shuffleOptions,
+  shuffleChoicesWithRandomCorrect,
   preloadEnglishWordAudio,
   WORD_QUIZ_ASSETS,
   WORD_QUIZ_OPTIONS,
+  WORD_QUIZ_PROMPT_BAKE_MASK,
   WORD_QUIZ_PROMPT_WORD,
   WORD_QUIZ_QUESTIONS,
   WORD_QUIZ_SPEAKER_HIT,
@@ -21,11 +23,15 @@ import { sessionWordQuizId } from '../exercise/session-results'
 import { playAnswerSfx, playTapSfx } from '../exercise/answer-sfx'
 import type { WordQuizQuestion } from './word-quiz'
 import { RetryWrongCompleteSheet } from '../exercise/RetryWrongCompleteSheet'
-import type { RetryWrongExerciseProps } from '../exercise/retry-wrong-ui'
+import {
+  useAdvanceWhenNoQuestions,
+  type RetryWrongExerciseProps,
+} from '../exercise/retry-wrong-ui'
 
 type WordQuizScreenProps = {
   sessionOffset: number
   questions?: WordQuizQuestion[]
+  answerIdForQuestion?: (questionId: string) => string
   onAnswer?: (stepId: string, isCorrect: boolean) => void
   onComplete?: () => void
   skipInitialSpeak?: boolean
@@ -53,14 +59,20 @@ function optionLabelClass(state: OptionVisualState) {
 export function WordQuizScreen({
   sessionOffset,
   questions,
+  answerIdForQuestion = sessionWordQuizId,
   onAnswer,
   onComplete,
   skipInitialSpeak = false,
   hideProgressBar = false,
   isFinalRetrySection = false,
+  sessionTotalSteps,
   onRetryFlowHome,
 }: WordQuizScreenProps) {
-  const activeQuestions = questions ?? WORD_QUIZ_QUESTIONS
+  // 유형 순서는 유지하고, 문항 출제 순서만 매 세션마다 섞음
+  // 주의: questions === [] 는 오답필터 결과(스킵). undefined 만 전체 은행.
+  const [activeQuestions] = useState(() =>
+    shuffleOptions([...(questions ?? WORD_QUIZ_QUESTIONS)]),
+  )
   const [questionIndex, setQuestionIndex] = useState(0)
   const [showRetryComplete, setShowRetryComplete] = useState(false)
   const [feedback, setFeedback] = useState<{
@@ -71,20 +83,28 @@ export function WordQuizScreen({
   const feedbackTimerRef = useRef<number | null>(null)
 
   const question = activeQuestions[questionIndex]
-  const shuffledOptions = useMemo(
-    () => shuffleOptions(question.options),
-    [question.id],
-  )
+  const shuffledOptions = useMemo(() => {
+    if (!question) return []
+    return shuffleChoicesWithRandomCorrect(
+      question.options,
+      question.correctAnswer,
+    )
+  }, [question])
   const completedInSection = questionIndex + (feedback ? 1 : 0)
+
+  useAdvanceWhenNoQuestions(activeQuestions.length, () => {
+    onComplete?.()
+  })
 
   useEffect(() => {
     void preloadEnglishWordAudio()
   }, [])
 
   useEffect(() => {
+    if (!question) return
     if (skipInitialSpeak && question.id === 'various') return
     speakEnglishWord(question.word)
-  }, [question.id, skipInitialSpeak])
+  }, [question, skipInitialSpeak])
 
   useEffect(() => {
     return () => {
@@ -100,12 +120,12 @@ export function WordQuizScreen({
   }
 
   const handleOptionClick = (option: string) => {
-    if (locked) return
+    if (!question || locked) return
 
     playTapSfx()
 
     const isCorrect = option === question.correctAnswer
-    onAnswer?.(sessionWordQuizId(question.id), isCorrect)
+    onAnswer?.(answerIdForQuestion(question.id), isCorrect)
     playAnswerSfx(isCorrect)
     setLocked(true)
     setFeedback({ kind: isCorrect ? 'correct' : 'wrong', option })
@@ -127,6 +147,10 @@ export function WordQuizScreen({
     }, FEEDBACK_MS)
   }
 
+  if (!question) {
+    return null
+  }
+
   return (
     <FigmaAssetFrame src={WORD_QUIZ_ASSETS.base} alt="단어 퀴즈" bgClassName="bg-white">
       <div className="absolute inset-0 z-10">
@@ -136,28 +160,54 @@ export function WordQuizScreen({
           <ExerciseProgressBar
             sessionOffset={sessionOffset}
             completedInSection={completedInSection}
+            totalSteps={sessionTotalSteps}
           />
         )}
 
         <div
-          className="pointer-events-none absolute flex items-center justify-center bg-white"
+          aria-hidden
+          className="pointer-events-none absolute z-[1] bg-white"
+          style={figmaRectStyle(WORD_QUIZ_PROMPT_BAKE_MASK)}
+        />
+
+        <div
+          className="pointer-events-none absolute z-[3] flex items-center justify-center bg-transparent"
           style={figmaRectStyle(WORD_QUIZ_PROMPT_WORD)}
         >
-          <span className={EXERCISE_HEADWORD_CLASS}>
-            {question.word}
-          </span>
+          <span className={EXERCISE_HEADWORD_CLASS}>{question.word}</span>
         </div>
 
         <button
           type="button"
           aria-label={`${question.word} 발음 듣기`}
-          className="absolute cursor-pointer rounded-full bg-transparent"
+          className="absolute z-[5] flex cursor-pointer items-center justify-center rounded-full border-0 bg-[#E3F2FD] p-0 shadow-none"
           style={figmaRectStyle(WORD_QUIZ_SPEAKER_HIT)}
           onClick={() => {
             playTapSfx()
             speakEnglishWord(question.word, { force: true })
           }}
-        />
+        >
+          <svg aria-hidden viewBox="0 0 24 24" className="h-[58%] w-[58%]">
+            <path
+              fill="#1E88E5"
+              d="M4.5 9.2h3.1L12 5.5v13l-4.4-3.7H4.5c-.7 0-1.3-.6-1.3-1.3V10.5c0-.7.6-1.3 1.3-1.3z"
+            />
+            <path
+              d="M14.2 9.1c1.1.9 1.8 2.2 1.8 3.7s-.7 2.8-1.8 3.7"
+              fill="none"
+              stroke="#1E88E5"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+            <path
+              d="M16.6 7c1.8 1.4 2.9 3.5 2.9 5.8s-1.1 4.4-2.9 5.8"
+              fill="none"
+              stroke="#1E88E5"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
 
         {shuffledOptions.map((option, index) => {
           const state = getOptionState(option)

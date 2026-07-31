@@ -1,11 +1,11 @@
 export const FRAME_W = 393
 export const FRAME_H = 852
 
-/** Figma `학습완료화면.svg` (394×829) — 393×852 프레임 기준으로 스케일 */
+/** Figma `learning-complete.svg` (394×829) — 393×852 프레임 기준으로 스케일 */
 const SVG_W = 394
 const SVG_H = 829
 
-export const LEARNING_COMPLETE_ASSET = '/assets/학습완료화면.svg'
+export const LEARNING_COMPLETE_ASSET = '/assets/learning-complete.svg'
 
 export type LearningCompleteWordId = 'various' | 'wave' | 'run-errands' | 'latest'
 

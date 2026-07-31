@@ -1,9 +1,12 @@
 export type MemberType = 'student' | 'teacher'
-export type SocialProvider = 'apple' | 'kakao'
+/** 소셜 로그인 — 구글은 UI·타입 준비, 로그인 버튼은 추후 연결 */
+export type SocialProvider = 'apple' | 'kakao' | 'google'
 
 export interface AuthUser {
   id: string
   provider: SocialProvider
+  /** 온보딩에서 입력한 이름(닉네임) */
+  displayName?: string
   memberType?: MemberType
   onboardingCompleted: boolean
 }
@@ -48,9 +51,24 @@ export function completeMemberType(
   return next
 }
 
-export function completeOnboarding(user: AuthUser): AuthUser {
+export function resetMemberType(user: AuthUser): AuthUser {
+  const { memberType: _memberType, ...rest } = user
+  const next: AuthUser = {
+    ...rest,
+    onboardingCompleted: false,
+  }
+  saveAuth(next)
+  return next
+}
+
+export function completeOnboarding(
+  user: AuthUser,
+  extras?: { displayName?: string },
+): AuthUser {
+  const name = extras?.displayName?.trim()
   const next: AuthUser = {
     ...user,
+    ...(name ? { displayName: name } : {}),
     onboardingCompleted: true,
   }
   saveAuth(next)
@@ -69,4 +87,22 @@ export function getPostAuthPath(user: AuthUser): string {
   }
 
   return user.memberType === 'student' ? '/student/home' : '/teacher/home'
+}
+
+/** 설정·프로필에 쓸 표시 이름 */
+export function resolveDisplayName(
+  user: AuthUser | null,
+  profileName?: string | null,
+): string {
+  const fromAuth = user?.displayName?.trim()
+  if (fromAuth) return fromAuth
+  const fromProfile = profileName?.trim()
+  if (fromProfile) return fromProfile
+  return '학생'
+}
+
+export function socialProviderLabel(provider: SocialProvider): string {
+  if (provider === 'kakao') return '카카오'
+  if (provider === 'apple') return 'Apple'
+  return 'Google'
 }

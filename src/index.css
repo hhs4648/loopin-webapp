@@ -36,7 +36,8 @@
   }
 }
 
-/* ── Legacy screens (login, member-type) — Tailwind 전환 전 ── */
+
+/* Legacy screens (login, member-type) ? pre-Tailwind */
 .app-shell {
   min-height: 100%;
   display: flex;
@@ -46,7 +47,7 @@
 
 .app-frame {
   width: 100%;
-  max-width: 430px;
+  max-width: 540px;
   min-height: 100dvh;
   position: relative;
   overflow: hidden;
@@ -168,7 +169,29 @@
 }
 
 .member-type-screen {
-  padding: calc(56px + env(safe-area-inset-top, 0px)) 24px calc(24px + env(safe-area-inset-bottom, 0px));
+  padding: 0;
+}
+
+.member-type-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 4px 24px calc(24px + env(safe-area-inset-bottom, 0px));
+}
+
+.member-type-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-left: -10px;
+  padding: 0;
+  background: none;
+}
+
+.member-type-header {
+  margin-top: 4px;
 }
 
 .member-type-title {
@@ -294,3 +317,64 @@
 .teacher-notice strong {
   color: #111111;
 }
+
+/* 메인 맵 — 빨간 성 생동감 */
+@keyframes loopin-sparkle {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15) rotate(14deg);
+  }
+}
+
+@keyframes coach-bounce {
+  0% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-14px) scale(1.06);
+  }
+  55% {
+    transform: translateY(0);
+  }
+  75% {
+    transform: translateY(-6px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes castle-retry-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes coach-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-7px);
+  }
+  40% {
+    transform: translateX(7px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+

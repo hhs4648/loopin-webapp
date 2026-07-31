@@ -6,7 +6,10 @@ import {
   type GrammarType1Question,
 } from '../grammar-type-1/grammar-type-1'
 import {
+  expandGrammarType2Steps,
   GRAMMAR_TYPE_2_QUESTIONS,
+  GRAMMAR_TYPE_2_X_ASSET,
+  GRAMMAR_TYPE_2_X_OPTION_BOXES,
   type GrammarType2Question,
 } from '../grammar-type-2/grammar-type-2'
 import { type WordPairId } from '../word-match/word-match'
@@ -18,6 +21,7 @@ export type SessionResults = Record<string, boolean>
 
 export type RetrySection =
   | 'word-match'
+  | 'word-listen-match'
   | 'word-quiz'
   | 'word-spell'
   | 'body-text-a'
@@ -26,15 +30,14 @@ export type RetrySection =
   | 'grammar-type-1'
   | 'grammar-type-2'
 
-export const WORD_MATCH_PAIR_IDS: WordPairId[] = [
-  'wave',
-  'latest',
-  'various',
-  'run-errands',
-]
+export const WORD_MATCH_PAIR_IDS: WordPairId[] = []
+
+/** 데모 세션용 — 과제 러너는 snapshot pairs 사용 */
+export const WORD_LISTEN_MATCH_PAIR_IDS: WordPairId[] = []
 
 export const RETRY_SECTION_ORDER: RetrySection[] = [
   'word-match',
+  'word-listen-match',
   'word-quiz',
   'word-spell',
   'body-text-a',
@@ -46,6 +49,10 @@ export const RETRY_SECTION_ORDER: RetrySection[] = [
 
 export function sessionWordMatchId(pairId: string) {
   return `word-match:${pairId}`
+}
+
+export function sessionWordListenMatchId(pairId: string) {
+  return `word-listen-match:${pairId}`
 }
 
 export function sessionWordQuizId(questionId: string) {
@@ -71,13 +78,16 @@ export function sessionBodyTextCId(questionId: string) {
 export function getAllSessionStepIds(): string[] {
   return [
     ...WORD_MATCH_PAIR_IDS.map(sessionWordMatchId),
+    ...WORD_LISTEN_MATCH_PAIR_IDS.map(sessionWordListenMatchId),
     ...WORD_QUIZ_QUESTIONS.map((question) => sessionWordQuizId(question.id)),
     ...WORD_SPELL_QUESTIONS.map((question) => sessionWordSpellId(question.id)),
     ...BODY_TEXT_A_QUESTIONS.map((question) => sessionBodyTextAId(question.id)),
     ...BODY_TEXT_B_QUESTIONS.map((question) => sessionBodyTextBId(question.id)),
     ...BODY_TEXT_C_QUESTIONS.map((question) => sessionBodyTextCId(question.id)),
     ...GRAMMAR_TYPE_1_QUESTIONS.map((question) => question.id),
-    ...GRAMMAR_TYPE_2_QUESTIONS.map((question) => question.id),
+    ...expandGrammarType2Steps(GRAMMAR_TYPE_2_QUESTIONS).map(
+      (question) => question.id,
+    ),
   ]
 }
 
@@ -91,6 +101,26 @@ export function countSessionWrong(results: SessionResults): number {
   return getAllSessionStepIds().filter((id) => results[id] === false).length
 }
 
+/** 완료 화면용 — 세션 문항 목록 기준으로 점수·요약 산출 */
+export function summarizeSessionResults(results: SessionResults): {
+  correctCount: number
+  wrongCount: number
+  totalCount: number
+  score: number
+} {
+  const ids = getAllSessionStepIds()
+  let correctCount = 0
+  let wrongCount = 0
+  for (const id of ids) {
+    if (results[id] === true) correctCount += 1
+    else if (results[id] === false) wrongCount += 1
+  }
+  const totalCount = ids.length
+  const score =
+    totalCount <= 0 ? 0 : Math.round((correctCount / totalCount) * 100)
+  return { correctCount, wrongCount, totalCount, score }
+}
+
 export function hasWrongInSection(
   section: RetrySection,
   results: SessionResults,
@@ -99,6 +129,10 @@ export function hasWrongInSection(
     case 'word-match':
       return WORD_MATCH_PAIR_IDS.some(
         (id) => results[sessionWordMatchId(id)] === false,
+      )
+    case 'word-listen-match':
+      return WORD_LISTEN_MATCH_PAIR_IDS.some(
+        (id) => results[sessionWordListenMatchId(id)] === false,
       )
     case 'word-quiz':
       return WORD_QUIZ_QUESTIONS.some(
@@ -125,7 +159,7 @@ export function hasWrongInSection(
         (question) => results[question.id] === false,
       )
     case 'grammar-type-2':
-      return GRAMMAR_TYPE_2_QUESTIONS.some(
+      return expandGrammarType2Steps(GRAMMAR_TYPE_2_QUESTIONS).some(
         (question) => results[question.id] === false,
       )
   }
@@ -162,6 +196,14 @@ export function isFinalRetrySection(
 export function getWrongWordMatchPairIds(results: SessionResults): WordPairId[] {
   return WORD_MATCH_PAIR_IDS.filter(
     (id) => results[sessionWordMatchId(id)] === false,
+  )
+}
+
+export function getWrongWordListenMatchPairIds(
+  results: SessionResults,
+): WordPairId[] {
+  return WORD_LISTEN_MATCH_PAIR_IDS.filter(
+    (id) => results[sessionWordListenMatchId(id)] === false,
   )
 }
 
@@ -202,14 +244,50 @@ export function getWrongGrammarType1Questions(results: SessionResults) {
 }
 
 export function getWrongGrammarType2Questions(results: SessionResults) {
-  return GRAMMAR_TYPE_2_QUESTIONS.filter(
-    (question) => results[question.id] === false,
-  )
+  const wrong: GrammarType2Question[] = []
+
+  for (const question of GRAMMAR_TYPE_2_QUESTIONS) {
+    if (question.kind === 'word-choice') {
+      if (results[question.id] === false) wrong.push(question)
+      continue
+    }
+
+    const oxWrong = results[question.id] === false
+    const fixId = `${question.id}:fix`
+    const fixWrong = Boolean(question.xCorrection) && results[fixId] === false
+    const fixPassed = results[fixId] === true
+
+    if (oxWrong) {
+      // 교정까지 이미 맞춘 경우 OX만 재시도, 아니면 xCorrection 유지해 유형2정답X로 이어짐
+      wrong.push(
+        fixPassed && question.xCorrection
+          ? { ...question, xCorrection: undefined }
+          : question,
+      )
+    } else if (fixWrong && question.xCorrection) {
+      const fix = question.xCorrection
+      wrong.push({
+        kind: 'word-choice',
+        id: fixId,
+        asset: GRAMMAR_TYPE_2_X_ASSET,
+        options: fix.options,
+        correctOptionId: fix.correctOptionId,
+        optionBoxes: GRAMMAR_TYPE_2_X_OPTION_BOXES,
+        maskPassage: true,
+        passageBefore: fix.passageBefore,
+        wrongPart: fix.wrongPart,
+        passageAfter: fix.passageAfter,
+      })
+    }
+  }
+
+  return wrong
 }
 
 /** 오답만 풀기 — 섹션 진입 시점의 오답 목록 (풀이 중 결과 갱신으로 목록이 비는 것 방지) */
 export type RetrySectionSnapshot =
   | { section: 'word-match'; pairIds: WordPairId[] }
+  | { section: 'word-listen-match'; pairIds: WordPairId[] }
   | { section: 'word-quiz'; questions: WordQuizQuestion[] }
   | { section: 'word-spell'; questions: WordSpellQuestion[] }
   | { section: 'body-text-a'; questions: BodyTextAQuestion[] }
@@ -225,6 +303,8 @@ export function buildRetrySectionSnapshot(
   switch (section) {
     case 'word-match':
       return { section, pairIds: getWrongWordMatchPairIds(results) }
+    case 'word-listen-match':
+      return { section, pairIds: getWrongWordListenMatchPairIds(results) }
     case 'word-quiz':
       return { section, questions: getWrongWordQuizQuestions(results) }
     case 'word-spell':

@@ -1,128 +1,197 @@
-import { FigmaAssetFrame } from '../FigmaAssetFrame'
+import { playTapSfx } from '../exercise/answer-sfx'
+import { EXERCISE_BTN_TEXT_CLASS } from '../exercise/exercise-typography'
+import { SessionRoundDropdown } from '../main-home/SessionRoundDropdown'
+import type { StudentAssignment } from '../../lib/sync/types'
 import {
-  EXERCISE_BTN_TEXT_CLASS,
-  EXERCISE_CTA_CLASS,
-  EXERCISE_SCORE_CLASS,
-  EXERCISE_SCORE_LABEL_CLASS,
-} from '../exercise/exercise-typography'
-import {
-  GRAMMAR_COMPLETE_ASSET,
-  GRAMMAR_COMPLETE_BAKED_BUTTONS_MASK,
-  GRAMMAR_COMPLETE_BAKED_SUBTITLE_MASK,
-  GRAMMAR_COMPLETE_CORRECT_LABEL,
-  GRAMMAR_COMPLETE_HOME_BTN,
-  GRAMMAR_COMPLETE_RETRY_ALL_BTN,
-  GRAMMAR_COMPLETE_RETRY_WRONG_BTN,
-  GRAMMAR_COMPLETE_SCORE,
-  SESSION_TOTAL_QUESTIONS,
+  ASSIGNMENT_COMPLETE_ASSET,
+  COMPLETE_BACK_HIT,
+  COMPLETE_BAKED_PILL_COVER,
+  COMPLETE_DROPDOWN_TOP_Y,
+  COMPLETE_RETRY_ALL_BTN,
+  COMPLETE_RETRY_WRONG_BTN,
+  COMPLETE_SCORE_MASK,
+  GRAMMAR_COMPLETE_BG,
   calcSessionScore,
-  figmaCamouflageStyle,
+  encouragementForScore,
   figmaRectStyle,
+  formatCorrectSummary,
+  formatRoundCompleteLabel,
 } from './grammar-complete'
 
 type GrammarCompleteScreenProps = {
   correctCount: number
   wrongCount: number
+  totalCount: number
+  roundNumber?: number
+  className?: string
+  assignments?: StudentAssignment[]
   onRetryAll?: () => void
   onRetryWrongOnly?: () => void
   onHome?: () => void
 }
 
+/**
+ * 과제 완료 화면 (첫 완료 = 완료된 성 탭, 동일 UI).
+ * Figma `과제 완료시` 프레임 + 실데이터 점수 + 시안 CTA:
+ * 왼쪽 흰「틀린문제만」| 오른쪽 파란「재도전」.
+ */
 export function GrammarCompleteScreen({
   correctCount,
   wrongCount,
+  totalCount,
+  roundNumber = 1,
+  className = 'A반',
+  assignments,
   onRetryAll,
   onRetryWrongOnly,
   onHome,
 }: GrammarCompleteScreenProps) {
-  const score = calcSessionScore(correctCount)
+  const score = calcSessionScore(correctCount, totalCount)
   const canRetryWrongOnly = wrongCount > 0
+  const summary = formatCorrectSummary(correctCount, totalCount)
+  const roundLabel = formatRoundCompleteLabel(roundNumber)
+  const encouragement = encouragementForScore(score)
 
   return (
-    <FigmaAssetFrame
-      src={GRAMMAR_COMPLETE_ASSET}
-      alt="문법 학습 완료"
-      bgClassName="bg-gradient-to-b from-[#D3EFFE] to-[#F0FAFF]"
-    >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute"
-        style={figmaCamouflageStyle(GRAMMAR_COMPLETE_SCORE)}
-      />
-      <p
-        className={`pointer-events-none absolute flex items-center justify-center bg-gradient-to-b from-[#0E9CF7] to-[#0085E9] bg-clip-text ${EXERCISE_SCORE_CLASS} text-transparent`}
-        style={figmaRectStyle(GRAMMAR_COMPLETE_SCORE)}
-      >
-        {score}
-      </p>
+    <div className="flex min-h-dvh w-full justify-center bg-[#E2F7FF]">
+      <div className="relative isolate aspect-[393/852] w-full max-w-[540px] self-center overflow-hidden">
+        <img
+          src={ASSIGNMENT_COMPLETE_ASSET}
+          alt="과제 완료"
+          className="pointer-events-none absolute inset-0 z-0 h-full w-full select-none object-cover"
+          draggable={false}
+        />
 
-      <div
-        aria-hidden
-        className="pointer-events-none absolute rounded-full bg-white"
-        style={figmaRectStyle(GRAMMAR_COMPLETE_CORRECT_LABEL)}
-      />
-      <p
-        className={`pointer-events-none absolute flex items-center justify-center ${EXERCISE_SCORE_LABEL_CLASS}`}
-        style={figmaRectStyle(GRAMMAR_COMPLETE_CORRECT_LABEL)}
-      >
-        {SESSION_TOTAL_QUESTIONS}문제 중 {correctCount}개 정답
-      </p>
+        <div className="absolute inset-0 z-[50]">
+          {onHome ? (
+            <button
+              type="button"
+              aria-label="홈으로"
+              className="absolute z-[60] cursor-pointer bg-transparent p-0"
+              style={figmaRectStyle(COMPLETE_BACK_HIT)}
+              onClick={() => {
+                playTapSfx()
+                onHome()
+              }}
+            />
+          ) : null}
 
-      <div
-        aria-hidden
-        className="pointer-events-none absolute"
-        style={figmaCamouflageStyle(GRAMMAR_COMPLETE_BAKED_SUBTITLE_MASK)}
-      />
+          <div
+            className="pointer-events-none absolute z-[54]"
+            style={{
+              ...figmaRectStyle(COMPLETE_BAKED_PILL_COVER),
+              background: GRAMMAR_COMPLETE_BG,
+            }}
+            aria-hidden
+          />
 
-      <div
-        aria-hidden
-        className="pointer-events-none absolute"
-        style={figmaCamouflageStyle(GRAMMAR_COMPLETE_BAKED_BUTTONS_MASK)}
-      />
+          {/* 점수 + 안내 (시안 카드 안) */}
+          <div
+            className="absolute z-[55] flex flex-col items-center bg-white px-3"
+            style={figmaRectStyle(COMPLETE_SCORE_MASK)}
+          >
+            <div className="flex flex-1 flex-col items-center justify-center">
+              <p className="font-sans text-[22px] font-bold leading-none text-[#00A63D]">
+                {roundLabel}
+              </p>
+              <p className="mt-3 flex items-end justify-center gap-1 leading-none">
+                <span className="font-sans text-[64px] font-bold tracking-[-0.03em] text-[#1E1E1E]">
+                  {score}
+                </span>
+                <span className="mb-1.5 font-sans text-[24px] font-bold text-[#6B7280]">
+                  점
+                </span>
+              </p>
+              <p className="mt-2 font-sans text-[24px] font-bold leading-none text-[#1E1E1E]">
+                {encouragement}
+              </p>
+              <p className="mt-2 font-sans text-[16px] font-semibold text-[#6B7280]">
+                {summary}
+              </p>
+            </div>
+            <div className="mb-1 w-full space-y-1 pb-1 text-center font-sans text-[12px] font-medium leading-snug">
+              <p className="text-[#6B7280]">
+                <span className="font-semibold text-[#4F91EA]">재도전</span>
+                {' - 다시 풀어서 더 높은 점수를 받을 수 있어요'}
+              </p>
+              <p className="text-[#6B7280]">
+                <span className="font-semibold text-[#4F91EA]">틀린 문제만</span>
+                {' - 틀린 문제만 골라서 다시 풀어봐요'}
+              </p>
+            </div>
+          </div>
 
-      {onRetryAll && (
-        <button
-          type="button"
-          aria-label="전부 재도전"
-          className={`absolute z-10 flex cursor-pointer items-center justify-center rounded-[20px] border border-white ${EXERCISE_CTA_CLASS} text-white shadow-sm`}
-          style={{
-            ...figmaRectStyle(GRAMMAR_COMPLETE_RETRY_ALL_BTN),
-            background: 'linear-gradient(to bottom, #5BA3F5, #3C86FF)',
-          }}
-          onClick={onRetryAll}
-        >
-          전부 재도전
-        </button>
-      )}
+          {/* 에셋 CTA 글자 가림용 — 버튼과 동일 크기·색의 불투명 받침 (잔디 띠 없음) */}
+          <div
+            className="pointer-events-none absolute z-[56] rounded-2xl bg-white"
+            style={figmaRectStyle(COMPLETE_RETRY_WRONG_BTN)}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute z-[56] rounded-2xl"
+            style={{
+              ...figmaRectStyle(COMPLETE_RETRY_ALL_BTN),
+              background: 'linear-gradient(90deg, #46AFFF 0%, #1E9EFF 100%)',
+            }}
+            aria-hidden
+          />
 
-      {onRetryWrongOnly && (
-        <button
-          type="button"
-          aria-label="오답만 풀기"
-          disabled={!canRetryWrongOnly}
-          className={`absolute z-10 flex items-center justify-center rounded-[20px] border ${EXERCISE_BTN_TEXT_CLASS} ${
-            canRetryWrongOnly
-              ? 'cursor-pointer border-[#3C86FF] bg-white text-[#3C86FF]'
-              : 'cursor-default border-[#D1D5DB] bg-[#F3F4F6] text-[#9CA3AF]'
-          }`}
-          style={figmaRectStyle(GRAMMAR_COMPLETE_RETRY_WRONG_BTN)}
-          onClick={onRetryWrongOnly}
-        >
-          오답만 풀기
-        </button>
-      )}
+          {/* 왼쪽: 흰「틀린문제만」 — 시안 */}
+          <button
+            type="button"
+            aria-label="틀린문제만 — 오답만 다시 풀기"
+            disabled={!onRetryWrongOnly || !canRetryWrongOnly}
+            className={`absolute z-[60] box-border flex items-center justify-center rounded-2xl border-2 ${EXERCISE_BTN_TEXT_CLASS} ${
+              onRetryWrongOnly && canRetryWrongOnly
+                ? 'cursor-pointer border-[#A7D9FF] bg-white text-[#4F91EA]'
+                : 'cursor-default border-[#C5D4E0] bg-[#F3F6F8] text-[#9CA3AF]'
+            }`}
+            style={figmaRectStyle(COMPLETE_RETRY_WRONG_BTN)}
+            onClick={() => {
+              if (!onRetryWrongOnly || !canRetryWrongOnly) return
+              playTapSfx()
+              onRetryWrongOnly()
+            }}
+          >
+            틀린문제만
+          </button>
 
-      {onHome && (
-        <button
-          type="button"
-          aria-label="홈"
-          className={`absolute z-10 flex cursor-pointer items-center justify-center rounded-[20px] border border-[#D1D5DB] bg-white ${EXERCISE_BTN_TEXT_CLASS} text-[#374151]`}
-          style={figmaRectStyle(GRAMMAR_COMPLETE_HOME_BTN)}
-          onClick={onHome}
-        >
-          홈
-        </button>
-      )}
-    </FigmaAssetFrame>
+          {/* 오른쪽: 파란「재도전」 — 시안 */}
+          <button
+            type="button"
+            aria-label="재도전 — 처음부터 다시 풀기"
+            disabled={!onRetryAll}
+            className={`absolute z-[60] box-border flex items-center justify-center rounded-2xl border-2 ${EXERCISE_BTN_TEXT_CLASS} ${
+              onRetryAll
+                ? 'cursor-pointer border-[#1E9EFF] text-white'
+                : 'cursor-default border-[#D1D5DB] bg-[#E5E7EB] text-[#9CA3AF]'
+            }`}
+            style={{
+              ...figmaRectStyle(COMPLETE_RETRY_ALL_BTN),
+              ...(onRetryAll
+                ? {
+                    background:
+                      'linear-gradient(90deg, #46AFFF 0%, #1E9EFF 100%)',
+                  }
+                : {}),
+            }}
+            onClick={() => {
+              if (!onRetryAll) return
+              playTapSfx()
+              onRetryAll()
+            }}
+          >
+            재도전
+          </button>
+        </div>
+
+        <SessionRoundDropdown
+          className={className}
+          assignments={assignments}
+          topY={COMPLETE_DROPDOWN_TOP_Y}
+          zClassName="z-[70]"
+        />
+      </div>
+    </div>
   )
 }

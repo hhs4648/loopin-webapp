@@ -1,41 +1,42 @@
-# 플래시 화면
+# 스플래시
 
-## 피그마 참조
-
-| 항목 | 내용 |
-|------|------|
-| 프레임명 | 플래시화면 |
-| Figma 링크 | https://www.figma.com/design/NFmd87QHBjrA3r9zV9s8Q7/Haksup?node-id=2917-5988 |
+| 항목 | 값 |
+|------|-----|
+| 경로 | `/` |
+| 구현 | `src/pages/SplashScreen.tsx` |
+| Figma | https://www.figma.com/design/NFmd87QHBjrA3r9zV9s8Q7/Haksup?node-id=2917-5988 |
 | node-id | `2917:5988` |
-| Export 에셋 | `public/assets/logo-loopin.png`, `status-*.svg` |
+| Export | `logo-loopin.svg`, `status-*.svg` (문서의 `logo-loopin.png`는 구버전 — SVG 우선) |
 
 ## 목적
 
-앱 실행 시 Loopin 브랜드를 노출하고, 이후 로그인·온보딩 화면으로 전환한다.
+앱 실행 시 브랜드 노출 후 인증 상태에 따라 분기.
 
-## 구현 방식
+## 진입 조건
 
-- 피그마에서 선택한 프레임을 그대로 구현한다.
-- 기존 프로젝트 구조를 유지한다.
-- 새로운 프로젝트를 만들지 않는다.
-- 파일 위치: `src/pages/SplashScreen.tsx`
-- 라우트: `/`
-- 재사용 컴포넌트: `LoopinLogo`, `IphoneStatusBar`, `AppFrame`
+- 앱 최초 진입 또는 알 수 없는 경로 리다이렉트
 
-## 레이아웃 / 스펙
+## 상태·인터랙션
 
-| 요소 | 스펙 (Figma Inspect) |
-|------|----------------------|
+| 상태 | 동작 |
+|------|------|
+| 표시 | 배경 `#2AA3FF`, 로고 중앙, 상태바 |
+| 1.8초 후 | `getStoredAuth()` → `getPostAuthPath` 또는 `/login` |
+
+## 레이아웃
+
+| 요소 | 스펙 |
+|------|------|
 | 프레임 | 393 × 852 |
 | 배경 | `#2AA3FF` |
-| Status Bar | iOS 스타일, 높이 53px, `pt-[21px]`, 시간 `18:00` |
-| 로고 | `176 × 67.427px`, 화면 정중앙 |
-| 로고 색 | 흰색 + `#B2F165` (∞ 좌측 루프) |
-| 전환 | 1.8초 후 인증 상태에 따라 라우팅 |
+| Status Bar | iOS 스타일 |
+| 로고 | 중앙, ∞ 강조 `#B2F165` |
+
+## 접근성
+
+- 장식적 로고; 자동 전환이므로 CTA 없음
 
 ## 주의사항
 
-- 반응형으로 제작
-- Tailwind 사용
-- 기존 컴포넌트 최대한 재사용
-- 로고는 Figma Export PNG (`4501:2481`) 사용
+- 임의 딜레이/카피 변경 금지
+- 에셋은 Figma Export 사용

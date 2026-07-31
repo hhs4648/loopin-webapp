@@ -1,32 +1,37 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  COLOR_CORRECT_BG,
-  EXERCISE_CTA_CLASS,
   EXERCISE_MATCH_TILE_EN_CLASS,
   EXERCISE_MATCH_TILE_KO_CLASS,
-  exerciseFeedbackTitleClass,
 } from '../exercise/exercise-typography'
 import { ExerciseProgressBar, BakedProgressBarMask } from '../exercise/ExerciseProgressBar'
 import { FigmaAssetFrame } from '../FigmaAssetFrame'
 import {
+  buildTilesFromPairs,
   FEEDBACK_MS,
   figmaRectStyle,
   isMatchingPair,
+  pickNextPage,
   WORD_MATCH_ASSETS,
-  WORD_MATCH_COMPLETE_SHEET,
-  WORD_TILES,
+  WORD_MATCH_TILE_COVERS,
+  type WordMatchPair,
   type WordPairId,
   type WordTile,
 } from './word-match'
 import { sessionWordMatchId } from '../exercise/session-results'
 import { playAnswerSfx, playTapSfx } from '../exercise/answer-sfx'
+import { preloadEnglishWordAudio, speakEnglishWord } from '../word-quiz/word-quiz'
 import { RetryWrongCompleteSheet } from '../exercise/RetryWrongCompleteSheet'
-import { useEnterToContinue } from '../exercise/use-enter-to-continue'
 import type { RetryWrongExerciseProps } from '../exercise/retry-wrong-ui'
 
 type WordMatchScreenProps = {
   sessionOffset: number
+  /** 이번 섹션/라운드에서 맞춰야 할 짝. 없으면 빈 화면(데모 단어 폴백 없음). */
+  pairs?: WordMatchPair[]
+  /** 4짝 미만일 때 채울 출제 단어 풀. 기본값은 pairs. */
+  fillPool?: WordMatchPair[]
   retryPairIds?: WordPairId[]
+  /** Defaults to sessionWordMatchId for demo retry tracking. */
+  answerIdForPair?: (pairId: string) => string
   onAnswer?: (stepId: string, isCorrect: boolean) => void
   onComplete?: () => void
 } & RetryWrongExerciseProps
@@ -67,50 +72,41 @@ function tileLabelClass(state: TileVisualState, side: WordTile['side']) {
   }
 }
 
-function WordMatchCompleteSheet({ onContinue }: { onContinue?: () => void }) {
-  const handleContinue = () => {
-    playTapSfx()
-    onContinue?.()
-  }
-
-  useEnterToContinue(onContinue ? handleContinue : undefined)
-
-  return (
-    <div className="absolute z-20" style={figmaRectStyle(WORD_MATCH_COMPLETE_SHEET)}>
-      <div className="flex h-full flex-col rounded-t-[24px] border-t border-[#E4E7EA] bg-white px-[30px] pb-[41px] pt-[30px] shadow-[0_-10px_24px_rgba(0,0,0,0.06)]">
-        <p className={exerciseFeedbackTitleClass(true)}>맞았어요!</p>
-        {onContinue && (
-          <button
-            type="button"
-            aria-label="계속하기"
-            className={`mt-auto flex h-[60px] w-full cursor-pointer items-center justify-center rounded-2xl border border-white ${COLOR_CORRECT_BG} ${EXERCISE_CTA_CLASS} text-white`}
-            onClick={handleContinue}
-          >
-            계속하기
-          </button>
-        )}
-      </div>
-    </div>
-  )
-}
-
 export function WordMatchScreen({
   sessionOffset,
+  pairs,
+  fillPool,
   retryPairIds,
+  answerIdForPair = sessionWordMatchId,
   onAnswer,
   onComplete,
   hideProgressBar = false,
   isFinalRetrySection = false,
+  sessionTotalSteps,
   onRetryFlowHome,
 }: WordMatchScreenProps) {
-  const activeTiles = retryPairIds
-    ? WORD_TILES.filter((tile) => retryPairIds.includes(tile.pairId))
-    : WORD_TILES
-  const requiredPairCount =
-    retryPairIds !== undefined ? retryPairIds.length : WORD_TILES.length / 2
+  const allPairs = useMemo(() => {
+    const base = pairs ?? []
+    if (!retryPairIds) return base
+    return base.filter((pair) => retryPairIds.includes(pair.id))
+  }, [pairs, retryPairIds])
 
+  const pool = useMemo(() => fillPool ?? allPairs, [fillPool, allPairs])
+
+  const totalPairCount = allPairs.length
+  const pageKeyRef = useRef(0)
+
+  // --- multi-round state ---
+  const [globalMatchedIds, setGlobalMatchedIds] = useState<Set<string>>(() => new Set())
+  const wrongPairIdsRef = useRef<Set<string>>(new Set())
+  const [pagePairs, setPagePairs] = useState<WordMatchPair[]>(() =>
+    pickNextPage(allPairs, new Set(), new Set(), pool, pageKeyRef.current),
+  )
+  const activeTiles = useMemo(() => buildTilesFromPairs(pagePairs), [pagePairs])
+
+  // --- per-page state ---
+  const [pageMatchedIds, setPageMatchedIds] = useState<Set<string>>(() => new Set())
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [matchedPairIds, setMatchedPairIds] = useState<Set<string>>(() => new Set())
   const pairHadWrongRef = useRef<Set<string>>(new Set())
   const [completed, setCompleted] = useState(false)
   const [feedback, setFeedback] = useState<{
@@ -121,6 +117,18 @@ export function WordMatchScreen({
   const feedbackTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
+    void preloadEnglishWordAudio()
+  }, [])
+
+  /** 짝이 없으면(데모 word-match 0문항) 다음 섹션으로 바로 넘김 */
+  const onCompleteRef = useRef(onComplete)
+  onCompleteRef.current = onComplete
+  useEffect(() => {
+    if (totalPairCount > 0) return
+    onCompleteRef.current?.()
+  }, [totalPairCount])
+
+  useEffect(() => {
     return () => {
       if (feedbackTimerRef.current !== null) {
         window.clearTimeout(feedbackTimerRef.current)
@@ -128,15 +136,36 @@ export function WordMatchScreen({
     }
   }, [])
 
+  const advanceToNextPage = (nextGlobalMatched: Set<string>) => {
+    pageKeyRef.current += 1
+    const nextPage = pickNextPage(
+      allPairs,
+      nextGlobalMatched,
+      wrongPairIdsRef.current,
+      pool,
+      pageKeyRef.current,
+    )
+    if (nextPage.length === 0) {
+      setCompleted(true)
+      return
+    }
+    setPagePairs(nextPage)
+    setPageMatchedIds(new Set())
+    setSelectedIds([])
+    pairHadWrongRef.current = new Set()
+    setFeedback(null)
+    setLocked(false)
+  }
+
   const getTileState = (tile: WordTile): TileVisualState => {
-    if (matchedPairIds.has(tile.pairId)) return 'disabled'
+    if (pageMatchedIds.has(tile.pairId)) return 'disabled'
     if (feedback?.tileIds.includes(tile.id)) return feedback.kind
     if (selectedIds.includes(tile.id)) return 'selected'
     return 'idle'
   }
 
   const handleTileClick = (tile: WordTile) => {
-    if (completed || locked || matchedPairIds.has(tile.pairId)) return
+    if (completed || locked || pageMatchedIds.has(tile.pairId)) return
 
     playTapSfx()
 
@@ -156,8 +185,17 @@ export function WordMatchScreen({
       return
     }
 
+    if (first.side === tile.side) {
+      setSelectedIds([tile.id])
+      return
+    }
+
     if (isMatchingPair(first, tile)) {
       setLocked(true)
+      const englishWord = [first, tile].find((entry) => entry.side === 'en')?.label
+      if (englishWord) {
+        speakEnglishWord(englishWord, { force: true })
+      }
       playAnswerSfx(true)
       setFeedback({ kind: 'correct', tileIds: [first.id, tile.id] })
       setSelectedIds([])
@@ -165,17 +203,31 @@ export function WordMatchScreen({
       feedbackTimerRef.current = window.setTimeout(() => {
         const pairId = tile.pairId
         const isCorrect = !pairHadWrongRef.current.has(pairId)
-        onAnswer?.(sessionWordMatchId(pairId), isCorrect)
+        onAnswer?.(answerIdForPair(pairId), isCorrect)
 
-        setMatchedPairIds((prev) => {
-          const nextMatched = new Set(prev).add(pairId)
-          if (nextMatched.size >= requiredPairCount) {
-            setCompleted(true)
-          }
-          return nextMatched
-        })
+        const nextPageMatched = new Set(pageMatchedIds).add(pairId)
+        setPageMatchedIds(nextPageMatched)
+
+        const nextGlobalMatched = new Set(globalMatchedIds).add(pairId)
+        setGlobalMatchedIds(nextGlobalMatched)
+
         setFeedback(null)
         setLocked(false)
+
+        if (nextGlobalMatched.size >= totalPairCount) {
+          // 마지막 짝까지 다 맞추면 "계속하기" 버튼 없이 스무스하게 다음 화면으로 넘어간다.
+          // (최종 오답 재도전 섹션은 예외 — 완료 시트에서 홈으로 이동하는 버튼이 필요함)
+          if (isFinalRetrySection) {
+            setCompleted(true)
+          } else {
+            onComplete?.()
+          }
+          return
+        }
+
+        if (nextPageMatched.size >= pagePairs.length) {
+          advanceToNextPage(nextGlobalMatched)
+        }
       }, FEEDBACK_MS)
       return
     }
@@ -184,6 +236,7 @@ export function WordMatchScreen({
     playAnswerSfx(false)
     setFeedback({ kind: 'wrong', tileIds: [first.id, tile.id] })
     pairHadWrongRef.current = new Set(pairHadWrongRef.current).add(first.pairId)
+    wrongPairIdsRef.current = new Set(wrongPairIdsRef.current).add(first.pairId)
     setSelectedIds([])
 
     feedbackTimerRef.current = window.setTimeout(() => {
@@ -191,7 +244,6 @@ export function WordMatchScreen({
       setLocked(false)
     }, FEEDBACK_MS)
   }
-
 
   return (
     <FigmaAssetFrame src={WORD_MATCH_ASSETS.base} alt="단어 매칭" bgClassName="bg-white">
@@ -201,9 +253,20 @@ export function WordMatchScreen({
         ) : (
           <ExerciseProgressBar
             sessionOffset={sessionOffset}
-            completedInSection={matchedPairIds.size}
+            completedInSection={globalMatchedIds.size}
+            totalSteps={sessionTotalSteps}
           />
         )}
+
+        {/* Figma에 구워진 데모 단어(wave/latest 등)가 비치지 않게 8칸을 항상 덮음 */}
+        {WORD_MATCH_TILE_COVERS.map((cover) => (
+          <div
+            key={cover.id}
+            aria-hidden
+            className="pointer-events-none absolute rounded-2xl bg-[#FEFEFE]"
+            style={figmaRectStyle(cover)}
+          />
+        ))}
 
         {activeTiles.map((tile) => {
           const state = getTileState(tile)
@@ -225,9 +288,6 @@ export function WordMatchScreen({
       </div>
       {completed && isFinalRetrySection && (
         <RetryWrongCompleteSheet onHome={onRetryFlowHome} />
-      )}
-      {completed && !isFinalRetrySection && (
-        <WordMatchCompleteSheet onContinue={onComplete} />
       )}
     </FigmaAssetFrame>
   )

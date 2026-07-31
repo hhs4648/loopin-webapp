@@ -2,13 +2,12 @@ import {
   figmaRectStyle,
   PILL,
   PILL_DIMMED_SURFACE,
-  PILL_LABEL_MASK,
   PILL_LABEL_TEXT,
   PILL_SURFACE,
 } from './session-round-dropdown'
 
 const LABEL_TEXT_CLASS =
-  "pointer-events-none absolute flex items-center justify-center font-['Pretendard',sans-serif] text-[14px] font-semibold leading-none text-[#1E242F]"
+  "pointer-events-none absolute flex items-center justify-center font-['Pretendard',sans-serif] text-[17px] font-bold leading-none tracking-[-0.02em] text-[#1E242F]"
 
 type ClassRoundPillLabelProps = {
   classLabel?: string
@@ -27,14 +26,16 @@ export function ClassRoundPillLabel({
       ? {
           rect: { x: PILL.x, y: PILL.y, w: PILL.w - 34, h: PILL.h },
           color: PILL_DIMMED_SURFACE,
-          rounded: true,
+          shadow: false,
         }
-      : { rect: PILL_LABEL_MASK, color: PILL_SURFACE, rounded: false }
+      : { rect: PILL, color: PILL_SURFACE, shadow: true }
 
   return (
     <>
       <div
-        className={`pointer-events-none absolute${mask.rounded ? ' rounded-[10px]' : ''}`}
+        className={`pointer-events-none absolute rounded-[16px]${
+          mask.shadow ? ' shadow-[0_2px_10px_rgba(30,36,47,0.12)]' : ''
+        }`}
         style={{
           ...figmaRectStyle(mask.rect),
           backgroundColor: mask.color,

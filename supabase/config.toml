@@ -1,0 +1,8 @@
+# A string used to distinguish different Supabase projects on the same host.
+project_id = "loopin-webapp"
+
+[api]
+enabled = true
+
+[functions.loopin-tts]
+verify_jwt = false

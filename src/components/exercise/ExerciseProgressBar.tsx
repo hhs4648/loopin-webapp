@@ -1,5 +1,5 @@
 import { EXERCISE_PROGRESS_CLASS } from './exercise-typography'
-import { getSessionProgressRatio } from './session-questions'
+import { getSessionProgressRatio, SESSION_TOTAL_STEPS } from './session-questions'
 
 export const FRAME_W = 393
 export const FRAME_H = 852
@@ -21,13 +21,20 @@ type ExerciseProgressBarProps = {
   sessionOffset: number
   /** 현재 유형에서 완료한 문제 수 */
   completedInSection: number
+  /** 전체 문항 수. 없으면 데모 세션 고정 합계 */
+  totalSteps?: number
 }
 
 export function ExerciseProgressBar({
   sessionOffset,
   completedInSection,
+  totalSteps = SESSION_TOTAL_STEPS,
 }: ExerciseProgressBarProps) {
-  const progressRatio = getSessionProgressRatio(sessionOffset, completedInSection)
+  const progressRatio = getSessionProgressRatio(
+    sessionOffset,
+    completedInSection,
+    totalSteps,
+  )
   const progressPercent = Math.round(progressRatio * 100)
   const fillWidth = progressPercent > 0 ? `${progressRatio * 100}%` : '0px'
 

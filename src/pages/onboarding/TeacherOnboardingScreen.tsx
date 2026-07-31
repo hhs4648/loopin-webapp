@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FigmaAssetFrame } from '../../components/FigmaAssetFrame'
+import { OnboardingFigmaFrame } from '../../components/onboarding/OnboardingFigmaFrame'
+import { useBackNavigation } from '../../components/navigation/BackNavigationProvider'
 import {
   INPUT_FIELD,
   INPUT_HINT,
@@ -14,6 +15,7 @@ import {
   completeOnboarding,
   getPostAuthPath,
   getStoredAuth,
+  resetMemberType,
 } from '../../lib/auth'
 
 const TEACHER_ONBOARDING_ASSETS = [
@@ -37,6 +39,17 @@ export function TeacherOnboardingScreen() {
   })
   const [schoolName, setSchoolName] = useState('')
   const [teacherName, setTeacherName] = useState('')
+
+  useBackNavigation(() => {
+    if (step > 0) {
+      setStep((current) => current - 1)
+      return
+    }
+
+    const user = getStoredAuth()
+    if (user) resetMemberType(user)
+    navigate('/onboarding/member-type', { replace: true })
+  })
 
   useEffect(() => {
     const user = getStoredAuth()
@@ -96,7 +109,7 @@ export function TeacherOnboardingScreen() {
   const asset = TEACHER_ONBOARDING_ASSETS[step]
 
   return (
-    <FigmaAssetFrame
+    <OnboardingFigmaFrame
       src={asset}
       alt={`선생님 회원가입 ${step + 1}단계`}
       bgClassName="bg-[#fefefe]"
@@ -159,6 +172,6 @@ export function TeacherOnboardingScreen() {
           />
         </>
       )}
-    </FigmaAssetFrame>
+    </OnboardingFigmaFrame>
   )
 }

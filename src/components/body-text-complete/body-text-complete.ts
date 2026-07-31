@@ -5,7 +5,7 @@ export { BODY_TEXT_TOTAL_QUESTIONS }
 export const FRAME_W = 393
 export const FRAME_H = 852
 
-export const BODY_TEXT_COMPLETE_ASSET = '/assets/본문 끝.svg'
+export const BODY_TEXT_COMPLETE_ASSET = '/assets/body-text-complete.svg'
 
 /** Figma — 점수 숫자 (예: 85) */
 export const BODY_TEXT_COMPLETE_SCORE = { x: 118, y: 400, w: 130, h: 76 }

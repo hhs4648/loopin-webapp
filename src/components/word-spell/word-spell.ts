@@ -2,13 +2,13 @@ export const FRAME_W = 393
 export const FRAME_H = 852
 
 export const WORD_SPELL_ASSETS = {
-  base: '/assets/단어C.svg',
-  filling: '/assets/단어C_채우기.svg',
-  correct: '/assets/단어C_정답시.svg',
-  wrong: '/assets/단어C_오답시.svg',
+  base: '/assets/word-c.svg',
+  filling: '/assets/word-c-fill.svg',
+  correct: '/assets/word-c-correct.svg',
+  wrong: '/assets/word-c-wrong.svg',
 } as const
 
-export type WordSpellQuestionId = 'various' | 'wave' | 'run-errands' | 'latest'
+export type WordSpellQuestionId = string
 
 export type WordSpellQuestion = {
   id: WordSpellQuestionId
@@ -63,33 +63,46 @@ export type WordSpellTile = {
   h: number
 }
 
-/** Figma `단어C.svg` — 한국어 예문 영역 */
-export const WORD_SPELL_KOREAN_PROMPT = { x: 36, y: 228, w: 322, h: 48 }
+/**
+ * SVG에 박힌 데모 한국어·영어·빈칸·잔상 전부 가림.
+ * 모든 문제에서 카드 위에 남던 잔글씨(낙서) 제거용 — 진행바 아래~타일 트레이 위.
+ */
+export const WORD_SPELL_CONTENT_BAKE_MASK = { x: 0, y: 158, w: 393, h: 402 }
 
-/** Figma `단어C.svg` — 영어 문장 + 밑줄 영역 */
-export const WORD_SPELL_PROMPT = { x: 36, y: 281, w: 322, h: 72 }
+/** 본문 카드 — 빈칸 많은 긴 문장용으로 트레이 직전까지 확장 */
+export const WORD_SPELL_CARD = { x: 16, y: 168, w: 361, h: 388 }
 
-/** Figma `단어C.svg` — 진행률 바 */
-export const WORD_SPELL_PROGRESS_BAR = { x: 31.6172, y: 142, w: 326, h: 18 }
+/** @deprecated CONTENT_BAKE_MASK로 통합 */
+export const WORD_SPELL_ABOVE_BAKE_MASK = WORD_SPELL_CONTENT_BAKE_MASK
 
-/** Figma `단어C.svg` — 진행률 텍스트 */
-export const WORD_SPELL_PROGRESS_LABEL = { x: 168, y: 146, w: 60, h: 18 }
+/** 카드 안 텍스트 영역 */
+export const WORD_SPELL_CARD_TEXT = { x: 28, y: 180, w: 337, h: 364 }
 
-/** Figma `단어C.svg` — 빈칸 슬롯 가림 */
-export const WORD_SPELL_SLOTS_MASK = { x: 15, y: 425, w: 363, h: 58 }
+/**
+ * 하단 별도 빈칸 줄은 쓰지 않음(문장 안 인라인 빈칸만 사용).
+ * SVG 데모 슬롯만 가림.
+ */
+export const WORD_SPELL_SLOTS_MASK = { x: 8, y: 400, w: 377, h: 160 }
 
-/** Figma `단어C.svg` — 하단 알파벳 타일 가림 */
-export const WORD_SPELL_TRAY_MASK = { x: 15, y: 560, w: 363, h: 140 }
+/** Figma `word-c.svg` — 하단 알파벳 타일 가림 */
+export const WORD_SPELL_TRAY_MASK = { x: 12, y: 548, w: 369, h: 160 }
 
-/** Figma `단어C.svg` — 제출하기 버튼 */
+/** Figma `word-c.svg` — 제출하기 버튼 */
 export const WORD_SPELL_SUBMIT_BTN = { x: 30, y: 751, w: 333, h: 60 }
 
-/** Figma `단어C_오답시.svg` — 하단 피드백 시트 (y=648 h=204) */
+/** Figma `word-c-wrong.svg` — 하단 피드백 시트 (y=648 h=204) */
 export const WORD_SPELL_FEEDBACK_SHEET = { x: 0, y: 648, w: 393, h: 204 }
 
-const SLOT_AREA = { x: 16, y: 431, w: 361, h: 48 }
+const SLOT_AREA = { x: 20, y: 440, w: 353, h: 44 }
+const SLOT_ROW_GAP = 8
+const SLOT_TWO_ROW_THRESHOLD = 9
 const TRAY_AREA = { x: 20, w: 353 }
-const TRAY_TILE = { w: 44, h: 52, row1Y: 576, row2Y: 638, row1Max: 6 }
+const TRAY_TILE = { w: 44, h: 52, row1Y: 568, row2Y: 630, row1Max: 6 }
+const SLOT_GAP = 6
+/** 단어 사이 띄어쓰기 간격 (글자 칸 간격 SLOT_GAP의 확연한 배수) */
+const WORD_GAP = 36
+
+export const PREFILLED_TILE_PREFIX = 'prefill:'
 
 function shuffleLetters(letters: string[]): string[] {
   const next = [...letters]
@@ -142,26 +155,149 @@ export function getSpaceAfterSlotIndices(answer: string): number[] {
   return indices
 }
 
+export function getPrefilledLetter(answer: string): string {
+  return getSpellingLetters(answer)[0] ?? ''
+}
+
+export function isPrefilledTileId(tileId: string | null): boolean {
+  return tileId?.startsWith(PREFILLED_TILE_PREFIX) ?? false
+}
+
+export function isPrefilledSlotIndex(slotIndex: number, slots: (string | null)[]): boolean {
+  return slotIndex === 0 && isPrefilledTileId(slots[0] ?? null)
+}
+
+export function createPrefilledTile(
+  questionId: string,
+  letter: string,
+): WordSpellTile {
+  return {
+    id: `${PREFILLED_TILE_PREFIX}${questionId}:0`,
+    letter,
+    x: 0,
+    y: 0,
+    w: 0,
+    h: 0,
+  }
+}
+
+export function buildQuestionState(question: WordSpellQuestion): {
+  tiles: WordSpellTile[]
+  slots: (string | null)[]
+} {
+  const prefilled = createPrefilledTile(
+    question.id,
+    getPrefilledLetter(question.answer),
+  )
+  const trayTiles = buildQuestionTiles(question)
+  const length = getSpellingLength(question.answer)
+  const slots = Array.from({ length: length }, () => null) as (string | null)[]
+  if (length > 0) slots[0] = prefilled.id
+
+  return { tiles: [prefilled, ...trayTiles], slots }
+}
+
 export function matchesSpellAnswer(built: string, answer: string): boolean {
   return built === answer.replace(/\s/g, '')
 }
 
-export function getSlotLayouts(count: number): Array<{ x: number; y: number; w: number; h: number }> {
+/** 띄어쓰기 기준으로 슬롯 인덱스 그룹화 (문장 밑줄·하단 칸 줄바꿈용) */
+export function getAnswerWordGroups(
+  slotCount: number,
+  spaceAfterSlotIndices: number[],
+): number[][] {
+  if (slotCount <= 0) return []
+
+  const groups: number[][] = []
+  let current: number[] = []
+
+  for (let slotIndex = 0; slotIndex < slotCount; slotIndex += 1) {
+    current.push(slotIndex)
+    if (
+      spaceAfterSlotIndices.includes(slotIndex) ||
+      slotIndex === slotCount - 1
+    ) {
+      groups.push(current)
+      current = []
+    }
+  }
+
+  return groups
+}
+
+function layoutSlotRow(
+  startIndex: number,
+  endIndex: number,
+  rowY: number,
+  spaceAfterSlotIndices: number[],
+): Array<{ x: number; y: number; w: number; h: number }> {
+  const count = endIndex - startIndex
   if (count <= 0) return []
 
-  const { x, y, w: areaW, h } = SLOT_AREA
+  const { x, w: areaW, h } = SLOT_AREA
   const maxSlotW = 37.13
   const minSlotW = 26
-  const slotW = Math.max(minSlotW, Math.min(maxSlotW, (areaW - (count - 1) * 6) / count))
-  const gap = count > 1 ? (areaW - count * slotW) / (count - 1) : 0
-  const startX = x + (areaW - (count * slotW + (count - 1) * gap)) / 2
+  const rowSpaces = spaceAfterSlotIndices.filter(
+    (index) => index >= startIndex && index < endIndex - 1,
+  )
+  const wordGapCount = rowSpaces.length
+  const normalGapCount = Math.max(0, count - 1 - wordGapCount)
+  const totalGapWidth = wordGapCount * WORD_GAP + normalGapCount * SLOT_GAP
+  const slotW = Math.max(
+    minSlotW,
+    Math.min(maxSlotW, (areaW - totalGapWidth) / count),
+  )
+  const totalWidth = count * slotW + totalGapWidth
+  let currentX = x + (areaW - totalWidth) / 2
 
-  return Array.from({ length: count }, (_, index) => ({
-    x: startX + index * (slotW + gap),
-    y,
-    w: slotW,
-    h,
-  }))
+  return Array.from({ length: count }, (_, offset) => {
+    const slotIndex = startIndex + offset
+    const layout = { x: currentX, y: rowY, w: slotW, h }
+    if (offset < count - 1) {
+      const gap = spaceAfterSlotIndices.includes(slotIndex) ? WORD_GAP : SLOT_GAP
+      currentX += slotW + gap
+    }
+    return layout
+  })
+}
+
+function pickTwoRowSplitIndex(
+  count: number,
+  spaceAfterSlotIndices: number[],
+): number {
+  const ideal = Math.ceil(count / 2)
+  const spacesNearMiddle = spaceAfterSlotIndices
+    .map((index) => index + 1)
+    .filter((split) => split > 0 && split < count)
+    .sort(
+      (left, right) => Math.abs(left - ideal) - Math.abs(right - ideal),
+    )
+
+  return spacesNearMiddle[0] ?? ideal
+}
+
+export function getSlotLayouts(
+  count: number,
+  spaceAfterSlotIndices: number[] = [],
+): Array<{ x: number; y: number; w: number; h: number }> {
+  if (count <= 0) return []
+
+  const { y } = SLOT_AREA
+
+  if (count <= SLOT_TWO_ROW_THRESHOLD) {
+    return layoutSlotRow(0, count, y, spaceAfterSlotIndices)
+  }
+
+  const splitAt = pickTwoRowSplitIndex(count, spaceAfterSlotIndices)
+  return [
+    ...layoutSlotRow(0, splitAt, y, spaceAfterSlotIndices),
+    ...layoutSlotRow(
+      splitAt,
+      count,
+      y + SLOT_AREA.h + SLOT_ROW_GAP,
+      spaceAfterSlotIndices,
+    ),
+  ]
 }
 
 function getTrayPositions(count: number): Array<{ x: number; y: number; w: number; h: number }> {
@@ -178,7 +314,9 @@ function getTrayPositions(count: number): Array<{ x: number; y: number; w: numbe
 }
 
 export function buildQuestionTiles(question: WordSpellQuestion): WordSpellTile[] {
-  const shuffledLetters = shuffleLetters(getSpellingLetters(question.answer))
+  const shuffledLetters = shuffleLetters(
+    getSpellingLetters(question.answer).slice(1),
+  )
   const positions = getTrayPositions(shuffledLetters.length)
 
   return shuffledLetters.map((letter, index) => ({

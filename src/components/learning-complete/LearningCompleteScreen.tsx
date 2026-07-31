@@ -111,7 +111,12 @@ export function LearningCompleteScreen({ onContinue }: LearningCompleteScreenPro
   }
 
   return (
-    <FigmaAssetFrame src={LEARNING_COMPLETE_ASSET} alt="학습 완료" bgClassName="bg-white">
+    <FigmaAssetFrame
+      src={LEARNING_COMPLETE_ASSET}
+      alt="학습 완료"
+      bgClassName="bg-white"
+      backButton="labeled"
+    >
       <div
         aria-hidden
         className="absolute z-[2] bg-white"

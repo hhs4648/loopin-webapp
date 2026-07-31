@@ -1,27 +1,31 @@
-# 로그인 화면
+# 로그인
 
-## 피그마 참조
-
-| 항목 | 내용 |
-|------|------|
-| 프레임명 | 로그인화면 |
-| Figma 링크 | https://www.figma.com/design/NFmd87QHBjrA3r9zV9s8Q7/Haksup?node-id=2917-6018 |
+| 항목 | 값 |
+|------|-----|
+| 경로 | `/login` |
+| 구현 | `src/pages/LoginScreen.tsx` |
+| Figma | https://www.figma.com/design/NFmd87QHBjrA3r9zV9s8Q7/Haksup?node-id=2917-6018 |
 | node-id | `2917:6018` |
-| Export 에셋 | `public/assets/login-screen.svg` (프레임 전체 Export, 원본: `로그인화면.svg`) |
+| Export | 프레임/로고/마스코트/아이콘 (`login-logo.svg`, `login-mascot-*.png`, `apple-icon.png`, `kakao-icon.png` 등) |
 
 ## 목적
 
-소셜 로그인(Apple / 카카오)으로 서비스에 진입한다.
+소셜 로그인(Apple / 카카오)으로 서비스 진입. `SocialProvider`에 **google** 타입·설정 뱃지 스타일은 준비됨(로그인 버튼 UI는 추후).
 
-## 구현 방식
+## 진입 조건
 
-- 피그마에서 선택한 프레임을 그대로 구현한다.
-- 기존 프로젝트 구조를 유지한다.
-- 새로운 프로젝트를 만들지 않는다.
-- 파일 위치: `src/pages/LoginScreen.tsx`
-- 라우트: `/login`
-- 재사용 컴포넌트: `AppFrame` (라우팅 래퍼)
-- 구현 방식: Figma Export SVG 전체 표시 + 소셜 버튼 투명 클릭 영역 오버레이
+- 미로그인 사용자
+- 스플래시에서 auth 없음
+
+## 현재 구현 (목업)
+
+| 동작 | 설명 |
+|------|------|
+| Apple / 카카오 탭 | `createMockUser` 후 **기존 `loopin_auth` 클리어·재저장** |
+| 성공 후 | `/onboarding/member-type` (또는 `getPostAuthPath`) |
+| 실제 OAuth | **없음** — 서버 토큰 없음 |
+
+> “재방문 로그인 유지”는 현재 불완전하다. 로그인 화면 진입 시 세션이 초기화될 수 있다.
 
 ## 레이아웃 / 스펙
 
@@ -29,16 +33,14 @@
 |------|----------------------|
 | 프레임 | 393 × 852 |
 | 배경 | `#2AA3FF` |
-| 로고 | 176 × 67.427px, left 40px / top 142px |
-| 슬로건 | Pretendard Medium 20px, `white/90`, line-height 26px |
-| 마스코트 | 202 × 200px, `rounded-[100px]`, 중앙 |
-| Apple 버튼 | 353 × 60px, `#000`, radius 13.92px |
-| 카카오 버튼 | 353 × 60px, `#FFE812`, border `#FDE33E` |
-| 버튼 텍스트 | SUIT Bold 18px |
+| Apple 버튼 | `#000`, 투명 히트 영역 |
+| 카카오 버튼 | `#FFE812` / border `#FDE33E` |
+
+## 접근성
+
+- 소셜 버튼 `aria-label` (Apple로 계속 / 카카오로 계속)
 
 ## 주의사항
 
-- 반응형으로 제작
-- Tailwind 사용
-- 기존 컴포넌트 최대한 재사용
-- 에셋은 Figma Export 원본 사용
+- Export 에셋 그대로, Tailwind, 투명 오버레이
+- 목표 연동: [../student-teacher-sync.md](../student-teacher-sync.md)
