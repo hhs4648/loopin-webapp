@@ -85,29 +85,44 @@ function getCachedAudio(url: string): HTMLAudioElement {
   return audio
 }
 
-async function playAudioUrl(url: string, token: number): Promise<void> {
-  if (token !== activeToken) return
-
-  const audio = getCachedAudio(url)
-  audio.currentTime = 0
-  activeAudios.push(audio)
-
-  await new Promise<void>((resolve, reject) => {
-    const finish = () => {
-      audio.onended = null
-      audio.onerror = null
+/** 재생 버퍼가 찰 때까지 대기 — 클릭 시 cold-start 지연 제거 */
+function warmAudio(audio: HTMLAudioElement): Promise<void> {
+  if (audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+    return Promise.resolve()
+  }
+  return new Promise((resolve) => {
+    const done = () => {
+      audio.removeEventListener('canplaythrough', done)
+      audio.removeEventListener('error', done)
       resolve()
     }
-    const fail = () => {
-      audio.onended = null
-      audio.onerror = null
-      reject(new Error('audio playback failed'))
-    }
+    audio.addEventListener('canplaythrough', done, { once: true })
+    audio.addEventListener('error', done, { once: true })
+    audio.load()
+  })
+}
 
-    audio.onended = finish
-    audio.onerror = fail
+/**
+ * 캐시된 blob은 새 Audio로 즉시 play — 이전 재생 상태/await에 묶이지 않음.
+ */
+function playAudioUrl(url: string, token: number): void {
+  if (token !== activeToken) return
 
-    void audio.play().catch(fail)
+  const audio = new Audio(url)
+  audio.preload = 'auto'
+  activeAudios.push(audio)
+
+  const cleanup = () => {
+    audio.onended = null
+    audio.onerror = null
+    const idx = activeAudios.indexOf(audio)
+    if (idx >= 0) activeAudios.splice(idx, 1)
+  }
+  audio.onended = cleanup
+  audio.onerror = cleanup
+
+  void audio.play().catch(() => {
+    cleanup()
   })
 }
 
@@ -152,7 +167,8 @@ export async function preloadLoopinEnglishTexts(
     unique.map(async (text) => {
       try {
         const url = await getAudioUrl(text, 'en')
-        getCachedAudio(url)
+        const audio = getCachedAudio(url)
+        await warmAudio(audio)
       } catch {
         // non-fatal
       }
@@ -186,11 +202,7 @@ export function speakLoopinTts(
 
   const cachedUrl = blobUrlCache.get(key)
   if (cachedUrl) {
-    void playAudioUrl(cachedUrl, token).catch((error) => {
-      if (import.meta.env.DEV) {
-        console.warn('[loopin-tts]', lang, trimmed, error)
-      }
-    })
+    playAudioUrl(cachedUrl, token)
     return
   }
 
@@ -198,7 +210,9 @@ export function speakLoopinTts(
     try {
       const url = await getAudioUrl(trimmed, lang)
       if (token !== activeToken) return
-      await playAudioUrl(url, token)
+      // 워밍도 해 두면 같은 단어 재클릭이 즉시 반응
+      void warmAudio(getCachedAudio(url))
+      playAudioUrl(url, token)
     } catch (error) {
       if (import.meta.env.DEV) {
         console.warn('[loopin-tts]', lang, trimmed, error)

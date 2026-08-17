@@ -1,15 +1,16 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { OnboardingFigmaFrame } from '../../components/onboarding/OnboardingFigmaFrame'
 import { useBackNavigation } from '../../components/navigation/BackNavigationProvider'
 import { BirthdatePicker } from '../../components/onboarding/BirthdatePicker'
 import {
   CircleCheckbox,
-  figmaAbsRect,
   INPUT_FIELD,
+  NAME_MAX_LENGTH,
+  NAME_MIN_LENGTH,
   NextStepButton,
+  sanitizeNameInput,
   TermsStep,
-  type FigmaOnboardingRect,
   type TermId,
   type TermState,
 } from '../../components/onboarding/onboarding-ui'
@@ -20,14 +21,12 @@ import {
   resetMemberType,
 } from '../../lib/auth'
 import { upsertStudentProfile } from '../../lib/sync/student-api'
-import { isSyncEnabled } from '../../lib/sync/supabase-client'
 
 const STUDENT_ONBOARDING_ASSETS = [
-  '/assets/onboarding-teacher-01-terms.svg',
-  '/assets/onboarding-teacher-02-school.svg',
-  '/assets/onboarding-student-03-birthdate.svg',
-  '/assets/onboarding-student-04-grade.svg',
-  '/assets/onboarding-student-06-purpose.svg',
+  '/assets/onboarding-teacher-01-terms.svg?v=2',
+  '/assets/onboarding-teacher-02-school.svg?v=2',
+  '/assets/onboarding-student-03-birthdate.svg?v=2',
+  '/assets/onboarding-student-04-grade.svg?v=2',
 ] as const
 
 const GRADE_ROWS = [
@@ -37,33 +36,6 @@ const GRADE_ROWS = [
 ] as const
 
 type GradeId = (typeof GRADE_ROWS)[number]['id']
-
-/** Figma `온보딩_학습목적선택` (node 5669:851) — Card_초대받음 / Card_혼자공부 */
-const PURPOSE_OPTIONS: {
-  id: LearningPurposeId
-  label: string
-  rect: FigmaOnboardingRect
-}[] = [
-  {
-    id: 'invited',
-    label: '선생님 초대를 받았어요',
-    rect: { x: 24, y: 238, w: 345, h: 100 },
-  },
-  {
-    id: 'self-study',
-    label: '혼자 공부할래요',
-    rect: { x: 24, y: 352, w: 345, h: 100 },
-  },
-]
-
-type LearningPurposeId = 'invited' | 'self-study'
-
-/** Figma `선택됨` variant — border `#46AFFF` 1.5px + drop shadow */
-const PURPOSE_CARD_SELECTED_CLASS =
-  'border-[#46AFFF] shadow-[0px_4px_7px_rgba(41,120,250,0.12)]'
-
-/** 선택 후 다음 단계로 넘어가기 전 파란 테두리를 보여주는 시간 */
-const PURPOSE_ADVANCE_MS = 300
 
 export function StudentOnboardingScreen() {
   const navigate = useNavigate()
@@ -78,26 +50,9 @@ export function StudentOnboardingScreen() {
   const [birthMonth, setBirthMonth] = useState('')
   const [birthDay, setBirthDay] = useState('')
   const [grade, setGrade] = useState<GradeId | null>(null)
-  const [learningPurpose, setLearningPurpose] =
-    useState<LearningPurposeId | null>(null)
-  const purposeTimerRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    return () => {
-      if (purposeTimerRef.current !== null) {
-        window.clearTimeout(purposeTimerRef.current)
-      }
-    }
-  }, [])
 
   useBackNavigation(() => {
     if (step > 0) {
-      // 학습목적 선택 대기 중(완료 예약 타이머) 뒤로가기 시 예약된 완료를 취소
-      if (purposeTimerRef.current !== null) {
-        window.clearTimeout(purposeTimerRef.current)
-        purposeTimerRef.current = null
-      }
-      setLearningPurpose(null)
       setStep((current) => current - 1)
       return
     }
@@ -129,7 +84,7 @@ export function StudentOnboardingScreen() {
     step === 0
       ? TERM_ROWS_REQUIRED(terms)
       : step === 1
-        ? studentName.trim().length > 0
+        ? studentName.trim().length >= NAME_MIN_LENGTH
         : step === 2
           ? birthdateComplete
           : step === 3
@@ -152,19 +107,15 @@ export function StudentOnboardingScreen() {
 
   const goNext = () => {
     if (!canProceed) return
+    // 학년(마지막 단계) → 온보딩 완료. 학습목적 선택 화면은 제거됨(2026-08-11)
+    if (step === 3) {
+      finishOnboarding()
+      return
+    }
     setStep((prev) => prev + 1)
   }
 
-  const selectLearningPurpose = (id: LearningPurposeId) => {
-    // 중복 클릭으로 완료가 두 번 실행되지 않게 첫 선택만 반영
-    if (learningPurpose) return
-    setLearningPurpose(id)
-    purposeTimerRef.current = window.setTimeout(() => {
-      finishOnboarding(id)
-    }, PURPOSE_ADVANCE_MS)
-  }
-
-  const finishOnboarding = (purpose: LearningPurposeId) => {
+  const finishOnboarding = () => {
     const user = getStoredAuth()
     if (!user) {
       navigate('/login', { replace: true })
@@ -184,31 +135,17 @@ export function StudentOnboardingScreen() {
             : undefined
 
     void (async () => {
-      if (isSyncEnabled()) {
-        await upsertStudentProfile({
-          displayName: studentName.trim() || '학생',
-          grade: gradeLabel,
-          birthdate,
-        })
-      } else {
-        await upsertStudentProfile({
-          displayName: studentName.trim() || '학생',
-          grade: gradeLabel,
-          birthdate,
-        })
-      }
+      await upsertStudentProfile({
+        displayName: studentName.trim() || '학생',
+        grade: gradeLabel,
+        birthdate,
+      })
       completeOnboarding(user, {
         displayName: studentName.trim() || '학생',
       })
-      if (purpose === 'self-study') {
-        // 혼자 공부: 교사 초대 없이 스스로 내신 코스를 만드는 커리큘럼 코스 화면으로 이동
-        navigate('/student/curriculum', { replace: true })
-        return
-      }
+      // 학습목적 분기 없음 — 학원/학교 메인(초대코드)으로 통일
       navigate('/student/home', {
         replace: true,
-        // "선생님 초대를 받았어요"를 선택했으면 기존에 남아있던 활성 클래스와
-        // 무관하게 메인 화면에서 초대코드 입력부터 시작하게 한다.
         state: { forceInviteStep: true },
       })
     })()
@@ -238,8 +175,8 @@ export function StudentOnboardingScreen() {
             aria-label="이름"
             placeholder="이름을 입력해주세요"
             value={studentName}
-            maxLength={5}
-            onChange={(e) => setStudentName(e.target.value)}
+            maxLength={NAME_MAX_LENGTH}
+            onChange={(e) => setStudentName(sanitizeNameInput(e.target.value))}
             className={INPUT_FIELD}
           />
           <NextStepButton enabled={canProceed} onClick={goNext} />
@@ -275,24 +212,6 @@ export function StudentOnboardingScreen() {
           <NextStepButton enabled={canProceed} onClick={goNext} />
         </>
       )}
-
-      {step === 4 &&
-        PURPOSE_OPTIONS.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            aria-label={option.label}
-            aria-pressed={learningPurpose === option.id}
-            disabled={learningPurpose !== null}
-            className={`absolute rounded-[20px] border-[1.5px] bg-transparent transition-colors ${
-              learningPurpose === option.id
-                ? PURPOSE_CARD_SELECTED_CLASS
-                : 'border-transparent'
-            } ${learningPurpose === null ? 'cursor-pointer' : 'cursor-default'}`}
-            style={figmaAbsRect(option.rect)}
-            onClick={() => selectLearningPurpose(option.id)}
-          />
-        ))}
     </OnboardingFigmaFrame>
   )
 }

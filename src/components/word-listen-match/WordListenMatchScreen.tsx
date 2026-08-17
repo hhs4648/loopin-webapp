@@ -2,10 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { EXERCISE_MATCH_TILE_KO_CLASS } from '../exercise/exercise-typography'
 import { ExerciseProgressBar, BakedProgressBarMask } from '../exercise/ExerciseProgressBar'
 import { FigmaAssetFrame } from '../FigmaAssetFrame'
+import { BACK_MASK_WHITE_HEADER } from '../navigation/figma-navigation'
 import {
   buildTilesFromPairs,
   FEEDBACK_MS,
   figmaRectStyle,
+  isFillPairId,
   isMatchingPair,
   pickNextPage,
   WORD_LISTEN_MATCH_ASSETS,
@@ -151,11 +153,16 @@ export function WordListenMatchScreen({
 }: WordListenMatchScreenProps) {
   const allPairs = useMemo(() => {
     const base = pairs ?? []
-    if (!retryPairIds) return base
-    return base.filter((pair) => retryPairIds.includes(pair.id))
+    const scoped = retryPairIds
+      ? base.filter((pair) => retryPairIds.includes(pair.id))
+      : base
+    return scoped.filter((pair) => !isFillPairId(pair.id))
   }, [pairs, retryPairIds])
 
-  const pool = useMemo(() => fillPool ?? allPairs, [fillPool, allPairs])
+  const pool = useMemo(() => {
+    const base = fillPool ?? pairs ?? []
+    return base.filter((pair) => !isFillPairId(pair.id))
+  }, [fillPool, pairs])
 
   const totalPairCount = allPairs.length
   const pageKeyRef = useRef(0)
@@ -279,8 +286,11 @@ export function WordListenMatchScreen({
 
       feedbackTimerRef.current = window.setTimeout(() => {
         const pairId = tile.pairId
+        const isFill = isFillPairId(pairId)
         const isCorrect = !pairHadWrongRef.current.has(pairId)
-        onAnswer?.(answerIdForPair(pairId), isCorrect)
+        if (!isFill) {
+          onAnswer?.(answerIdForPair(pairId), isCorrect)
+        }
 
         const nextPageMatched = new Set(pageMatchedIds).add(pairId)
         setPageMatchedIds(nextPageMatched)
@@ -291,7 +301,12 @@ export function WordListenMatchScreen({
         setFeedback(null)
         setLocked(false)
 
-        if (nextGlobalMatched.size >= totalPairCount) {
+        const requiredDone = allPairs.every((pair) =>
+          nextGlobalMatched.has(pair.id),
+        )
+        const pageDone = nextPageMatched.size >= pagePairs.length
+
+        if (requiredDone && pageDone) {
           if (isFinalRetrySection) {
             setCompleted(true)
           } else {
@@ -300,7 +315,7 @@ export function WordListenMatchScreen({
           return
         }
 
-        if (nextPageMatched.size >= pagePairs.length) {
+        if (pageDone) {
           advanceToNextPage(nextGlobalMatched)
         }
       }, FEEDBACK_MS)
@@ -321,7 +336,7 @@ export function WordListenMatchScreen({
   }
 
   return (
-    <FigmaAssetFrame
+    <FigmaAssetFrame backButtonMask={BACK_MASK_WHITE_HEADER}
       src={WORD_LISTEN_MATCH_ASSETS.base}
       alt="단어 TTS 뜻 짝맞추기"
       bgClassName="bg-white"
@@ -332,7 +347,7 @@ export function WordListenMatchScreen({
         ) : (
           <ExerciseProgressBar
             sessionOffset={sessionOffset}
-            completedInSection={globalMatchedIds.size}
+            completedInSection={allPairs.filter((pair) => globalMatchedIds.has(pair.id)).length}
             totalSteps={sessionTotalSteps}
           />
         )}
@@ -342,7 +357,7 @@ export function WordListenMatchScreen({
           className="pointer-events-none absolute flex items-center justify-center bg-white px-4"
           style={figmaRectStyle(WORD_LISTEN_MATCH_PROMPT)}
         >
-          <p className="font-sans text-center text-[18px] font-semibold leading-snug tracking-[-0.01em] text-[#1E1E1E]">
+          <p className="font-sans text-center text-[16px] font-semibold leading-none tracking-[-0.01em] text-[#1E1E1E]">
             {WORD_LISTEN_MATCH_PROMPT_COPY}
           </p>
         </div>
@@ -385,3 +400,4 @@ export function WordListenMatchScreen({
     </FigmaAssetFrame>
   )
 }
+

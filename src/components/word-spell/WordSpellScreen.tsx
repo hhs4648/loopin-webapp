@@ -7,8 +7,10 @@ import {
   EXERCISE_PASSAGE_KO_MUTED_CLASS,
 } from '../exercise/exercise-typography'
 import { ExerciseProgressBar, BakedProgressBarMask } from '../exercise/ExerciseProgressBar'
+import { ExpandablePassageBox } from '../exercise/ExpandablePassageBox'
 import { ExerciseContinueButton } from '../exercise/ExerciseContinueButton'
 import { FigmaAssetFrame } from '../FigmaAssetFrame'
+import { BACK_MASK_WHITE_HEADER } from '../navigation/figma-navigation'
 import {
   buildQuestionState,
   buildWordFromSlots,
@@ -22,7 +24,6 @@ import {
   matchesSpellAnswer,
   WORD_SPELL_ASSETS,
   WORD_SPELL_CARD,
-  WORD_SPELL_CARD_TEXT,
   WORD_SPELL_CONTENT_BAKE_MASK,
   WORD_SPELL_QUESTIONS,
   WORD_SPELL_SLOTS_MASK,
@@ -50,6 +51,9 @@ type WordSpellScreenProps = {
 
 type SpellResult = 'playing' | 'correct' | 'wrong'
 
+/** 트레이(~y=548) 직전까지 — 카드가 슬롯 마스크 영역으로만 자람 */
+const WORD_SPELL_PASSAGE_MAX_BOTTOM = WORD_SPELL_TRAY_MASK.y - 8
+
 function trayTileClass() {
   return 'box-border rounded-[14px] border-[3px] border-transparent bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)]'
 }
@@ -73,21 +77,14 @@ function InlineAnswerLine({
   disabled: boolean
   onSlotClick: (slotIndex: number) => void
 }) {
-  const slotWidthClass =
-    slotCount >= 12
-      ? 'min-w-[9px]'
-      : slotCount >= 9
-        ? 'min-w-[10px]'
-        : 'min-w-[12px]'
-
   const wordGroups = getAnswerWordGroups(slotCount, spaceAfterSlotIndices)
 
   return (
-    <span className="inline-flex max-w-full flex-wrap items-baseline justify-center gap-x-[0.85em] gap-y-1.5 align-baseline">
+    <span className="inline-flex max-w-full flex-wrap items-end justify-center gap-x-[0.55em] gap-y-1 align-baseline">
       {wordGroups.map((group, groupIndex) => (
         <span
           key={`blank-word-${groupIndex}`}
-          className="inline-flex shrink items-baseline border-b-2 border-[#1E1E1E] pb-0.5"
+          className="inline-flex shrink-0 items-end border-b-[2.5px] border-[#1E1E1E] pb-[1px]"
         >
           {group.map((slotIndex) => {
             const tileId = slots[slotIndex]
@@ -105,18 +102,22 @@ function InlineAnswerLine({
                     ? `${slotIndex + 1}번째 글자 ${letter}${isPrefilled ? ' (힌트)' : ''}`
                     : `${slotIndex + 1}번째 빈칸`
                 }
-                className={`${slotWidthClass} px-px text-center ${EXERCISE_OPTION_EN_CLASS} leading-none ${
+                className={[
+                  // 본문 20px 기준 — 글자 칸이 문장과 같은 크기·높이로 이어지게
+                  'inline-flex h-[1.2em] w-[0.78em] shrink-0 items-center justify-center',
+                  'p-0 font-en text-[1em] font-semibold leading-none tracking-normal',
                   isPrefilled
                     ? 'cursor-default text-[#64748B]'
                     : isFilled
-                      ? 'cursor-pointer'
-                      : 'cursor-default text-[#9CA3AF]'
-                }`}
+                      ? 'cursor-pointer text-[#1E1E1E]'
+                      : 'cursor-default text-transparent',
+                ].join(' ')}
                 onClick={() => {
                   if (isFilled && !isPrefilled) onSlotClick(slotIndex)
                 }}
               >
-                {isFilled ? letter : '_'}
+                {/* 빈 칸은 `_` 대신 투명 자리만 — 밑줄만 보이게 */}
+                {isFilled ? letter : '\u00A0'}
               </button>
             )
           })}
@@ -264,7 +265,7 @@ export function WordSpellScreen({
   }
 
   return (
-    <FigmaAssetFrame src={WORD_SPELL_ASSETS.base} alt="단어 스펠링" bgClassName="bg-white">
+    <FigmaAssetFrame backButtonMask={BACK_MASK_WHITE_HEADER} src={WORD_SPELL_ASSETS.base} alt="단어 스펠링" bgClassName="bg-white">
       <div className={`absolute inset-0 z-10 ${showFeedback ? 'pointer-events-none' : ''}`}>
         {hideProgressBar ? (
           <BakedProgressBarMask />
@@ -276,55 +277,48 @@ export function WordSpellScreen({
           />
         )}
 
-        {/* SVG 데모 본문·빈칸·잔상 전부 가림 (매 문제 공통) */}
+        {/* SVG 데모 본문·빈칸·잔상 가림 */}
         <div
           aria-hidden
           className="pointer-events-none absolute z-[1] bg-white"
           style={figmaRectStyle(WORD_SPELL_CONTENT_BAKE_MASK)}
         />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute z-[1] rounded-[22px] bg-[#F7FAFF]"
-          style={figmaRectStyle(WORD_SPELL_CARD)}
-        />
-        <div
-          key={question.id}
-          className="absolute z-[2] overflow-y-auto overflow-x-hidden px-1"
-          style={figmaRectStyle(WORD_SPELL_CARD_TEXT)}
-        >
-          <div className="flex min-h-full flex-col items-center justify-center gap-3 py-3 text-center">
-            <p
-              className={`${EXERCISE_PASSAGE_KO_MUTED_CLASS} w-full shrink-0 leading-[1.35]`}
-              style={{
-                display: '-webkit-box',
-                WebkitBoxOrient: 'vertical',
-                WebkitLineClamp: 3,
-                overflow: 'hidden',
-                overflowWrap: 'anywhere',
-                wordBreak: 'keep-all',
-              }}
-            >
-              {question.korean}
-            </p>
-            <p
-              className={`${EXERCISE_PASSAGE_EN_CLASS} w-full whitespace-normal leading-[1.55]`}
-              style={{ overflowWrap: 'anywhere' }}
-            >
-              {question.englishBefore}
-              <InlineAnswerLine
-                slotCount={spellingLength}
-                slots={slots}
-                tiles={tiles}
-                spaceAfterSlotIndices={spaceAfterSlotIndices}
-                disabled={!isPlaying}
-                onSlotClick={handleSlotClick}
-              />
-              {question.englishAfter}
-            </p>
-          </div>
-        </div>
 
-        {/* SVG 데모 슬롯만 가림 — 별도 빈칸 줄은 문장 인라인으로 대체 */}
+        {/* 회색 카드 + 본문 — 긴 문장은 트레이 직전까지 박스가 자람 */}
+        <ExpandablePassageBox
+          rect={WORD_SPELL_CARD}
+          maxBottom={WORD_SPELL_PASSAGE_MAX_BOTTOM}
+          contentKey={question.id}
+          className="absolute z-[2] rounded-[22px] bg-[#F7FAFF]"
+          contentClassName="flex w-full flex-col items-center justify-center gap-3 px-4 py-5 text-center"
+        >
+          <p
+            className={`${EXERCISE_PASSAGE_KO_MUTED_CLASS} w-full shrink-0 leading-[1.4]`}
+            style={{
+              overflowWrap: 'anywhere',
+              wordBreak: 'keep-all',
+            }}
+          >
+            {question.korean}
+          </p>
+          <p
+            className={`${EXERCISE_PASSAGE_EN_CLASS} w-full shrink-0 whitespace-normal leading-[1.5]`}
+            style={{ overflowWrap: 'break-word' }}
+          >
+            <span className="whitespace-pre-wrap">{question.englishBefore}</span>
+            <InlineAnswerLine
+              slotCount={spellingLength}
+              slots={slots}
+              tiles={tiles}
+              spaceAfterSlotIndices={spaceAfterSlotIndices}
+              disabled={!isPlaying}
+              onSlotClick={handleSlotClick}
+            />
+            <span className="whitespace-pre-wrap">{question.englishAfter}</span>
+          </p>
+        </ExpandablePassageBox>
+
+        {/* 카드~트레이 사이 SVG 잔상 */}
         <div
           aria-hidden
           className="pointer-events-none absolute z-[1] bg-white"
@@ -385,3 +379,4 @@ export function WordSpellScreen({
     </FigmaAssetFrame>
   )
 }
+

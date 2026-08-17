@@ -1,9 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { shuffleArray } from '../../lib/shuffle'
 import { FigmaAssetFrame } from '../FigmaAssetFrame'
+import { BACK_MASK_WHITE_HEADER } from '../navigation/figma-navigation'
 import { ExerciseProgressBar, BakedProgressBarMask } from '../exercise/ExerciseProgressBar'
 import { exerciseOptionEnStateClass } from '../exercise/exercise-typography'
 import { ExerciseContinueButton } from '../exercise/ExerciseContinueButton'
+import {
+  ExpandablePassageBox,
+  PASSAGE_SAFE_BOTTOM,
+  shiftRect,
+} from '../exercise/ExpandablePassageBox'
 import {
   GRAMMAR_PASSAGE_BLANK_CLASS,
   GRAMMAR_PASSAGE_TEXT_CLASS,
@@ -13,7 +19,6 @@ import {
   GRAMMAR_TYPE_1_ASSET,
   GRAMMAR_TYPE_1_OPTION_BOXES,
   GRAMMAR_TYPE_1_PASSAGE,
-  GRAMMAR_TYPE_1_PASSAGE_ENGLISH,
   GRAMMAR_TYPE_1_QUESTIONS,
   type GrammarType1Question,
 } from './grammar-type-1'
@@ -26,6 +31,10 @@ import {
 
 /** 정답 시 효과음 후 자동 진행 */
 const CORRECT_AUTO_ADVANCE_MS = 1000
+
+/** 선택지를 아래로 민 뒤에도 피드백 시트 위에 남도록 */
+const PASSAGE_MAX_BOTTOM =
+  PASSAGE_SAFE_BOTTOM - GRAMMAR_TYPE_1_OPTION_BOXES[0]!.h - 12
 
 type GrammarType1ScreenProps = {
   sessionOffset: number
@@ -56,30 +65,35 @@ function optionLabelClass(state: OptionVisualState) {
 function GrammarPassage({
   question,
   selectedLabel,
+  onGrowthChange,
 }: {
   question: GrammarType1Question
   selectedLabel: string | null
+  onGrowthChange: (growth: number) => void
 }) {
+  useEffect(() => {
+    if (!question.maskPassage) onGrowthChange(0)
+  }, [question.maskPassage, question.id, onGrowthChange])
+
   if (!question.maskPassage) return null
 
   return (
-    <>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute rounded-[19px] border-2 border-[#D9D9D9] bg-white"
-        style={figmaRectStyle(GRAMMAR_TYPE_1_PASSAGE)}
-      />
-      <div
-        className="pointer-events-none absolute flex flex-col items-center gap-y-1"
-        style={figmaRectStyle(GRAMMAR_TYPE_1_PASSAGE_ENGLISH)}
-      >
-        <div className="flex flex-wrap items-center justify-center gap-x-1.5">
-          <span className={GRAMMAR_PASSAGE_TEXT_CLASS}>{question.passageBefore}</span>
-          <span className={GRAMMAR_PASSAGE_BLANK_CLASS}>{selectedLabel ?? ''}</span>
-        </div>
-        <p className={`${GRAMMAR_PASSAGE_TEXT_CLASS} text-center`}>{question.passageAfter}</p>
+    <ExpandablePassageBox
+      rect={GRAMMAR_TYPE_1_PASSAGE}
+      maxBottom={PASSAGE_MAX_BOTTOM}
+      contentKey={question.id}
+      onGrowthChange={onGrowthChange}
+      className="pointer-events-none absolute z-[2] rounded-[19px] border-2 border-[#D9D9D9] bg-white"
+      contentClassName="flex w-full flex-col items-center justify-center gap-y-1 px-4 py-5"
+    >
+      <div className="flex flex-wrap items-center justify-center gap-x-1.5">
+        <span className={GRAMMAR_PASSAGE_TEXT_CLASS}>{question.passageBefore}</span>
+        <span className={GRAMMAR_PASSAGE_BLANK_CLASS}>{selectedLabel ?? ''}</span>
       </div>
-    </>
+      {question.passageAfter ? (
+        <p className={`${GRAMMAR_PASSAGE_TEXT_CLASS} text-center`}>{question.passageAfter}</p>
+      ) : null}
+    </ExpandablePassageBox>
   )
 }
 
@@ -101,6 +115,7 @@ export function GrammarType1Screen({
   const [result, setResult] = useState<'correct' | 'wrong' | null>(null)
   const autoAdvanceRef = useRef<number | null>(null)
 
+  const [passageGrowth, setPassageGrowth] = useState(0)
   const question = activeQuestions[questionIndex]
   const displayOptions = useMemo(
     () => (question ? shuffleArray(question.options) : []),
@@ -110,6 +125,10 @@ export function GrammarType1Screen({
   const locked = result !== null
   const showFeedback = result !== null
   const completedInSection = questionIndex + (showFeedback ? 1 : 0)
+
+  useEffect(() => {
+    setPassageGrowth(0)
+  }, [question?.id])
 
   useAdvanceWhenNoQuestions(activeQuestions.length, () => {
     onComplete?.()
@@ -198,7 +217,7 @@ export function GrammarType1Screen({
   }
 
   return (
-    <FigmaAssetFrame src={GRAMMAR_TYPE_1_ASSET} alt="문법 유형 1" bgClassName="bg-white">
+    <FigmaAssetFrame backButtonMask={BACK_MASK_WHITE_HEADER} src={GRAMMAR_TYPE_1_ASSET} alt="문법 유형 1" bgClassName="bg-white">
       <div className={`absolute inset-0 z-10 ${showFeedback ? 'pointer-events-none' : ''}`}>
         {hideProgressBar ? (
           <BakedProgressBarMask />
@@ -217,11 +236,12 @@ export function GrammarType1Screen({
               ? (correctOption?.label ?? selectedOption?.label ?? null)
               : null
           }
+          onGrowthChange={setPassageGrowth}
         />
 
         {displayOptions.map((option, index) => {
           const state = getOptionState(option.id)
-          const box = GRAMMAR_TYPE_1_OPTION_BOXES[index]
+          const box = shiftRect(GRAMMAR_TYPE_1_OPTION_BOXES[index]!, passageGrowth)
 
           return (
             <button
@@ -257,3 +277,4 @@ export function GrammarType1Screen({
     </FigmaAssetFrame>
   )
 }
+

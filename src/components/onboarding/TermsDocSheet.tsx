@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useBackNavigation } from '../navigation/BackNavigationProvider'
 import { OnboardingChrome } from './OnboardingChrome'
-import { ONBOARDING_TITLE_CLASS, onboardingContentTopStyle } from './onboarding-chrome'
+import { onboardingContentTopStyle } from './onboarding-chrome'
+import {
+  ONBOARDING_BUTTON_LABEL_CLASS,
+  ONBOARDING_CAPTION_CLASS,
+  ONBOARDING_CTA_BG,
+  ONBOARDING_CTA_RADIUS_CLASS,
+  ONBOARDING_TITLE_CLASS,
+} from './onboarding-typography'
 
 type TermsDocSheetProps = {
   label: string
@@ -53,18 +60,16 @@ export function TermsDocSheet({ label, docUrl, onClose }: TermsDocSheetProps) {
         className="flex shrink-0 items-center border-b border-[#E5E7EB] px-6 pb-3"
         style={onboardingContentTopStyle()}
       >
-        <h2 className={`min-w-0 flex-1 ${ONBOARDING_TITLE_CLASS}`} style={{ lineHeight: '1.4' }}>
-          {label}
-        </h2>
+        <h2 className={`min-w-0 flex-1 ${ONBOARDING_TITLE_CLASS}`}>{label}</h2>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4 [scrollbar-width:thin]">
         {loadError ? (
-          <p className="font-['Pretendard',sans-serif] text-[14px] leading-relaxed text-[#667085]">
+          <p className={`${ONBOARDING_CAPTION_CLASS} text-[#667085]`}>
             문서를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.
           </p>
         ) : html == null ? (
-          <p className="font-['Pretendard',sans-serif] text-[14px] leading-relaxed text-[#667085]">
+          <p className={`${ONBOARDING_CAPTION_CLASS} text-[#667085]`}>
             불러오는 중…
           </p>
         ) : (
@@ -84,7 +89,7 @@ export function TermsDocSheet({ label, docUrl, onClose }: TermsDocSheetProps) {
         <button
           type="button"
           aria-label="확인하기"
-          className="flex min-h-[52px] w-full items-center justify-center rounded-[19px] bg-[#2AA3FF] font-['Pretendard',sans-serif] text-[15px] font-semibold text-white"
+          className={`flex h-[60px] w-full items-center justify-center ${ONBOARDING_CTA_RADIUS_CLASS} ${ONBOARDING_CTA_BG} ${ONBOARDING_BUTTON_LABEL_CLASS} text-white`}
           onClick={onClose}
         >
           확인하기

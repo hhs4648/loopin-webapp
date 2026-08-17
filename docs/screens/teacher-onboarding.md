@@ -39,6 +39,10 @@
 
 ## 주의사항
 
+- 글자·버튼 크기는 전부 `onboarding-typography.ts` 토큰 ([../design.md](../design.md) 온보딩 스케일).
+- 완료 화면(step 4)의 **"학생 초대하기" / "홈으로" 두 버튼은 하단 CTA와 같은 크기**
+  (x=30 w=333 **h=60** r=16, y=665 / y=741). 예전엔 위 버튼 히트 영역만 h=44라
+  시안 버튼보다 16px 작았다.
 - **코드 점검:** `schoolName` / `teacherName` 상태와 입력 라벨 바인딩이 뒤바뀔 수 있음 — 수정 시 이 문서도 갱신
 - **목표:** 교사 본 기능은 `loopin-project` ([../student-teacher-sync.md](../student-teacher-sync.md))
 - 입력 프로필은 현재 미저장

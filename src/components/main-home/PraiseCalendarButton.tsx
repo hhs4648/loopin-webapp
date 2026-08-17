@@ -1,11 +1,23 @@
 import type { CSSProperties } from 'react'
-import { dimmedSurface } from './session-round-dropdown'
+import { dimmedSurface, framePx, SKY_FIXED_H } from './assignment-home'
+
+/** 풀밭 윗변에서 버튼 윗변까지 — 시안 실측(하늘 200 시절 y=220) */
+const PRAISE_CALENDAR_TOP_GAP = 20
 
 /**
  * ★칭찬캘린더 버튼 — `메인화면` 시안 흰 박스 실측(원본 899×1750 → 393 환산).
  * 맵에 구워진 잔상은 이 좌표로 가리고, 실제 버튼은 **뷰포트 고정**으로 올린다.
+ *
+ * y를 숫자로 박지 않고 **`SKY_FIXED_H`에서 파생**시킨다. 예전에는 220으로 고정돼 있었는데,
+ * 하늘 밴드를 200 → 294로 키우자 버튼이 풀밭이 아니라 오늘의 미션 카드 위에 얹혔다
+ * (2026-08-08). 풀밭 시작 바로 아래라는 관계를 코드로 붙들어 두면 다시 어긋나지 않는다.
  */
-export const PRAISE_CALENDAR_FIXED_RECT = { x: 256, y: 220, w: 107, h: 42 }
+export const PRAISE_CALENDAR_FIXED_RECT = {
+  x: 256,
+  y: SKY_FIXED_H + PRAISE_CALENDAR_TOP_GAP,
+  w: 107,
+  h: 42,
+}
 
 /** @deprecated 맵 스크롤과 함께 움직이던 히트 영역 — `PRAISE_CALENDAR_FIXED_RECT` 사용 */
 export const PRAISE_CALENDAR_MAP_RECT = PRAISE_CALENDAR_FIXED_RECT
@@ -33,8 +45,18 @@ const ICON_FILL: Record<'default' | 'dimmed', string> = {
   dimmed: dimmedSurface({ r: 86, g: 167, b: 255 }),
 }
 
+/**
+ * 글자·별 크기 (393 기준).
+ *
+ * 예전에는 글씨가 **고정 18px**이었다. 알약 상자는 프레임에 비례해 줄어드는데 글씨만
+ * 그대로라, 아이폰 SE(프레임 308)에서 **상자를 8px 넘쳤다.** `framePx`로 같이 줄인다.
+ * 크기도 18 → 15로 낮췄다 — 맵에서 혼자 크게 도드라져 파트 카드와 부딪혔다.
+ */
+const LABEL_PX = 15
+const ICON_PX = 17
+
 const BASE_CLASS =
-  "pointer-events-auto absolute z-[11] flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[14px] border font-['Pretendard',sans-serif] text-[18px] font-semibold leading-none"
+  "pointer-events-auto absolute z-[11] flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[14px] border font-['Pretendard',sans-serif] font-semibold leading-none"
 
 type PraiseCalendarButtonProps = {
   /** 위치·크기 — 과제 맵에서는 뷰포트 고정(`figmaRectStyle`) */
@@ -44,10 +66,16 @@ type PraiseCalendarButtonProps = {
   onClick?: () => void
 }
 
-/** 시안과 같은 다섯 꼭지 별 */
+/** 시안과 같은 다섯 꼭지 별 — 글자와 같은 비율로 줄어든다 */
 function PraiseStarIcon({ fill }: { fill: string }) {
   return (
-    <svg aria-hidden className="size-5 shrink-0" viewBox="0 0 20 20" fill="none">
+    <svg
+      aria-hidden
+      className="shrink-0"
+      style={{ width: framePx(ICON_PX), height: framePx(ICON_PX) }}
+      viewBox="0 0 20 20"
+      fill="none"
+    >
       <path
         d="M10 1.5L12.2 7.2L18.3 7.9L13.7 12.1L15.1 18.1L10 14.9L4.9 18.1L6.3 12.1L1.7 7.9L7.8 7.2L10 1.5Z"
         fill={fill}
@@ -61,7 +89,11 @@ export function PraiseCalendarButton({
   surface = 'default',
   onClick,
 }: PraiseCalendarButtonProps) {
-  const mergedStyle = { ...SURFACE_STYLE[surface], ...style }
+  const mergedStyle = {
+    ...SURFACE_STYLE[surface],
+    fontSize: framePx(LABEL_PX),
+    ...style,
+  }
 
   const content = (
     <>

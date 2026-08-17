@@ -1,7 +1,7 @@
-/** 한국어 본문 — Noto Sans KR (body font-sans) */
+/** 한국어 본문 — Pretendard (body font-sans) */
 export const FONT_KO = 'font-sans'
 
-/** 영어 본문·선택지 — Inter */
+/** 영어 본문·선택지 — Pretendard (font-en = 동일 패밀리) */
 export const FONT_EN = 'font-en'
 
 export const COLOR_TEXT_PRIMARY = 'text-[#1E1E1E]'
@@ -17,8 +17,19 @@ export const COLOR_WRONG_BG = 'bg-[#FF4B4B]'
  * 문제 화면 공통 타이포 (전 유형 통일)
  * - 영어·한국어 본문/선택지/안내/짝맞추기/코치: 20px · 기본 가운데 정렬
  */
-const EXERCISE_EN_BASE =
-  `${FONT_EN} text-center text-[20px] font-semibold leading-snug tracking-[-0.01em] text-[#1E1E1E] antialiased`
+/**
+ * 영문 본문 — **크기를 뺀** 형태.
+ *
+ * 길이가 길면 글씨를 줄여 상자에 맞추는 화면이 있어서(`useShrinkToFit`), 크기가
+ * 클래스에 박혀 있으면 부모에서 못 줄인다. 크기는 `EXERCISE_EN_PX`로 따로 준다.
+ */
+export const EXERCISE_EN_BASE_UNSIZED =
+  `${FONT_EN} text-center font-semibold leading-snug tracking-[-0.01em] text-[#1E1E1E] antialiased`
+
+/** 위 클래스의 기준 크기 (px) */
+export const EXERCISE_EN_PX = 20
+
+const EXERCISE_EN_BASE = `${EXERCISE_EN_BASE_UNSIZED} text-[20px]`
 
 const EXERCISE_KO_BASE =
   `${FONT_KO} text-center text-[20px] font-medium leading-snug tracking-[-0.01em] text-[#1E293B]`

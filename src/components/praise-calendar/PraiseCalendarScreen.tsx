@@ -10,13 +10,14 @@ import {
   DEFAULT_PASS_SCORE_THRESHOLD,
   figmaRectStyle,
   formatYearMonthKo,
+  getCellLayout,
   monthCursorValue,
   MONTH_NEXT_BTN,
   MONTH_PREV_BTN,
   MONTH_TITLE_MASK,
+  CARD_BORDER_COLOR,
   PRAISE_CALENDAR_ASSET,
   PRAISE_STATUS_FACE_ASSETS,
-  PROGRESS_CARD,
   PROGRESS_HERO_FACE,
   PROGRESS_SUBTITLE,
   PROGRESS_TITLE,
@@ -25,6 +26,7 @@ import {
   STATUS_META,
   summarizeMonth,
   toDateKey,
+  weekCountForMonth,
   WEEKDAY_CENTERS_X,
   WEEKDAY_LABELS,
   WEEKDAY_Y,
@@ -50,10 +52,12 @@ function StatusFaceImg({
   status,
   className,
   alt,
+  size,
 }: {
   status: PraiseDayStatus
   className?: string
   alt?: string
+  size?: number
 }) {
   return (
     <img
@@ -61,6 +65,7 @@ function StatusFaceImg({
       alt={alt ?? ''}
       draggable={false}
       className={`pointer-events-none select-none object-contain ${className ?? ''}`}
+      style={size != null ? { width: size, height: size } : undefined}
     />
   )
 }
@@ -70,16 +75,18 @@ function DayCell({
   status,
   isToday,
   style,
+  faceSize,
 }: {
   day: number
   status: PraiseDayStatus | null
   isToday: boolean
   style: CSSProperties
+  faceSize: number
 }) {
   if (isToday && !status) {
     return (
       <div className="absolute z-[3] flex flex-col items-center" style={style}>
-        <div className="flex h-full w-full flex-col items-center justify-center rounded-[13px] bg-[#2AA3FF]">
+        <div className="flex h-full w-full flex-col items-center justify-center rounded-[14px] bg-[#2AA3FF]">
           <span className="font-['Pretendard',sans-serif] text-[13px] font-bold text-white">
             {day}
           </span>
@@ -96,7 +103,7 @@ function DayCell({
     return (
       <div className="absolute z-[3] flex flex-col items-center" style={style}>
         <div
-          className="flex h-full w-full flex-col items-center rounded-[13px] border pt-0.5"
+          className="flex h-full w-full flex-col items-center overflow-hidden rounded-[14px] border pt-px"
           style={{ background: meta.cellBg, borderColor: meta.cellBorder }}
           aria-label={`${day}일 ${meta.label}`}
         >
@@ -108,8 +115,9 @@ function DayCell({
           </span>
           <StatusFaceImg
             status={status}
-            className="mt-0.5 h-[30px] w-[30px]"
+            className="mt-px shrink-0 object-contain"
             alt={meta.label}
+            size={faceSize}
           />
         </div>
         {isToday ? (
@@ -214,6 +222,10 @@ export function PraiseCalendarScreen({
     () => buildMonthCells(year, monthIndex, statusByDate, todayKey),
     [year, monthIndex, statusByDate, todayKey],
   )
+  const cellLayout = useMemo(
+    () => getCellLayout(weekCountForMonth(year, monthIndex)),
+    [year, monthIndex],
+  )
 
   const cursorValue = monthCursorValue(year, monthIndex)
   const canGoPrev =
@@ -225,13 +237,13 @@ export function PraiseCalendarScreen({
     <FigmaAssetFrame
       src={PRAISE_CALENDAR_ASSET}
       alt="칭찬 캘린더"
-      bgClassName="bg-[#E2F7FF]"
+      bgClassName="bg-white"
       backButton="labeled"
     >
       {/* 구워진 연·월 글자 가림 */}
       <div
         aria-hidden
-        className="pointer-events-none absolute z-[2] bg-[#E2F7FF]"
+        className="pointer-events-none absolute z-[2] bg-white"
         style={figmaRectStyle(MONTH_TITLE_MASK)}
       />
       <p
@@ -264,12 +276,12 @@ export function PraiseCalendarScreen({
         }}
       />
 
-      {/* 달성 카드 — SVG 예시 덮고 실데이터 */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute z-[2] rounded-[24px] bg-white"
-        style={figmaRectStyle(PROGRESS_CARD)}
-      />
+      {/*
+        달성 카드는 **덮지 않는다.** 새 시안(`?v=3`)의 카드는 그라디언트 + 장식 원 +
+        테두리라 흰 사각으로 덮으면 그 디자인이 통째로 사라진다. 대신 카드 안의
+        예시 데이터를 SVG에서 걷어내고(`praise-calendar.ts` 주석 참고) 여기서
+        실데이터만 얹는다.
+      */}
       <div
         className="pointer-events-none absolute z-[3]"
         style={figmaRectStyle(PROGRESS_HERO_FACE)}
@@ -290,7 +302,7 @@ export function PraiseCalendarScreen({
         {summary.completed > 0 ? ' · 최고 기록!' : ''}
       </p>
       <div
-        className="pointer-events-none absolute z-[3] overflow-hidden rounded-full bg-[#E8F1FA]"
+        className="pointer-events-none absolute z-[3] overflow-hidden rounded-full bg-white/60"
         style={figmaRectStyle(PROGRESS_TRACK)}
       >
         <div
@@ -302,8 +314,11 @@ export function PraiseCalendarScreen({
       {/* 달력 카드 본문 — 범례·탭은 SVG 유지 */}
       <div
         aria-hidden
-        className="pointer-events-none absolute z-[2] rounded-[24px] bg-white"
-        style={figmaRectStyle(CALENDAR_CARD)}
+        className="pointer-events-none absolute z-[2] box-border rounded-[24px] border bg-white"
+        style={{
+          ...figmaRectStyle(CALENDAR_CARD),
+          borderColor: CARD_BORDER_COLOR,
+        }}
       />
 
       {WEEKDAY_LABELS.map((label, index) => {
@@ -332,7 +347,8 @@ export function PraiseCalendarScreen({
             day={cell.day}
             status={cell.status}
             isToday={cell.isToday}
-            style={cellRectStyle(col, row)}
+            style={cellRectStyle(col, row, cellLayout)}
+            faceSize={cellLayout.faceSize}
           />
         )
       })}

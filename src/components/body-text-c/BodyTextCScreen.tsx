@@ -4,15 +4,23 @@ import {
   EXERCISE_COACH_LINE_CLASS,
   EXERCISE_CTA_CLASS,
   EXERCISE_INPUT_EN_CLASS,
-  EXERCISE_OPTION_EN_CLASS,
   EXERCISE_PASSAGE_KO_CLASS,
+  EXERCISE_EN_BASE_UNSIZED,
+  EXERCISE_EN_PX,
 } from '../exercise/exercise-typography'
 import { ExerciseProgressBar, BakedProgressBarMask } from '../exercise/ExerciseProgressBar'
+import { useShrinkToFit } from '../exercise/use-shrink-to-fit'
+import {
+  ExpandablePassageBox,
+  shiftRect,
+} from '../exercise/ExpandablePassageBox'
 import { ExerciseContinueButton } from '../exercise/ExerciseContinueButton'
 import { FigmaAssetFrame } from '../FigmaAssetFrame'
+import { BACK_MASK_WHITE_HEADER } from '../navigation/figma-navigation'
 import {
   BODY_TEXT_C_ASSET,
   BODY_TEXT_C_COACH_RETRY,
+  BODY_TEXT_C_CONTENT_BAKE_MASK,
   BODY_TEXT_C_PASSAGE,
   BODY_TEXT_C_QUESTIONS,
   BODY_TEXT_C_SENTENCE_BOX,
@@ -48,6 +56,10 @@ type BodyTextCScreenProps = {
 } & RetryWrongExerciseProps
 
 type BodyResult = 'playing' | 'retry' | 'correct' | 'wrong'
+
+/** 제출(~y=751)이 가려지지 않게 — 지문 성장 상한 ≈64px */
+const BODY_TEXT_C_PASSAGE_MAX_BOTTOM =
+  BODY_TEXT_C_PASSAGE.y + BODY_TEXT_C_PASSAGE.h + 64
 
 function displayCharClass(ch: BodyTextCDisplayChar): string {
   if (ch.kind === 'filled') return 'text-[#1F242E]'
@@ -96,6 +108,13 @@ export function BodyTextCScreen({
   const [inputFocused, setInputFocused] = useState(false)
   const [keyboardInsetPx, setKeyboardInsetPx] = useState(0)
   const [keyboardHint, setKeyboardHint] = useState<string | null>(null)
+  const [passageGrowth, setPassageGrowth] = useState(0)
+  /*
+    문장이 길면 답안 상자를 넘쳐 위아래가 잘렸다. 상자를 늘리면 아래 버튼과 겹쳐서
+    **글씨를 줄여** 맞춘다. 그래도 안 되면(하한 도달) 그때만 스크롤을 연다.
+  */
+  const fitBoxRef = useRef<HTMLDivElement>(null)
+  const fitContentRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const typedLettersRef = useRef('')
   const editableTypedRef = useRef('')
@@ -144,6 +163,11 @@ export function BodyTextCScreen({
     return groupBodyTextCDisplayWords(chars)
   }, [question, typedLetters, lockedMask, retrySlots])
 
+  /** 내용이 바뀔 때마다 다시 맞춘다 — 문항이 바뀌면 길이가 달라진다 */
+  const answerNeedsScroll = useShrinkToFit(fitBoxRef, fitContentRef, [
+    displayWords,
+  ])
+
   const caretTypeIndex = useMemo(() => {
     if (result === 'retry' && retrySlots) {
       const emptyIndex = retrySlots.findIndex((slot) => slot === null)
@@ -159,6 +183,10 @@ export function BodyTextCScreen({
     const timer = window.setTimeout(focus, 80)
     return () => window.clearTimeout(timer)
   }, [isPlaying, question?.id, result])
+
+  useEffect(() => {
+    setPassageGrowth(0)
+  }, [question?.id])
 
   // 모바일 키보드가 올라오면 visualViewport 기준으로 제출 버튼을 위로 올림
   useEffect(() => {
@@ -315,7 +343,7 @@ export function BodyTextCScreen({
   }
 
   return (
-    <FigmaAssetFrame src={BODY_TEXT_C_ASSET} alt="본문 C" bgClassName="bg-white">
+    <FigmaAssetFrame backButtonMask={BACK_MASK_WHITE_HEADER} src={BODY_TEXT_C_ASSET} alt="본문 C" bgClassName="bg-white">
       <div className={`absolute inset-0 z-10 ${showFeedback ? 'pointer-events-none' : ''}`}>
         {hideProgressBar ? (
           <BakedProgressBarMask />
@@ -327,41 +355,42 @@ export function BodyTextCScreen({
           />
         )}
 
+        {/* SVG 데모 빈칸·점선·잔글씨(낙서) 전부 가림 */}
         <div
           aria-hidden
           className="pointer-events-none absolute z-[1] bg-white"
-          style={figmaRectStyle(BODY_TEXT_C_PASSAGE)}
+          style={figmaRectStyle(BODY_TEXT_C_CONTENT_BAKE_MASK)}
         />
-        <div
-          className="pointer-events-none absolute z-[3] flex items-center justify-center px-2 py-1"
-          style={figmaRectStyle(BODY_TEXT_C_PASSAGE)}
-        >
-          {question.promptKo ? (
+        {question.promptKo ? (
+          <ExpandablePassageBox
+            rect={BODY_TEXT_C_PASSAGE}
+            maxBottom={BODY_TEXT_C_PASSAGE_MAX_BOTTOM}
+            contentKey={question.id}
+            onGrowthChange={setPassageGrowth}
+            className="pointer-events-none absolute z-[3]"
+            contentClassName="flex w-full items-center justify-center px-2 py-1"
+          >
             <p
               className={`w-full whitespace-normal break-keep ${EXERCISE_PASSAGE_KO_CLASS}`}
               style={{
-                display: '-webkit-box',
-                WebkitBoxOrient: 'vertical',
-                WebkitLineClamp: 4,
-                overflow: 'hidden',
                 overflowWrap: 'anywhere',
                 wordBreak: 'keep-all',
               }}
             >
               {question.promptKo}
             </p>
-          ) : null}
-        </div>
+          </ExpandablePassageBox>
+        ) : null}
 
         <div
           aria-hidden
-          className="pointer-events-none absolute rounded-[12px] bg-[#F6F9FD]"
-          style={figmaRectStyle(BODY_TEXT_C_SENTENCE_BOX)}
+          className="pointer-events-none absolute z-[4] rounded-[12px] bg-[#F6F9FD]"
+          style={figmaRectStyle(shiftRect(BODY_TEXT_C_SENTENCE_BOX, passageGrowth))}
         />
         <form
           id="body-text-c-answer-form"
           className="absolute z-[5] flex cursor-text flex-col overflow-hidden px-4 py-4"
-          style={figmaRectStyle(BODY_TEXT_C_SENTENCE_BOX)}
+          style={figmaRectStyle(shiftRect(BODY_TEXT_C_SENTENCE_BOX, passageGrowth))}
           onSubmit={handleFormSubmit}
           onPointerDown={(event) => {
             if (!isPlaying) return
@@ -370,14 +399,27 @@ export function BodyTextCScreen({
             focusInput()
           }}
         >
+          {/*
+            바깥은 **남은 높이**(측정 기준), 안쪽은 **내용의 자연 높이**다.
+            예전에는 한 겹이었고 `content-center`라 위아래 양쪽으로 넘쳐서,
+            잘리는 것도 모자라 `scrollHeight`로 넘침을 잴 수도 없었다.
+          */}
           <div
+            ref={fitBoxRef}
             aria-hidden
-            className="pointer-events-none flex min-h-0 flex-1 flex-wrap content-center justify-center gap-x-6 gap-y-3"
+            className={`pointer-events-none flex min-h-0 flex-1 items-center justify-center ${
+              answerNeedsScroll ? 'overflow-y-auto' : 'overflow-hidden'
+            }`}
+          >
+          <div
+            ref={fitContentRef}
+            className="flex w-full flex-wrap justify-center gap-x-6 gap-y-3"
+            style={{ fontSize: `${EXERCISE_EN_PX}px` }}
           >
             {displayWords.map((word, wordIndex) => (
               <span
                 key={`word-${wordIndex}`}
-                className={`inline-flex items-center gap-[6px] leading-none ${EXERCISE_OPTION_EN_CLASS}`}
+                className={`inline-flex items-center gap-[6px] leading-none ${EXERCISE_EN_BASE_UNSIZED}`}
               >
                 {word.map((ch, charIndex) => {
                   const isCaret =
@@ -433,6 +475,7 @@ export function BodyTextCScreen({
                 })}
               </span>
             ))}
+          </div>
           </div>
 
           <input
@@ -530,3 +573,4 @@ export function BodyTextCScreen({
     </FigmaAssetFrame>
   )
 }
+

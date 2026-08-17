@@ -102,13 +102,13 @@ slotX(i) = pattern[i % 2]   // leftX | rightX
 | `#E6E8F0` | 선택지 중립 보더 |
 | `#212633` | 본문·선택지 텍스트 (SVG) |
 | `#4F91EB` | 학습 확인 버튼 (SVG) |
-| `#E2F7FF` | 메인 홈 하늘톤 배경 |
+| `#FFFFFF → #C5EBFE` | 메인 홈 하늘 그라데이션 (`MAIN_HOME_SKY_GRADIENT`) |
 | `#FD3D3D` | 1회차(빨간) 성 · 완료 체크 · **커리큘럼 Day 노드(활성)** |
 | `#D1D6DB` | 커리큘럼 Day 노드(잠금) 원 |
 | `#8C94A1` | 커리큘럼 Day 노드(잠금) 숫자 |
 | `#FFA10A` | 2회차(노란) 성 · 완료 체크 (`main-home-full-map.svg` paint11) |
 | `#DE801B` | 노란 성 보조 톤(문서 레거시 — 체크는 `#FFA10A` 사용) |
-| `#46AFFF` | 온보딩 학습목적 선택 카드 — 선택 테두리(1.5px) + 그림자 |
+| `#46AFFF` | (과거) 온보딩 학습목적 선택 카드 테두리 — **화면 삭제**, 토큰만 참고용 |
 
 ### 레거시 주의
 
@@ -121,10 +121,10 @@ slotX(i) = pattern[i % 2]   // leftX | rightX
 
 | 토큰 | 값 |
 |------|-----|
-| `--font-sans` | `'Noto Sans KR', system-ui, sans-serif` |
-| `--font-en` | `'Inter', system-ui, sans-serif` |
+| `--font-sans` | `'Pretendard', system-ui, sans-serif` |
+| `--font-en` | `'Pretendard', system-ui, sans-serif` (한·영 동일) |
 
-Figma 시안은 Pretendard / SUIT를 쓰는 화면이 있다. 웹에서는 Noto Sans KR로 대체하거나 SVG 글리프로 고정한다.
+앱 전역 글씨체는 **Pretendard** (`index.html` CDN). `font-sans` / `font-en` 모두 Pretendard를 가리킨다.
 
 ### 문제(학습) 화면 공통 스케일 — `exercise-typography.ts`
 
@@ -132,35 +132,51 @@ Figma 시안은 Pretendard / SUIT를 쓰는 화면이 있다. 웹에서는 Noto 
 
 | 용도 | 토큰 | 스펙 |
 |------|------|------|
-| 영어 본문·선택지·타일·입력 | `EXERCISE_PASSAGE_EN` / `OPTION_EN` / `INPUT_EN` | Inter **20px** / semibold / `#1E1E1E` |
-| 한국어 지문·안내 | `EXERCISE_PASSAGE_KO` / `HINT_KO` / `EMPTY_HINT` | Noto **20px** / medium |
-| 한국어 보조 설명 | `EXERCISE_PASSAGE_KO_MUTED` | Noto **20px** / medium / muted |
-| 단어 퀴즈 헤드워드 | `EXERCISE_HEADWORD` | Inter **30px** / bold |
+| 영어 본문·선택지·타일·입력 | `EXERCISE_PASSAGE_EN` / `OPTION_EN` / `INPUT_EN` | Pretendard **20px** / semibold / `#1E1E1E` |
+| 한국어 지문·안내 | `EXERCISE_PASSAGE_KO` / `HINT_KO` / `EMPTY_HINT` | Pretendard **20px** / medium |
+| 한국어 보조 설명 | `EXERCISE_PASSAGE_KO_MUTED` | Pretendard **20px** / medium / muted |
+| 단어 퀴즈 헤드워드 | `EXERCISE_HEADWORD` | Pretendard **30px** / bold |
 | 짝맞추기 타일(한/영) | `MATCH_TILE_*` | **20px** / semibold (한·영 동일) |
-| 루핀 코치 말풍선 | `EXERCISE_COACH_LINE` | Noto **20px** / semibold / `#3D7EF0` |
+| 루핀 코치 말풍선 | `EXERCISE_COACH_LINE` | Pretendard **20px** / semibold / `#3D7EF0` |
 | 피드백 제목 | `exerciseFeedbackTitleClass` | **20px** / bold |
-| 피드백 해설 | `EXERCISE_FEEDBACK_HINT` | Noto **20px** / semibold |
+| 피드백 해설 | `EXERCISE_FEEDBACK_HINT` | Pretendard **20px** / semibold |
 | CTA(제출·계속하기) | `EXERCISE_CTA` | **22px** / bold — 전 유형 동일 (`ExerciseContinueButton`은 제출 슬롯, 팝업 시트 아님) |
 | 진행률 | `EXERCISE_PROGRESS` | **12px** / semibold |
 
-화면별로 `text-[NNpx]`·`font-['Inter']` 등을 직접 쓰지 말고 위 토큰을 재사용한다.
+화면별로 `text-[NNpx]`·개별 `font-['…']`를 직접 쓰지 말고 위 토큰·`font-sans`/`font-en`을 재사용한다.
+
+### 온보딩 공통 스케일 — `onboarding-typography.ts`
+
+회원유형·약관·이름·학교명·생년월일·학년 화면이 **동일 토큰**을 쓴다.
+단계는 **24 / 18 / 16 / 14 네 개뿐**이고 자간은 전 단계 **0**이다.
+(값은 `public/assets/onboarding-*.svg`에 구워진 글자를 실측해 맞춘 것 — 온보딩은
+이미지 위에 React 요소를 얹는 구조라 어긋나면 비활성→활성 전환 때 글자가 튄다.)
+
+| 용도 | 토큰 | 스펙 |
+|------|------|------|
+| 화면 제목 | `ONBOARDING_TITLE` | Pretendard **24px** / bold / line-height 32 / `#1E1E1E` |
+| 하단 CTA 라벨 | `ONBOARDING_BUTTON_LABEL` | Pretendard **18px** / **bold** |
+| 약관·옵션 라벨, 입력값 | `ONBOARDING_BODY` | Pretendard **16px** / **semibold** / 24 |
+| 입력 안내, 생년월일 필드 | `ONBOARDING_CAPTION` | Pretendard **14px** / medium / 20 |
+
+온보딩 공통 지오메트리 (전 화면 동일, Figma 393×852 기준):
+
+| 요소 | 값 | 토큰 |
+|------|-----|------|
+| 하단 CTA 버튼 | x=30 y=741 **w=333 h=60 r=16** | `ONBOARDING_CTA_RECT` / `ONBOARDING_CTA_RADIUS` |
+| CTA 활성 / 비활성 | `#2AA3FF` / `#BEC3CD` | `ONBOARDING_CTA_BG(_DISABLED)` |
+| 선택 원 | 바깥 지름 **24** (`circle r=10.5` + `stroke 3`), 링 `#D9D9D9` | `ONBOARDING_CHECK_SIZE` |
+| 선택 원 오른쪽 라벨 x | **68** | `ONBOARDING_OPTION_LABEL_X` |
+| 제목 박스 top / 좌우 여백 | **105** / **20** | `ONBOARDING_TITLE_TOP` / `ONBOARDING_CONTENT_X` |
+
+Figma 에셋이 없는 화면(회원 유형)은 `CircleCheckbox hasBakedRing={false}` /
+`NextStepButton hasBakedButton={false}`로 두면 미선택 링·비활성 버튼까지 직접 그린다.
 
 | 용도 | 대략 스펙 |
 |------|-----------|
 | 로그인 슬로건 | Medium ~20px, white/90 |
 | 소셜 버튼 | Bold ~18px |
-| 온보딩 제목 | Bold ~22px |
 | 퀴즈 선택지 | SVG path (이미지 내) 또는 `EXERCISE_*` 오버레이 |
-| 커리큘럼 Day 숫자 (활성) | Pretendard Bold, 잠금 노드와 동일 시각 크기 (`fontSize`≈24). 주차별 원색: 1~3 빨강 · 4~6 주황 · 7~9 노랑 · 10~12 초록 · 13~15 파랑 |
-
-**혼자 공부 · 커리큘럼 맵 노드**
-
-| 토큰 | 값 | 설명 |
-|------|-----|------|
-| Day 원 반지름 | SVG `r≈29.67` (잠금 `r≈31`과 근접) | `START_DAY_NODE_R` |
-| Day 숫자 | 잠금 노드와 **동일 크기** | `CurriculumDayNodes` |
-| 진행 중 링(파란 호선) | LONG에 베이크됨 · **미시작(0%)에서는 `opacity=0`** | 진도 연동 시 재표시 예정 |
-| 하단 내비 | **81px** | `curriculum-start` 하단 조각 |
 
 문법·연습 전용 타이포 헬퍼:
 
@@ -171,8 +187,8 @@ Figma 시안은 Pretendard / SUIT를 쓰는 화면이 있다. 웹에서는 Noto 
 
 | 패턴 | 값 |
 |------|-----|
-| 소셜/CTA 버튼 높이 | ~52–60px |
-| 버튼 radius | ~10–14px (시안별) |
+| 소셜/CTA 버튼 높이 | ~52–60px (**온보딩은 60px 고정** — 위 스케일 참고) |
+| 버튼 radius | ~10–14px (시안별) / **온보딩 CTA는 16px 고정** |
 | 퀴즈 옵션 radius | ~24px |
 | 선택 테두리 | 3px |
 | Safe area | `env(safe-area-inset-*)` (로그인/온보딩 패딩) |
@@ -198,7 +214,7 @@ Figma 시안은 Pretendard / SUIT를 쓰는 화면이 있다. 웹에서는 Noto 
 | 시작 루핀 | 맵에 구워진 대기 루핀 — **완료 성이 없을 때만** 보임. 완료 성이 생기면 `StartPointMask`로 루핀·필만 가리고 깃발·길은 원본 유지. 성 바닥 중앙에 `mascot-cheer.svg`(React) 표시 |
 | praise calendar CTA | 글자 크기 **20px**, 아이콘 20px. rect는 **121×40** (맵 x=255, y=312 / 프레임 x=255, y=246). 배경 SVG의 `이번 할 일` 레이어는 `display="none"` 처리 |
 | praise calendar CTA (dimmed) | 초대코드·대기 미리보기: 45% 검정 오버레이 아래에 있는 것처럼 모든 색상을 ×0.55 딤 처리한 비인터랙티브 복제 (`PraiseCalendarButton surface="dimmed"`) |
-| 오늘의 미션 카드 (`TodayMissionCard`) | Figma `현재학습_CTA카드` 기준에서 가독성을 위해 확대: 배지 14px SemiBold(Figma 11px+3, 너비는 텍스트에 맞춰 자동), 제목 23px Bold(`#1F242E`, Figma 18px+5), 부제 16px Regular(`#6B7382`, Figma 13px+3), 버튼 23px SemiBold(Figma 13px+10, `leading-none`). 버튼 텍스트가 2~3줄로 줄바꿈될 수 있어 버튼 rect를 108×76(기존 96×60)으로 확대. Noto Sans KR 600(SemiBold) 웨이트를 `index.html` Google Fonts에서 로드해야 함 |
+| 오늘의 미션 카드 (`TodayMissionCard`) | Figma `현재학습_CTA카드` 기준에서 가독성을 위해 확대: 배지 14px SemiBold(Figma 11px+3, 너비는 텍스트에 맞춰 자동), 제목 23px Bold(`#1F242E`, Figma 18px+5), 부제 16px Regular(`#6B7382`, Figma 13px+3), 버튼 23px SemiBold(Figma 13px+10, `leading-none`). 버튼 텍스트가 2~3줄로 줄바꿈될 수 있어 버튼 rect를 108×76(기존 96×60)으로 확대. 글씨체는 전역 Pretendard |
 
 ### 5.1 동기화 과제 유형
 
@@ -210,7 +226,7 @@ Figma 시안은 Pretendard / SUIT를 쓰는 화면이 있다. 웹에서는 Noto 
 | 단어 유형 A · 짝맞추기 | `WordMatchScreen` + `word-a-*.svg`, 168×98 타일 2열, 최대 4쌍/페이지 (영문 ↔ 한글) |
 | 단어 유형 B · TTS 뜻 짝맞추기 | `WordListenMatchScreen` + `word-a-start.svg` 재사용 — A와 동일 레이아웃·상태색, 왼쪽은 스피커+파형 오디오 타일(탭 시 TTS). 전용 Export는 추후 |
 | 단어 유형 C · 3지선다 | `WordQuizScreen` + `word-c-*.svg` (구 B / 구 `word-b` 에셋 → C로 재매핑 예정) |
-| 단어 유형 D · 예문 빈칸 | `WordSpellScreen` + `word-d-*.svg` — 정답 띄어쓰기 유지, 첫 글자 슬롯 고정(힌트). 긴 정답은 두 줄. 카드 밖 **튀어나옴 금지** (`WORD_SPELL_CARD` + clip). *(구 C / 구 `word-c`)* |
+| 단어 유형 D · 예문 빈칸 | `WordSpellScreen` + `word-d-*.svg` — 정답 띄어쓰기 유지, 첫 글자 슬롯 고정(힌트). 본문 카드(`WORD_SPELL_CARD`)는 진행바·트레이 사이 **한 덩어리 클립**. 긴 정답은 카드 안 스크롤. 카드 밖 **튀어나옴 금지**. *(구 C / 구 `word-c`)* |
 | 본문 A · 번역 배열 | `BodyTextAScreen` + `body-text-a.svg` — 루핀 코치 안내, 피드백은 **계속하기만** |
 | 본문 B · 청크배열 | `BodyTextBScreen` + `body-text-a.svg` 재사용 — 한글 제시라 **스피커 숨김**, 제출 시(오답 포함) 영어 예문 TTS. 루핀 코치 안내, 피드백은 **계속하기만** |
 | 본문 C · 영작 | `BodyTextCScreen` + `body-text-c.svg` |

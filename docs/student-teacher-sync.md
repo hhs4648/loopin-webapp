@@ -17,7 +17,10 @@
 - 학생은 여러 반 가입 가능 · 홈은 **가장 최근 가입 반**을 활성 반으로 사용
 - 과제 `content_snapshot`으로 문항 원본 고정 · 학생 실행기는 snapshot 기반
 - 시도(`attempts`)·답안(`answers`) 보존 · 교사는 **최신 시도** 상태 + 최초/최신 점수 표시
-- Realtime 구독 실패 시 focus/재진입 시 재조회
+- `attempts.max_combo` = 그 회차 최고 연속 정답 (마이그레이션 `005`, 기본 0). 완료 시 한 번 쓰고,
+  학생 앱 종합 완료 화면의 「연속 정답」 배지가 읽는다. **교사 화면에는 아직 안 쓰인다.**
+- 학생 홈: `class_assignments`·`attempts` Realtime 구독 + focus/visibility 재조회 (`subscribeStudentClassRealtime`)
+- Realtime 구독 실패 시에도 focus/재진입 시 재조회로 과제 목록 갱신
 
 ```mermaid
 flowchart LR
@@ -95,7 +98,7 @@ supabase functions deploy loopin-tts
 |------|------|------|
 | 익명 세션·프로필 | `src/lib/sync/student-api.ts` + 온보딩 | 구현됨 |
 | 초대코드 가입 | `MainHomeScreen` → `enrollWithInviteCode` | 구현됨 |
-| 과제 목록 | `fetchStudentAssignments` → `AssignmentReceivedScreen` | 구현됨 |
+| 과제 목록 | `fetchStudentAssignments` + Realtime/`visibility` 재조회 → `AssignmentReceivedScreen` | 구현됨 |
 | 과제 실행 | `AssignmentRunnerScreen` → `build-session-sections` → 기존 Figma `*Screen` | 구현됨 |
 | 데모 고정 세션 | 기존 word-match 등 | 코드·자산은 남아 있으나 초대코드 단계가 env 없이는 통과되지 않아 현재는 이 경로로 도달 불가 (`MainHomeScreen.tryEnter`가 `isSyncEnabled()===false`면 에러만 표시) |
 

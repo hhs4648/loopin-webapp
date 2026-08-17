@@ -1,88 +1,63 @@
 export const FRAME_W = 393
 export const FRAME_H = 852
 
-/** Figma `learning-complete.svg` (394×829) — 393×852 프레임 기준으로 스케일 */
-const SVG_W = 394
-const SVG_H = 829
+/**
+ * Figma `단어파트 완료화면` — 원본 캔버스 606×1134, 콘텐츠 프레임은 x=81.1797부터 523×1134.
+ * 523:1134 = 393:852 이므로 viewBox만 콘텐츠 프레임에 맞추면 좌표가 1:1로 대응한다.
+ * (이전 export는 393×829로 세로가 눌려 있어 scaleRect 보정이 필요했다 — 이제 불필요.)
+ */
+export const LEARNING_COMPLETE_ASSET = '/assets/word-part-complete.svg?v=5'
 
-export const LEARNING_COMPLETE_ASSET = '/assets/learning-complete.svg'
+/**
+ * 「1파트 완료」베이크 배지 — React로 교사 부여명 배지를 덮어쓴다.
+ * SVG viewBox(81.18,0,523,1134) → 393×852: x=(270.15-81.18)/523*393 ≈ 142, y≈49.
+ */
+export const LEARNING_COMPLETE_BADGE = { x: 142, y: 49, w: 108, h: 24 }
 
-export type LearningCompleteWordId = 'various' | 'wave' | 'run-errands' | 'latest'
+/** 통계 카드 전체 — 베이크 수치 가리고 React로 그림 */
+export const LEARNING_COMPLETE_STATS_CARD = { x: 20, y: 347, w: 353, h: 93 }
 
-export type LearningCompleteWord = {
-  id: LearningCompleteWordId
-  english: string
-  meaningKo: string
-  partOfSpeech: string
-  partOfSpeechKo: string
-  exampleEn: string
-  exampleKo: string
-  box: { x: number; y: number; w: number; h: number }
+/** 통계 카드 가운데 구분선 세로 여백 (카드 상·하단에서) */
+export const LEARNING_COMPLETE_STATS_DIVIDER_INSET = 22
+
+/**
+ * 「오늘 배운 단어」카드 스크롤 영역.
+ * 제목 아래 ~ 「단어장에서도 복습할 수 있어요」 위. 베이크 8칸을 덮고 React 그리드로 대체.
+ */
+export const LEARNING_COMPLETE_WORD_SCROLL = { x: 12, y: 478, w: 369, h: 216 }
+
+/** 카드 그리드 내부 여백 — 첫 칸 상단이 베이크 위치(y=484)와 맞도록 */
+export const LEARNING_COMPLETE_WORD_GRID_PAD = 6
+
+/** 카드 한 칸 (그리드 gap 계산용) */
+export const LEARNING_COMPLETE_WORD_CARD = { w: 172, h: 46 }
+
+/** 파란「계속하기」 */
+export const LEARNING_COMPLETE_PRIMARY_BTN = { x: 29, y: 757, w: 228, h: 54 }
+
+/** 회색「홈」 */
+export const LEARNING_COMPLETE_SECONDARY_BTN = { x: 265, y: 757, w: 99, h: 54 }
+
+/** 공부 시간(분) — 1분 미만도 최소 1분으로 표기 */
+export function formatStudyMinutes(startedAtMs: number | null, endedAtMs = Date.now()): number {
+  if (startedAtMs == null || endedAtMs < startedAtMs) return 1
+  return Math.max(1, Math.round((endedAtMs - startedAtMs) / 60_000))
 }
 
-function scaleRect(rect: { x: number; y: number; w: number; h: number }) {
-  return {
-    x: (rect.x / SVG_W) * FRAME_W,
-    y: (rect.y / SVG_H) * FRAME_H,
-    w: (rect.w / SVG_W) * FRAME_W,
-    h: (rect.h / SVG_H) * FRAME_H,
-  }
+export function formatLearnedWordCountLabel(count: number): string {
+  return `${Math.max(0, count)}개`
 }
 
-export const LEARNING_COMPLETE_WORDS: LearningCompleteWord[] = [
-  {
-    id: 'various',
-    english: 'various',
-    meaningKo: '다양한',
-    partOfSpeech: '형용사',
-    partOfSpeechKo: '다양한',
-    exampleEn: 'We tried various foods at the festival.',
-    exampleKo: '우리는 축제에서 다양한 음식들을 먹어 보았다.',
-    box: scaleRect({ x: 20, y: 484, w: 172, h: 46 }),
-  },
-  {
-    id: 'wave',
-    english: 'wave',
-    meaningKo: '(손을) 흔들다',
-    partOfSpeech: '동사',
-    partOfSpeechKo: '(손을) 흔들다',
-    exampleEn: 'I wave to my friend every morning.',
-    exampleKo: '나는 매일 아침 친구에게 손을 흔든다.',
-    box: scaleRect({ x: 201, y: 484, w: 172, h: 46 }),
-  },
-  {
-    id: 'run-errands',
-    english: 'run errands',
-    meaningKo: '심부름하다',
-    partOfSpeech: '동사',
-    partOfSpeechKo: '심부름하다',
-    exampleEn: 'I run errands for my mom on weekends.',
-    exampleKo: '나는 주말마다 엄마를 위해 심부름을 한다.',
-    box: scaleRect({ x: 20, y: 536, w: 172, h: 46 }),
-  },
-  {
-    id: 'latest',
-    english: 'latest',
-    meaningKo: '최신의',
-    partOfSpeech: '형용사',
-    partOfSpeechKo: '최신의',
-    exampleEn: 'I bought the latest version of the game.',
-    exampleKo: '나는 그 게임의 최신 버전을 샀다.',
-    box: scaleRect({ x: 201, y: 536, w: 172, h: 46 }),
-  },
-]
+export function formatStudyMinutesLabel(minutes: number): string {
+  return `${Math.max(0, minutes)}분`
+}
 
-/** SVG에 박혀 있는 단어 카드·상세 영역을 가리고 React로 렌더 */
-export const LEARNING_COMPLETE_WORD_LIST_MASK = scaleRect({ x: 8, y: 472, w: 378, h: 122 })
-export const LEARNING_COMPLETE_DETAIL_CARD = scaleRect({ x: 20, y: 347, w: 353, h: 93 })
-
-/** Figma — 메인 버튼 (학습 완료) */
-export const LEARNING_COMPLETE_PRIMARY_BTN = scaleRect({ x: 29, y: 757, w: 228, h: 54 })
-
-/** Figma — 보조 버튼 */
-export const LEARNING_COMPLETE_SECONDARY_BTN = scaleRect({ x: 265, y: 757, w: 99, h: 54 })
-
-export function figmaRectStyle(rect: { x: number; y: number; w: number; h: number }) {
+export function figmaRectStyle(rect: {
+  x: number
+  y: number
+  w: number
+  h: number
+}) {
   return {
     left: `${(rect.x / FRAME_W) * 100}%`,
     top: `${(rect.y / FRAME_H) * 100}%`,

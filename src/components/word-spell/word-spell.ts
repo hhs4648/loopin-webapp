@@ -2,8 +2,8 @@ export const FRAME_W = 393
 export const FRAME_H = 852
 
 export const WORD_SPELL_ASSETS = {
-  base: '/assets/word-c.svg',
-  filling: '/assets/word-c-fill.svg',
+  base: '/assets/word-c.svg?v=2',
+  filling: '/assets/word-c-fill.svg?v=2',
   correct: '/assets/word-c-correct.svg',
   wrong: '/assets/word-c-wrong.svg',
 } as const
@@ -65,24 +65,37 @@ export type WordSpellTile = {
 
 /**
  * SVG에 박힌 데모 한국어·영어·빈칸·잔상 전부 가림.
- * 모든 문제에서 카드 위에 남던 잔글씨(낙서) 제거용 — 진행바 아래~타일 트레이 위.
+ * 진행바 아래 ~ 알파벳 트레이 직전까지만 (트레이·제출 버튼은 남김).
  */
-export const WORD_SPELL_CONTENT_BAKE_MASK = { x: 0, y: 158, w: 393, h: 402 }
+/**
+ * 구워진 본문 가림 — **진행바(138~162) 아래부터** 시작한다.
+ * y 140이면 진행바 구간까지 덮어서, 그 위에 얹히는 카드와 진행바가 붙어 보였다.
+ */
+export const WORD_SPELL_CONTENT_BAKE_MASK = { x: 0, y: 166, w: 393, h: 374 }
 
-/** 본문 카드 — 빈칸 많은 긴 문장용으로 트레이 직전까지 확장 */
-export const WORD_SPELL_CARD = { x: 16, y: 168, w: 361, h: 388 }
+/**
+ * 본문 카드 — 진행바·트레이 사이 가운데.
+ * 너무 길면 하단이 트레이와 겹치고, 예전 SLOTS 흰 마스크에 잘려
+ * 「회색 박스 밖으로 글자가 나온」것처럼 보였다.
+ */
+/**
+ * 문제 카드 — 윗변이 진행바 아래(162)에서 14px 떨어지도록 176부터.
+ * 예전 156은 진행바에 6px 물려서 카드가 바에 붙어 보였다.
+ * 아래는 글자 트레이(456)에 닿지 않게 448에서 끝낸다.
+ */
+export const WORD_SPELL_CARD = { x: 20, y: 176, w: 353, h: 272 }
 
 /** @deprecated CONTENT_BAKE_MASK로 통합 */
 export const WORD_SPELL_ABOVE_BAKE_MASK = WORD_SPELL_CONTENT_BAKE_MASK
 
-/** 카드 안 텍스트 영역 */
-export const WORD_SPELL_CARD_TEXT = { x: 28, y: 180, w: 337, h: 364 }
+/** 카드 안 텍스트 (카드와 동일 클립 영역, 좌우·상하 패딩) */
+export const WORD_SPELL_CARD_TEXT = { x: 36, y: 192, w: 321, h: 240 }
 
 /**
- * 하단 별도 빈칸 줄은 쓰지 않음(문장 안 인라인 빈칸만 사용).
- * SVG 데모 슬롯만 가림.
+ * 하단 별도 빈칸 줄은 쓰지 않음(문장 안 인라인 빈칸만).
+ * 카드와 겹치지 않게 트레이 위 잔상만 가림.
  */
-export const WORD_SPELL_SLOTS_MASK = { x: 8, y: 400, w: 377, h: 160 }
+export const WORD_SPELL_SLOTS_MASK = { x: 8, y: 456, w: 377, h: 88 }
 
 /** Figma `word-c.svg` — 하단 알파벳 타일 가림 */
 export const WORD_SPELL_TRAY_MASK = { x: 12, y: 548, w: 369, h: 160 }

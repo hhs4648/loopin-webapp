@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { ONBOARDING_CAPTION_CLASS } from './onboarding-typography'
 
 const BIRTH_YEAR_MIN = 1927
 const BIRTH_YEAR_MAX = 2021
@@ -14,9 +15,8 @@ const FRAME_H = 852
 const CONTAINER_W = 134
 const CONTAINER_H = 210
 
-/** Figma — Inter Medium 14/20, letter-spacing -0.15px */
-const BIRTHDATE_TEXT_CLASS =
-  "font-['Inter',sans-serif] text-[14px] font-medium leading-[20px] tracking-[-0.15px]"
+/** Figma — Pretendard Medium 14/20 (온보딩 공통 캡션 단계) */
+const BIRTHDATE_TEXT_CLASS = ONBOARDING_CAPTION_CLASS
 
 const FIELD_TOP = '22.89%'
 const FIELD_HEIGHT = '4.23%'

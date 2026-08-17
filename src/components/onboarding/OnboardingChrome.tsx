@@ -1,4 +1,3 @@
-import { IphoneStatusBar } from '../IphoneStatusBar'
 import { useCurrentBackNavigation } from '../navigation/BackNavigationProvider'
 import {
   ONBOARDING_BACK_HIT,
@@ -32,9 +31,6 @@ export function OnboardingChrome() {
 
   return (
     <>
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-[15]">
-        <IphoneStatusBar />
-      </div>
       {visible ? (
         <button
           type="button"

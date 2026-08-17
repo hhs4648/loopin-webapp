@@ -9,7 +9,7 @@ import {
 
 type CastleCompleteMascotProps = {
   castle: { id?: string; x: number; y: number; w: number; h: number }
-  /** 현재 위치일 때만 「현재 위치」 필 표시 */
+  /** 현재 위치일 때만 하단 「현재 위치」 필 표시 */
   showCurrentLocation?: boolean
 }
 
@@ -38,7 +38,7 @@ function Sparkle({ style }: { style: CSSProperties }) {
  *
  * 배치는 `캐릭터 성도착` 참고:
  * 가로 중앙 · 발끝 Y = 성 바닥 Y · 크기는 성 대비 참고 비율.
- * (합성 에셋은 그리지 않음 — 맵에 구워진 성 유지)
+ * 하단 필은 항상 「현재 위치」(파랑). 「진행중」은 성 상단 `CastleRetryingPill`.
  */
 export function CastleCompleteMascot({
   castle,

@@ -63,6 +63,85 @@ export function sessionWordSpellId(questionId: string) {
   return `word-spell:${questionId}`
 }
 
+/**
+ * 단어 파트(A~D)에서 학습한 고유 단어 수.
+ * 세션 결과에 기록된 단어 id를 우선하고, 없으면 데모 은행 고유 수를 쓴다.
+ */
+export function countWordPartUniqueWords(results: SessionResults = {}): number {
+  return listLearnedWordPartWords(results).length
+}
+
+export type LearnedWordPartItem = {
+  id: string
+  english: string
+  meaningKo: string
+}
+
+function meaningFromSpellHint(hint: string): string | null {
+  const match = hint.match(/\(([^)]+)\)\s*$/)
+  return match?.[1]?.trim() || null
+}
+
+function wordCatalogById(): Map<string, LearnedWordPartItem> {
+  const byId = new Map<string, LearnedWordPartItem>()
+  for (const question of WORD_QUIZ_QUESTIONS) {
+    byId.set(question.id.toLowerCase(), {
+      id: question.id,
+      english: question.word,
+      meaningKo: question.correctAnswer,
+    })
+  }
+  for (const question of WORD_SPELL_QUESTIONS) {
+    const key = question.id.toLowerCase()
+    if (byId.has(key)) continue
+    byId.set(key, {
+      id: question.id,
+      english: question.answer,
+      meaningKo: meaningFromSpellHint(question.answerHint) ?? question.korean,
+    })
+  }
+  return byId
+}
+
+/**
+ * 오늘 배운 단어 카드용 목록 (고유 단어, 세션 등장 순).
+ * 결과가 없으면 데모 은행 순서로 채운다.
+ */
+export function listLearnedWordPartWords(
+  results: SessionResults = {},
+): LearnedWordPartItem[] {
+  const catalog = wordCatalogById()
+  const orderedKeys: string[] = []
+  const seen = new Set<string>()
+
+  const push = (rawId: string) => {
+    const key = rawId.toLowerCase()
+    if (seen.has(key)) return
+    seen.add(key)
+    orderedKeys.push(key)
+  }
+
+  for (const stepId of Object.keys(results)) {
+    const match = stepId.match(
+      /^word-(?:match|listen-match|quiz|spell):(.+)$/,
+    )
+    if (match?.[1]) push(match[1])
+  }
+
+  if (orderedKeys.length === 0) {
+    for (const question of WORD_QUIZ_QUESTIONS) push(question.id)
+    for (const question of WORD_SPELL_QUESTIONS) push(question.id)
+    for (const pairId of WORD_MATCH_PAIR_IDS) push(String(pairId))
+    for (const pairId of WORD_LISTEN_MATCH_PAIR_IDS) push(String(pairId))
+  }
+
+  return orderedKeys.map((key) => {
+    const known = catalog.get(key)
+    if (known) return known
+    return { id: key, english: key, meaningKo: '' }
+  })
+}
+
 export function sessionBodyTextAId(questionId: string) {
   return `body-text-a:${questionId}`
 }

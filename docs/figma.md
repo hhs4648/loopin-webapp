@@ -81,14 +81,18 @@ Figma 파일: `https://www.figma.com/design/NFmd87QHBjrA3r9zV9s8Q7/Haksup`
 | `온보딩_회원가입 4(교사선택).svg` | `onboarding-teacher-04-complete.svg` |
 | `온보딩_생년월일_선택전.svg` | `onboarding-student-03-birthdate.svg` |
 | `온보딩_학년선택_선택전.svg` | `onboarding-student-04-grade.svg` |
-| `온보딩_학습목적선택.svg` (node `5669:851`) | `onboarding-student-06-purpose.svg` |
+| `온보딩_학습목적선택.svg` (node `5669:851`) | `onboarding-student-06-purpose.svg` (**미사용** — 온보딩 단계 삭제, 2026-08-11) |
 | `메인화면.svg` | `main-home-invite-code.svg` |
 | `메인화면(초대코드 입력후).svg` | `main-home-invite-entered.svg` |
 | `메인화면(과제 부여 받은후).svg` | `main-home-assignment-received.svg` |
 | `Container.svg` | `birthdate-dropdown-container.svg` |
 | `회색 성.svg` | `castle-gray.svg` |
 | *(과제부여 프레임 하단)* | `main-home-bottom-nav.svg` | 학원/학교 메인 하단 탭 (홈·단어장·복습노트·메뉴). **바 전체 탭 → 설정 창** |
-| `설정 창.svg` | `settings-window.svg` | 설정 풀스크린 오버레이 (`SettingsWindow`). 원본 553×1012 · 표시 크롭 393×852(@80,50) |
+| `설정 창.svg` | `settings-window.svg` | 설정 풀스크린 오버레이 (`SettingsWindow`). **401×852** 단일 프레임(하단 베이크 내비는 패널에서 크롭). 이름·연동(카카오/애플/구글)·이용안내/로그아웃 히트는 `settings.ts` 좌표 |
+| `복습하기 메인화면.svg` | `review-main.svg` | 복습하기 시안 393×811(내비 위). **코드에서 쓰지 않는다** — 글자가 전부 벡터 path(`<text>` 0개)라 유형명·정답률 숫자를 바꿀 수 없어서, `ReviewMainWindow`는 이 시안의 색·간격을 참고해 직접 그린다. 색·치수 대조용으로만 보관 |
+| *(위 시안 내장 PNG 추출)* | `review-cat-reading.png` | 복습 파란 카드 속 책 읽는 고양이 (420px) |
+| *(위 시안 내장 PNG 추출)* | `review-cat-cheer.png` | 복습 빈 상태의 만세 고양이 (260px) |
+| `복습 화면 추가.svg` | `review-card-banner.svg` | 파란 카드 아래 배너(377×120). `ReviewMainWindow` |
 | `재도전 화면.svg` | `castle-retry-screen.svg` | 완료 성 재도전 확인 풀프레임 (`CastleRetryConfirmScreen`). 하늘 색은 무시 · 카드·버튼만 시안 기준 |
 | `미션 체크.svg` | `mission-check.svg` |
 | `별표.svg` | `mission-star.svg` — 과제 완료 성 마커(원+별). 렌더는 `MissionCheckBadge`가 성 색으로 채움 |
@@ -97,18 +101,12 @@ Figma 파일: `https://www.figma.com/design/NFmd87QHBjrA3r9zV9s8Q7/Haksup`
 | `만세 캐릭터.svg` | `mascot-banzai.svg` | 학원/학교 메인 · 현재 위치 성 만세 루핀 (`CastleCompleteMascot`) |
 | `루핀 캐릭터 시작.svg` | `loopin-character-start.svg` — 시작 지점 대기 포즈(`MapCharacter`) |
 | `praise-calendar-source.png` *(내용 SVG)* | `praise-calendar.svg` — 칭찬 캘린더 풀스크린 · 상태 얼굴 PNG 추출(`praise-status-*.png`) |
-| `커리큘럼 코스.svg` | `onboarding-curriculum-course.svg` — 혼자 공부 「내신 코스 만들기」 |
-| `메인화면LONG.svg` | `main-screen-long.svg` — 혼자 공부 커리큘럼 메인 **맵 배경**(세로 스크롤). 구 공룡·베이크 Day1–3·러닝·시작 깃발·떠 있는 자물쇠 뱃지는 `opacity=0`, 장식·진도·캐릭터는 React 오버레이 |
-| `체크무늬바닥시작점.png` | `checkered-floor-start.png` — 커리큘럼 맵 출발선 오버레이 |
-| (LONG 베이크 러닝 분리) | `curriculum-running-character.png` — 진행 중 Day 옆 러닝 캐릭터 |
-| `dinosaur.svg` *(제공)* | 동일 — 커리큘럼 맵 장식 공룡 (`CurriculumDinosaurDecor`) |
-| `trees.svg` *(제공)* | `curriculum-tree-round.png` / `curriculum-tree-tall.png` — 맵 가장자리 장식 나무 (`CurriculumTreeDecor`) |
-| `메인화면LONG.svg` + `커리큘럼 메인화면.svg` 하늘 타이틀 | `curriculum-main-long.svg` — (이전 bake본 · 참고) |
-| `커리큘럼 드롭다운.svg` | `curriculum-dropdown.svg` — 코스 칩 드롭다운 시안(선택·삭제·새 코스) |
-| `커리큘럼 시작.svg` | `curriculum-start.svg` — 0% 시작 시안 · 하단 내비 조각 원본 |
-| *(커리큘럼 시작 하단 바)* | `curriculum-bottom-nav.svg` / `curriculum-bottom-nav-menu.svg` — 홈 활성 · 전체(설정) 활성 |
-| `커리큘럼 시작캐릭터.svg` | `curriculum-start-character.svg` — 미시작(0%) 맵 시작점 루핀 |
-| `체크무늬바닥시작점.png` | `checkered-floor-start.png` — 커리큘럼 맵 출발선 (위 rename 표 참고) |
+| `dinosaur.svg` / `trees.svg` *(제공)* | `curriculum-dinosaur.svg` · `curriculum-tree-round.png` / `curriculum-tree-tall.png` — **학원/학교 맵** 장식 (`MainHomeMapDecor`). 파일명에 curriculum이 남아 있으나 커리큘럼 기능은 삭제됨 |
+| *(학원 메인 하단 · 복습 활성)* | `main-home-bottom-nav-review.svg` |
+
+> **삭제 (2026-08-11):** 혼자 공부·커리큘럼 전용 에셋
+> (`onboarding-curriculum-course`, `main-screen-long`, `curriculum-start*`, `curriculum-bottom-nav*`,
+> `curriculum-dropdown`, `curriculum-running-character`, `curriculum-main-long*` 등) 및 관련 한글 Export.
 
 학습·연습 에셋 (현재 저장소 — 2026-07-25 전면 ASCII kebab-case로 rename 완료. 한글 파일명 없음):
 
@@ -126,15 +124,29 @@ Figma 파일: `https://www.figma.com/design/NFmd87QHBjrA3r9zV9s8Q7/Haksup`
 | `본문 끝.svg` | `body-text-complete.svg` | 본문 완료 |
 | `유형1.svg` / `유형2.svg` / `유형2정답X.svg` | `grammar-type-1.svg` / `grammar-type-2.svg` / `grammar-type-2-x.svg` | 문법 |
 | `문법정답클릭.svg` | `grammar-answer-click.svg` | 문법 피드백 (미사용 · 보관) |
-| `학습완료화면.svg` / `문법종료시.svg` | `learning-complete.svg` / `grammar-complete.svg` | 완료 |
-| `과제 완료시.svg` | `assignment-complete-v4.svg` | 세션(과제) 완료 · `GrammarCompleteScreen` (파란=재도전, 흰=틀린문제만). 데모 점수만 React 오버레이 |
+| `단어파트 완료화면.svg` | `word-part-complete.svg` | 단어 파트 완료 · `LearningCompleteScreen` (계속하기 / 홈). **2026-08-06 20시 재Export로 교체(`?v=5`)** — 캐릭터가 만세→엄지척으로 바뀌었고 레이아웃·배지 좌표는 이전과 동일. 606×1134, 콘텐츠 x=81.1797부터 523×1134 → `viewBox`만 콘텐츠 프레임으로 바꿔 393×852로 크롭 |
+| `문장,문법 완료화면.svg` | `sentence-grammar-complete.svg` | **2026-08-06 점수대별 3종으로 교체됨 — 더 이상 코드에서 참조하지 않는다.** 아래 3줄 참고 |
+| `문장,문법 완료화면(80점 이상).svg` | `sentence-grammar-complete-high.svg` | 문장·문법 파트 완료 **80점 이상** — 색종이 배경 + 엄지척. 「정말 잘했어요!」 |
+| `문장,문법 완료화면(50점이상 ~80점 미만).svg` | `sentence-grammar-complete-mid.svg` | **50~79점** — 구름 배경 + 시무룩. 「좋아요, 다음엔 더 올려봐요!」 |
+| `문장,문법 완료화면(50점 미만).svg` | `sentence-grammar-complete-low.svg` | **50점 미만** — 빗방울 배경 + 우는 표정. 「속상하죠? 다음엔 더 잘할 수 있어요!」 |
+
+> 문장·문법 완료 3종은 원본 523×1134 → `viewBox` 유지, width/height만 393×852로 바꿔 쓴다.
+> **배지·점수·격려·정답수·버튼 좌표가 세 장 모두 동일**하므로 `part-complete.ts`의 rect는 공유한다.
+> 배경 그라데이션도 셋 다 `#E3F1FF → #F9FDFF`라 텍스트 마스크 위장이 그대로 통한다.
+> 격려 문구는 시안에 구워져 있으니 `encouragementForPartScore`를 바꾸면 SVG도 같이 바꿔야 한다.
+> 교체 전 파일은 `*.svg.bak-pre-2026-08-06`로 남겨 뒀다 (git 미추적이라 덮어쓰면 복구 불가였음).
+| `학습완료화면.svg` / `문법종료시.svg` | `learning-complete.svg`(레거시) / `grammar-complete.svg` | 구 학습완료 · 문법 완료 |
+| `점수 완료화면.svg` / `완료 1·2·3.svg` | `assignment-complete-high/mid/low.svg` | 성/과제 **종합** 완료 (`GrammarCompleteScreen`). **80↑ / 50~79 / 50↓** 캐릭터·격려. 상단 「1반 3회차」필은 에셋에서 제거(`?v=3`) |
+| `네비게이션바.svg` | `nav-bar.svg` | **하단 내비 5칸 공통**(홈·단어장·복습하기·헬스장·전체 · 394×82). 학원/학교 메인과 혼자 공부 메인이 **같은 파일**을 쓴다. 393을 5등분(78.62)한 슬롯이라 코드의 `(i+0.5)/5` 히트 계산과 0.2px 이내로 맞는다. **활성 칸 시안은 1번(홈)뿐** — 다른 탭에 있어도 홈이 진하게 보인다(칸별 시안 필요) |
+| `복습 화면 추가.svg` | `review-empty-card.svg` | 복습하기 「오늘의 맞춤 복습」 카드 **아래 배너**(377×120 · 카드 353×96). 예전 `review-card-banner.svg`는 내용 없는 흰 카드라 빈 상자만 떠 있었다. **원본 3.54MB → 42KB** — 2048×2048 PNG가 69×71 자리에 박혀 있어 보이는 영역만 잘라 3배로 재삽입 |
+| `연속 정답.svg` | `combo-streak-badge.svg` | 종합 완료 화면 「연속 정답」 배지(134×179). **원본의 흰 숫자 path를 제거한 것** — 콤보 수는 `ComboStreakBadge`가 뷰박스 안에 그린다 |
+| `과제 완료시.svg` | `assignment-complete-v4.svg` 등 | (레거시) 세션 완료 구 에셋 |
 | `메인화면.svg` | `main-home-full-map.svg` | (레거시·삭제됨) 이전 학원 맵 슬라이스 — 사용 금지 |
 | `학원학교 학생용 메인화면.svg` | `main-home-academy-map.svg` (+ `main-home-map-long.svg`) | **학원/학교 메인**(`/student/home`) 맵 배경 — 단일 LONG, bridge/segment 없음 (2026-07-28) |
 | (파생·삭제) | `main-home-full-map*.svg` / `map-bridge` / `map-segment` | 잘못 베이크한 슬라이스 — 제거됨 |
 | (제공 PNG) | `map-castle-red-flag.png` | 맵 성 슬롯용 React 오버레이 |
 | (제공 SVG) | `flag.svg` | 학원/학교 메인 시작 깃발 React 오버레이 (하늘 크롭 아래 배치) |
 | `캐릭터 성도착.svg` | `character-castle-arrive.svg` | 학원/학교 메인 · 현재 위치 루핀 배치 **참고용**(렌더 안 함). 기존 맵 성 + `mascot-banzai` |
-| `메인화면LONG.svg` | `main-screen-long.svg` | **혼자 공부 메인**(`/student/curriculum/main`) 맵 배경 — 학원/학교 full-map과 **다른 화면** |
 | `현재학습_CTA카드.svg` | `current-learning-cta-card.svg` | 오늘의 미션 카드 좌표 원본 (미사용 · 보관) |
 | `웹페이지 과제화면.svg` | `web-assignment-screen.svg` | 과제 화면 (미사용 · 보관) |
 | `audio/sentence-*.wav` | (동일) | 영어 예문 오디오 |

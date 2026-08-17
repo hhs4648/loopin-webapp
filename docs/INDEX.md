@@ -40,29 +40,26 @@
 
 ---
 
-## ⚠️ 학생 메인 화면 2종 — 절대 헷갈리지 말 것
+## ⚠️ 학생 메인 — `/student/home`
 
-앱에 **학생 메인 맵이 두 개** 있다. 말하는 사람이 「메인」「학원 메인」「학교 메인」「혼자 공부 메인」이라고 하면 **아래 표를 먼저 보고** 작업한다.  
-**`/student/main` 라우트는 없다.** (구어로 “student/main”이라고 해도 코드 경로는 `/student/home`이다.)
+앱의 **학생 메인**은 학원/학교(선생님 초대) 성 맵 하나다.  
+**`/student/main` 라우트는 없다.** 구어 “메인” / “학원 메인” / “학교 메인” / “student/main” → 모두 **`/student/home`** (`MainHomeScreen`).
 
-| 사용자가 말하는 것 | 실제 라우트 | 구현 | 명세 | 무엇 |
-|--------------------|-------------|------|------|------|
-| **학원/학교 학생 메인** · 선생님 초대 · 과제 성 맵 | **`/student/home`** | `MainHomeScreen` → `AssignmentReceivedScreen` · `src/components/main-home/` | [screens/main-home.md](./screens/main-home.md) | 초대코드 → 성(캐슬) 맵 · 과제 실행 |
-| **혼자 공부 학생 메인** · 커리큘럼 맵 · Day 1·2·3 | **`/student/curriculum/main`** | `CurriculumMainScreen` · `src/components/curriculum-main/` | [screens/curriculum-course.md](./screens/curriculum-course.md) | 내신 코스 생성 후 LONG 맵 · Day 노드 |
+| 사용자가 말하는 것 | 실제 라우트 | 구현 | 명세 |
+|--------------------|-------------|------|------|
+| **학원/학교 학생 메인** · 선생님 초대 · 과제 성 맵 | **`/student/home`** | `MainHomeScreen` → `AssignmentReceivedScreen` · `src/components/main-home/` | [screens/main-home.md](./screens/main-home.md) |
 
 ```
-온보딩 「선생님 초대를 받았어요」 → /student/home
-온보딩 「혼자 공부할래요」     → /student/curriculum → (코스 생성) → /student/curriculum/main
+학생 온보딩 완료 → /student/home (초대코드)
 ```
 
-- 「메인화면 길/캐릭터/성」→ **먼저 어느 메인인지 확인**. 학원·학교면 `main-home`, 혼자 공부면 `curriculum-main`.
-- 에셋도 다름: 학원·학교 = `main-home-academy-map.svg` (LONG 단일) · 혼자 공부 = `main-screen-long.svg`.
+> **삭제 (2026-08-11):** 혼자 공부·커리큘럼 (`/student/curriculum`, `/student/curriculum/main`)은 제품에서 제외했다.
 
 ---
 
 ## 빠른 시작 (에이전트용)
 
-0. **위 「학생 메인 화면 2종」표를 확인** — 학원/학교(`/student/home`) vs 혼자 공부(`/student/curriculum/main`)
+0. 작업 대상이 학원/학교 메인(`/student/home`)인지 확인
 1. 작업 대상 화면을 `uiux.md`에서 플로우 확인
 2. `figma.md`에서 프레임·에셋·오버레이 규칙 확인
 3. `design.md`에서 색상·타이포·프레임 토큰 확인
@@ -99,7 +96,8 @@
 | 1회차 학습 세션 | ✅ 구현 (단어 A·B·C·D) | [screens/learning-session.md](./screens/learning-session.md) · [uiux.md](./uiux.md) §3.6 |
 | 완료·오답 재시도 | ✅ 구현 | [screens/completion-retry.md](./screens/completion-retry.md) |
 | 2회차 성 학습(학습1~4) | ✅ 구현 | [screens/castle-learning.md](./screens/castle-learning.md) |
-| **혼자 공부** 코스 만들기 (`/student/curriculum`) · **혼자 공부 메인** (`/student/curriculum/main`) | ✅ 구현 (목업) | [screens/curriculum-course.md](./screens/curriculum-course.md) |
+| ~~혼자 공부·커리큘럼~~ | ❌ **삭제** (2026-08-11) | — |
+| **복습하기** (하단 탭 `복습노트`) | 🟡 분류별 정답률·목록 + 「지금 시작하기」연습 풀이. 만점 시 분류 감추기·오답 시 오답률/카드 재배치(localStorage). 복습 답안 서버 저장은 미구현 | [screens/review.md](./screens/review.md) |
 | 백엔드 / `loopin-project` 연동 | ✅ 구현 (env 필요 · 미설정 시 비활성) | [student-teacher-sync.md](./student-teacher-sync.md) |
 
 > 참고: `/teacher/home`은 현재 학생 홈과 **동일 UI**를 렌더합니다. 교사용 본 기능은 `loopin-project`로 이전·연동하는 것이 목표입니다.

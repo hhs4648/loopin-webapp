@@ -1,10 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  ONBOARDING_OPTION_CLASS,
-  ONBOARDING_TITLE_CLASS,
+  onboardingContentXStyle,
   onboardingTitleTopStyle,
 } from '../components/onboarding/onboarding-chrome'
+import {
+  ONBOARDING_BODY_CLASS,
+  ONBOARDING_OPTION_LABEL_X,
+  ONBOARDING_TEXT,
+  ONBOARDING_TITLE_CLASS,
+} from '../components/onboarding/onboarding-typography'
+import {
+  CircleCheckbox,
+  NextStepButton,
+  figmaAbsRect,
+} from '../components/onboarding/onboarding-ui'
 import { OnboardingPhoneShell } from '../components/onboarding/OnboardingFigmaFrame'
 import { useBackNavigation } from '../components/navigation/BackNavigationProvider'
 import {
@@ -13,6 +23,18 @@ import {
   getStoredAuth,
   type MemberType,
 } from '../lib/auth'
+
+/**
+ * Figma 에셋이 없는 화면이라 좌표를 직접 잡는다.
+ * 값은 `온보딩_학년선택`(`onboarding-student-04-grade.svg`)과 동일 —
+ * 선택 원 cx=32, 첫 행 cy=244, 행 간격 74.
+ */
+const MEMBER_TYPE_ROWS: { id: MemberType; cy: number; label: string }[] = [
+  { id: 'student', cy: 244, label: '학생' },
+  { id: 'teacher', cy: 318, label: '선생님 (학교)' },
+]
+
+const OPTION_ROW_H = 24
 
 export function MemberTypeScreen() {
   const navigate = useNavigate()
@@ -51,79 +73,47 @@ export function MemberTypeScreen() {
 
   return (
     <OnboardingPhoneShell bgClassName="bg-white">
-      <div
-        className="flex min-h-0 flex-1 flex-col px-6"
-        style={onboardingTitleTopStyle()}
+      <header
+        style={{ ...onboardingTitleTopStyle(), ...onboardingContentXStyle() }}
       >
-        <header>
-          <h1 className={ONBOARDING_TITLE_CLASS}>회원 유형을 선택해주세요</h1>
-        </header>
+        <h1 className={ONBOARDING_TITLE_CLASS}>회원 유형을 선택해주세요</h1>
+      </header>
 
-        <div
-          className="mt-10 flex flex-col gap-7"
-          role="radiogroup"
-          aria-label="회원 유형"
-        >
-          <button
-            type="button"
-            role="radio"
-            aria-checked={selected === 'student'}
-            className={`flex w-full items-center gap-3 bg-transparent p-0 text-left ${ONBOARDING_OPTION_CLASS} ${
-              selected === 'student' ? '' : ''
-            }`}
-            onClick={() => setSelected('student')}
-          >
-            <span
-              className={`flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-2 ${
-                selected === 'student'
-                  ? 'border-[#2AA3FF]'
-                  : 'border-[#D9D9D9]'
-              }`}
+      <div role="radiogroup" aria-label="회원 유형">
+        {MEMBER_TYPE_ROWS.map((row) => (
+          <div key={row.id}>
+            <CircleCheckbox
+              checked={selected === row.id}
+              cx={32}
+              cy={row.cy}
+              label={row.label}
+              hasBakedRing={false}
+              onToggle={() => setSelected(row.id)}
+            />
+            <button
+              type="button"
+              role="radio"
+              aria-checked={selected === row.id}
+              className={`absolute z-[2] flex items-center bg-transparent p-0 text-left ${ONBOARDING_BODY_CLASS} ${ONBOARDING_TEXT}`}
+              style={figmaAbsRect({
+                x: ONBOARDING_OPTION_LABEL_X,
+                y: row.cy - OPTION_ROW_H / 2,
+                w: 330 - ONBOARDING_OPTION_LABEL_X,
+                h: OPTION_ROW_H,
+              })}
+              onClick={() => setSelected(row.id)}
             >
-              <span
-                className={`h-[10px] w-[10px] rounded-full bg-[#2AA3FF] transition-opacity ${
-                  selected === 'student' ? 'opacity-100' : 'opacity-0'
-                }`}
-              />
-            </span>
-            학생
-          </button>
-
-          <button
-            type="button"
-            role="radio"
-            aria-checked={selected === 'teacher'}
-            className={`flex w-full items-center gap-3 bg-transparent p-0 text-left ${ONBOARDING_OPTION_CLASS}`}
-            onClick={() => setSelected('teacher')}
-          >
-            <span
-              className={`flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-2 ${
-                selected === 'teacher'
-                  ? 'border-[#2AA3FF]'
-                  : 'border-[#D9D9D9]'
-              }`}
-            >
-              <span
-                className={`h-[10px] w-[10px] rounded-full bg-[#2AA3FF] transition-opacity ${
-                  selected === 'teacher' ? 'opacity-100' : 'opacity-0'
-                }`}
-              />
-            </span>
-            선생님 (학교)
-          </button>
-        </div>
-
-        <footer className="mt-auto pb-6 pt-6">
-          <button
-            type="button"
-            className="flex h-[52px] w-full items-center justify-center rounded-[10px] bg-[#2AA3FF] font-['Pretendard',sans-serif] text-[16px] font-bold text-white disabled:cursor-not-allowed disabled:bg-[#C4C4C4]"
-            disabled={!selected}
-            onClick={handleNext}
-          >
-            다음
-          </button>
-        </footer>
+              {row.label}
+            </button>
+          </div>
+        ))}
       </div>
+
+      <NextStepButton
+        enabled={selected !== null}
+        onClick={handleNext}
+        hasBakedButton={false}
+      />
     </OnboardingPhoneShell>
   )
 }

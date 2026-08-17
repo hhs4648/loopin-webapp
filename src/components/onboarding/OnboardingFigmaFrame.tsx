@@ -26,7 +26,7 @@ export function OnboardingFigmaFrame({
   children,
 }: OnboardingFigmaFrameProps) {
   return (
-    <div className={`flex min-h-dvh w-full justify-center ${bgClassName}`}>
+    <div className={`flex min-h-full w-full justify-center ${bgClassName}`}>
       <div className="relative aspect-[393/852] w-full max-w-[540px] self-center">
         <img
           src={src}
@@ -57,7 +57,7 @@ export function OnboardingPhoneShell({
   children,
 }: OnboardingPhoneShellProps) {
   return (
-    <div className={`flex min-h-dvh w-full justify-center ${bgClassName}`}>
+    <div className={`flex min-h-full w-full justify-center ${bgClassName}`}>
       <div className="relative aspect-[393/852] w-full max-w-[540px] self-center overflow-hidden">
         <OnboardingChrome />
         <div className="absolute inset-0 flex flex-col">{children}</div>

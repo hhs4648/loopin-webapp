@@ -1,3 +1,5 @@
+import { comboMilestoneIndex } from './combo'
+
 let audioContext: AudioContext | null = null
 
 function getAudioContext(): AudioContext | null {
@@ -98,6 +100,33 @@ export function playAnswerSfx(isCorrect: boolean) {
   }
 
   playWrongAnswerSfx()
+}
+
+/**
+ * 콤보 마일스톤 — 정답음 **위에 얹히는** 짧은 상승 아르페지오.
+ *
+ * 정답음은 각 문제 화면이 내고 있어서 러너에서 끌 수 없다. 그래서 억지로 겹치지 않게
+ * 0.14초 뒤에 시작해 「정답 → 보너스」로 들리게 한다.
+ *
+ * 마일스톤이 오를수록 반음씩 올라가되 **1옥타브(12반음)에서 멈춘다** — 계속 올리면
+ * 후반에 소리가 찢어지고 귀에 거슬린다.
+ */
+export function playComboSfx(combo: number) {
+  const ctx = getAudioContext()
+  if (!ctx) return
+
+  const semitones = Math.min(comboMilestoneIndex(combo), 12)
+  const ratio = Math.pow(2, semitones / 12)
+  const offset = 0.14
+
+  const notes: ChimeNote[] = [
+    { freq: 1046.5 * ratio, at: offset, length: 0.3, volume: 0.15 },
+    { freq: 1318.51 * ratio, at: offset + 0.07, length: 0.32, volume: 0.16 },
+    { freq: 1567.98 * ratio, at: offset + 0.14, length: 0.36, volume: 0.17 },
+    { freq: 2093 * ratio, at: offset + 0.21, length: 0.46, volume: 0.18 },
+  ]
+
+  notes.forEach((note) => playClearChime(ctx, note))
 }
 
 /** 버튼·타일 탭 — 짧고 맑은 클릭감 */

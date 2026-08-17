@@ -2,7 +2,7 @@ export const FRAME_W = 393
 export const FRAME_H = 852
 
 export const WORD_MATCH_ASSETS = {
-  base: '/assets/word-a-start.svg',
+  base: '/assets/word-a-start.svg?v=2',
 } as const
 
 export const FEEDBACK_MS = 500
@@ -36,6 +36,11 @@ const KO_X = 205
 const ROW_Y = [214, 328, 442, 556] as const
 
 export const PAGE_SIZE = 4
+
+/** `fillMatchPage`가 붙인 채움 짝 id (`{base}:fill:{pageKey}:{n}`) */
+export function isFillPairId(id: string): boolean {
+  return id.includes(':fill:')
+}
 
 /** SVG에 구워진 데모 타일을 가리기 위한 8칸 커버 좌표 */
 export const WORD_MATCH_TILE_COVERS = ROW_Y.flatMap((y, row) => [

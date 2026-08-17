@@ -3,8 +3,23 @@ import type { StudentAssignment } from '../../lib/sync/types'
 export const FRAME_W = 393
 export const FRAME_H = 852
 
-/** Figma Export — `praise-calendar-source.png`(실제 SVG) → `praise-calendar.svg` */
-export const PRAISE_CALENDAR_ASSET = '/assets/praise-calendar.svg?v=1'
+/**
+ * Figma `칭찬캘린더.svg` → `praise-calendar.svg` (`?v=3`, 2026-08-11 새 시안).
+ *
+ * 배경이 하늘색 그라디언트에서 **흰색**으로, 달성 카드가 흰색에서 **연한 파랑
+ * 그라디언트 + 장식 원 + 테두리**로 바뀌었다. 좌표는 예전 시안과 완전히 같아서
+ * 오버레이 위치는 그대로 쓴다.
+ *
+ * 넣으면서 지운 것:
+ * - OS가 그리는 것들 — 시계·셀룰러·와이파이·배터리·홈 인디케이터
+ * - 달성 카드 안의 **예시 데이터**(75% 진행바·히어로 얼굴·제목·부제).
+ *   예전엔 카드를 흰 사각으로 통째로 덮고 그 위에 실데이터를 그렸는데, 새 시안은
+ *   카드 자체가 그림이라 덮으면 그라디언트도 장식 원도 다 가려진다. 그래서 카드는
+ *   남기고 **안의 예시만** 걷어냈다.
+ *
+ * 원본은 `_backup/praise-calendar.v2.svg`.
+ */
+export const PRAISE_CALENDAR_ASSET = '/assets/praise-calendar.svg?v=3'
 
 export const PRAISE_STATUS_FACE_ASSETS = {
   pass: '/assets/praise-status-pass.png',
@@ -47,20 +62,67 @@ export const PROGRESS_TITLE = { x: 118, y: 178, w: 230, h: 28 }
 export const PROGRESS_SUBTITLE = { x: 118, y: 208, w: 230, h: 20 }
 export const PROGRESS_TRACK = { x: 44, y: 249, w: 305, h: 10 }
 
-/** Figma — 달력 카드 (범례·하단 탭은 SVG 유지) */
-export const CALENDAR_CARD = { x: 20, y: 299, w: 353, h: 332 }
+/**
+ * Figma — 달력 카드 (범례·하단 탭은 SVG 유지).
+ * 시안 실측: y 299 → 630.9. 달력 내용은 React가 전부 그리므로 카드는 흰 덮개로
+ * 가리고 테두리만 다시 그린다(`CARD_BORDER_COLOR`).
+ * 5주 그리드는 마지막 줄 아래 623까지라 카드 안에 들어가고, 6주는
+ * `getCellLayout`이 세로로 압축한다.
+ */
+export const CALENDAR_CARD = { x: 20, y: 299, w: 353, h: 331.9 }
+
+/** 카드 테두리 — 새 시안(`?v=3`)에서 달성·달력·범례 카드가 모두 이 색 1px */
+export const CARD_BORDER_COLOR = '#EEF1F5'
+
+/** 그리드 하단 여백 — Today 라벨(`-bottom-3`)·카드 라운드 */
+export const GRID_BOTTOM_INSET = 16
 
 export const WEEKDAY_Y = 316
 export const WEEKDAY_CENTERS_X = [55.1, 102.4, 149.4, 196.5, 243.6, 290.6, 337.5] as const
 
-export const GRID_ORIGIN = { x: 36, y: 339 }
-export const CELL_W = 38
-export const CELL_H = 48
-export const COL_GAP = 9
-export const ROW_GAP = 8
+/*
+  칸을 키우고 **간격을 그만큼 줄여 피치는 그대로** 뒀다(가로 47 · 세로 56).
+  피치가 바뀌면 요일 머리글·카드 여백까지 전부 다시 맞춰야 하는데, 원한 건
+  「이모티콘을 크게」 하나였다. `GRID_ORIGIN.x`만 2px 당겨서 칸 중심을 요일
+  머리글(`WEEKDAY_CENTERS_X`)에 다시 맞춘다.
+*/
+export const GRID_ORIGIN = { x: 34, y: 339 }
+export const CELL_W = 42
+export const CELL_H = 52
+export const COL_GAP = 5
+export const ROW_GAP = 4
 export const CELL_PITCH_X = CELL_W + COL_GAP
 export const CELL_PITCH_Y = CELL_H + ROW_GAP
-export const FACE_SIZE = 30
+/** 칸(42×52) 안에서 날짜 숫자·여백을 뺀 나머지를 얼굴이 다 쓴다 */
+export const FACE_SIZE = 36
+
+export type CellLayout = {
+  pitchY: number
+  cellH: number
+  faceSize: number
+}
+
+/** 해당 월이 몇 주 그리드인지 (월 시작 요일 포함) */
+export function weekCountForMonth(year: number, monthIndex: number): number {
+  const first = new Date(year, monthIndex, 1)
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
+  const mondayOffset = (first.getDay() + 6) % 7
+  return Math.ceil((mondayOffset + daysInMonth) / 7)
+}
+
+/**
+ * 5주까지는 시안 피치 유지. 6주(예: 2026-08)는 카드 안에 맞춰 세로 압축.
+ */
+export function getCellLayout(weekCount: number): CellLayout {
+  if (weekCount <= 5) {
+    return { pitchY: CELL_PITCH_Y, cellH: CELL_H, faceSize: FACE_SIZE }
+  }
+  const maxBottom = CALENDAR_CARD.y + CALENDAR_CARD.h - GRID_BOTTOM_INSET
+  const pitchY = (maxBottom - GRID_ORIGIN.y) / weekCount
+  const cellH = Math.max(36, pitchY - 4)
+  const faceSize = Math.max(24, Math.min(FACE_SIZE, cellH - 15))
+  return { pitchY, cellH, faceSize }
+}
 
 export const STATUS_META: Record<
   PraiseDayStatus,
@@ -95,12 +157,12 @@ export function figmaRectStyle(rect: { x: number; y: number; w: number; h: numbe
   }
 }
 
-export function cellRectStyle(col: number, row: number) {
+export function cellRectStyle(col: number, row: number, layout: CellLayout) {
   return figmaRectStyle({
     x: GRID_ORIGIN.x + col * CELL_PITCH_X,
-    y: GRID_ORIGIN.y + row * CELL_PITCH_Y,
+    y: GRID_ORIGIN.y + row * layout.pitchY,
     w: CELL_W,
-    h: CELL_H,
+    h: layout.cellH,
   })
 }
 

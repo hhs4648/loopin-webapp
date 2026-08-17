@@ -1,15 +1,15 @@
 /**
  * Figma `메인화면(과제 부여 받은후)` 하단 탭바를 뷰포트에 고정.
- * (아이콘/라벨은 SVG 시안 — React로 다시 그리지 않음)
+ * (아이콘/라벨은 SVG 시안 — `activeId`에 따라 홈/복습 활성 에셋 전환)
  *
  * 히트 영역은 탭 칸 전체가 아니라 아이콘·라벨 근처(칸 폭의 ~52%)만.
  */
 import type { MainHomeNavTabId } from './assignment-home'
 import {
   FRAME_H,
-  MAIN_HOME_ASSETS,
   MAIN_HOME_NAV_TABS,
   NAV_H,
+  mainHomeNavAssetFor,
 } from './assignment-home'
 
 /** 탭 슬롯 대비 클릭 가능 폭 비율 (좌우 여백으로 오탭 방지) */
@@ -23,6 +23,7 @@ export function MainHomeBottomNav({
   onSelect?: (id: MainHomeNavTabId) => void
 }) {
   const tabCount = MAIN_HOME_NAV_TABS.length
+  const asset = mainHomeNavAssetFor(activeId)
 
   return (
     <div
@@ -30,7 +31,7 @@ export function MainHomeBottomNav({
       style={{ height: `${(NAV_H / FRAME_H) * 100}%` }}
     >
       <img
-        src={MAIN_HOME_ASSETS.bottomNav}
+        src={asset}
         alt=""
         aria-hidden
         draggable={false}

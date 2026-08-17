@@ -24,12 +24,23 @@
 
 ## 레이아웃
 
-- 상단 `IphoneStatusBar` (시간·셀룰러·와이파이·배터리)
-- 그 아래 뒤로가기 → 제목 → 옵션 → 다음
+**Figma export 에셋이 없는 유일한 온보딩 화면**이라 좌표를 직접 잡는다.
+값은 `온보딩_학년선택`(`onboarding-student-04-grade.svg`)과 **동일**하게 맞춘다 —
+다른 온보딩 화면과 제목·옵션·버튼이 같은 자리에 오도록.
+
+| 요소 | 값 (393×852) |
+|------|--------------|
+| 제목 | 박스 top **105**, 좌측 **20**, `ONBOARDING_TITLE` (24 Bold/32) |
+| 선택 원 | cx **32**, cy **244** / **318** (간격 74), 지름 **24** |
+| 옵션 라벨 | x **68**, `ONBOARDING_BODY` (16 SemiBold) |
+| 다음 버튼 | x=30 y=741 w=333 h=60 r=16, `NextStepButton hasBakedButton={false}` |
+
+크기·색은 전부 `onboarding-typography.ts` 토큰이다. 직접 px를 쓰지 않는다.
 
 ## 접근성
 
-- 라디오형 옵션, 선택 상태 시각 표시 (`.radio-option`)
+- `role="radiogroup"` + 옵션 `role="radio"` / `aria-checked`
+- 선택 원은 `CircleCheckbox`(`aria-pressed`) — 다른 온보딩 화면과 동일 컴포넌트
 
 ## 주의사항
 

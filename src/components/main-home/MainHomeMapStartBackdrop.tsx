@@ -1,15 +1,18 @@
 import {
   FRAME_H,
-  MAIN_HOME_SKY,
-} from './session-round-dropdown'
+  MAIN_HOME_SKY_GRADIENT,
+} from './assignment-home'
+import { MainHomeMapCanvas } from './MainHomeMapCanvas'
+import { MainHomeMapDecor } from './MainHomeMapDecor'
+import { MapCastleSprite } from './MapCastleSprite'
 import { MapCharacter } from './MapCharacter'
 import {
   fullMapRectStyle,
+  getCastleAccentColor,
   MAIN_HOME_ASSETS,
   MAIN_HOME_GRASS,
-  MAP_CONTENT_H,
+  MAP_CASTLE_SLOTS,
   MAP_SCROLL_H,
-  MAP_SKY_CROP,
   MASCOT_WAVE_RECT,
   NAV_H,
   SKY_FIXED_H,
@@ -28,7 +31,7 @@ export function MainHomeMapStartBackdrop() {
         className="absolute inset-x-0 top-0 z-[1]"
         style={{
           height: `${(SKY_FIXED_H / FRAME_H) * 100}%`,
-          background: MAIN_HOME_SKY,
+          background: MAIN_HOME_SKY_GRADIENT,
         }}
       />
 
@@ -47,17 +50,18 @@ export function MainHomeMapStartBackdrop() {
             background: MAIN_HOME_GRASS,
           }}
         >
-          <div
-            className="absolute inset-x-0"
-            style={{
-              top: `${(-MAP_SKY_CROP / MAP_SCROLL_H) * 100}%`,
-              height: `${(MAP_CONTENT_H / MAP_SCROLL_H) * 100}%`,
-              backgroundImage: `url(${MAIN_HOME_ASSETS.map})`,
-              backgroundSize: '100% 100%',
-              backgroundPosition: 'left top',
-              backgroundRepeat: 'no-repeat',
-            }}
-          />
+          <MainHomeMapCanvas />
+          <MainHomeMapDecor />
+
+          {/* 성 — 배경이 벡터가 되면서 더 이상 구워져 있지 않다 (본 화면과 동일하게 색도 다르게) */}
+          {MAP_CASTLE_SLOTS.slice(0, 4).map((castle, index) => (
+            <MapCastleSprite
+              key={castle.id}
+              color={getCastleAccentColor(index)}
+              className="absolute z-[1] select-none"
+              style={fullMapRectStyle(castle.x, castle.y, castle.w, castle.h)}
+            />
+          ))}
 
           <img
             src={MAIN_HOME_ASSETS.startFlag}

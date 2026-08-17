@@ -5,10 +5,12 @@ import {
 } from '../exercise/exercise-typography'
 import { ExerciseProgressBar, BakedProgressBarMask } from '../exercise/ExerciseProgressBar'
 import { FigmaAssetFrame } from '../FigmaAssetFrame'
+import { BACK_MASK_WHITE_HEADER } from '../navigation/figma-navigation'
 import {
   buildTilesFromPairs,
   FEEDBACK_MS,
   figmaRectStyle,
+  isFillPairId,
   isMatchingPair,
   pickNextPage,
   WORD_MATCH_ASSETS,
@@ -19,7 +21,11 @@ import {
 } from './word-match'
 import { sessionWordMatchId } from '../exercise/session-results'
 import { playAnswerSfx, playTapSfx } from '../exercise/answer-sfx'
-import { preloadEnglishWordAudio, speakEnglishWord } from '../word-quiz/word-quiz'
+import {
+  preloadEnglishWordAudio,
+  preloadEnglishWords,
+  speakEnglishWord,
+} from '../word-quiz/word-quiz'
 import { RetryWrongCompleteSheet } from '../exercise/RetryWrongCompleteSheet'
 import type { RetryWrongExerciseProps } from '../exercise/retry-wrong-ui'
 
@@ -87,11 +93,17 @@ export function WordMatchScreen({
 }: WordMatchScreenProps) {
   const allPairs = useMemo(() => {
     const base = pairs ?? []
-    if (!retryPairIds) return base
-    return base.filter((pair) => retryPairIds.includes(pair.id))
+    const scoped = retryPairIds
+      ? base.filter((pair) => retryPairIds.includes(pair.id))
+      : base
+    // 필수 짝만 — 예전 섹션 빌더가 pairs에 넣었던 채움(:fill:)은 제외
+    return scoped.filter((pair) => !isFillPairId(pair.id))
   }, [pairs, retryPairIds])
 
-  const pool = useMemo(() => fillPool ?? allPairs, [fillPool, allPairs])
+  const pool = useMemo(() => {
+    const base = fillPool ?? pairs ?? []
+    return base.filter((pair) => !isFillPairId(pair.id))
+  }, [fillPool, pairs])
 
   const totalPairCount = allPairs.length
   const pageKeyRef = useRef(0)
@@ -119,6 +131,16 @@ export function WordMatchScreen({
   useEffect(() => {
     void preloadEnglishWordAudio()
   }, [])
+
+  /** 실제 출제 영어 — 클릭 전에 클라우드 TTS 받아 두어 즉시 재생 */
+  useEffect(() => {
+    const english = [
+      ...allPairs.map((pair) => pair.english),
+      ...pool.map((pair) => pair.english),
+      ...pagePairs.map((pair) => pair.english),
+    ]
+    void preloadEnglishWords(english)
+  }, [allPairs, pool, pagePairs])
 
   /** 짝이 없으면(데모 word-match 0문항) 다음 섹션으로 바로 넘김 */
   const onCompleteRef = useRef(onComplete)
@@ -167,7 +189,12 @@ export function WordMatchScreen({
   const handleTileClick = (tile: WordTile) => {
     if (completed || locked || pageMatchedIds.has(tile.pairId)) return
 
-    playTapSfx()
+    // 영어 타일: TTS를 탭음보다 먼저 — 클릭 즉시 발음
+    if (tile.side === 'en') {
+      speakEnglishWord(tile.label, { force: true })
+    } else {
+      playTapSfx()
+    }
 
     if (selectedIds.includes(tile.id)) {
       setSelectedIds((ids) => ids.filter((id) => id !== tile.id))
@@ -192,18 +219,18 @@ export function WordMatchScreen({
 
     if (isMatchingPair(first, tile)) {
       setLocked(true)
-      const englishWord = [first, tile].find((entry) => entry.side === 'en')?.label
-      if (englishWord) {
-        speakEnglishWord(englishWord, { force: true })
-      }
       playAnswerSfx(true)
       setFeedback({ kind: 'correct', tileIds: [first.id, tile.id] })
       setSelectedIds([])
 
       feedbackTimerRef.current = window.setTimeout(() => {
         const pairId = tile.pairId
+        const isFill = isFillPairId(pairId)
         const isCorrect = !pairHadWrongRef.current.has(pairId)
-        onAnswer?.(answerIdForPair(pairId), isCorrect)
+        // 채움 짝은 화면용 — 채점·진행도에는 넣지 않음
+        if (!isFill) {
+          onAnswer?.(answerIdForPair(pairId), isCorrect)
+        }
 
         const nextPageMatched = new Set(pageMatchedIds).add(pairId)
         setPageMatchedIds(nextPageMatched)
@@ -214,9 +241,13 @@ export function WordMatchScreen({
         setFeedback(null)
         setLocked(false)
 
-        if (nextGlobalMatched.size >= totalPairCount) {
-          // 마지막 짝까지 다 맞추면 "계속하기" 버튼 없이 스무스하게 다음 화면으로 넘어간다.
-          // (최종 오답 재도전 섹션은 예외 — 완료 시트에서 홈으로 이동하는 버튼이 필요함)
+        const requiredDone = allPairs.every((pair) =>
+          nextGlobalMatched.has(pair.id),
+        )
+        const pageDone = nextPageMatched.size >= pagePairs.length
+
+        // 필수 짝을 다 맞춰도, 화면에 남은 채움 짝까지 맞춰야 다음으로 넘어감
+        if (requiredDone && pageDone) {
           if (isFinalRetrySection) {
             setCompleted(true)
           } else {
@@ -225,7 +256,7 @@ export function WordMatchScreen({
           return
         }
 
-        if (nextPageMatched.size >= pagePairs.length) {
+        if (pageDone) {
           advanceToNextPage(nextGlobalMatched)
         }
       }, FEEDBACK_MS)
@@ -246,14 +277,14 @@ export function WordMatchScreen({
   }
 
   return (
-    <FigmaAssetFrame src={WORD_MATCH_ASSETS.base} alt="단어 매칭" bgClassName="bg-white">
+    <FigmaAssetFrame backButtonMask={BACK_MASK_WHITE_HEADER} src={WORD_MATCH_ASSETS.base} alt="단어 매칭" bgClassName="bg-white">
       <div className="absolute inset-0 z-10">
         {hideProgressBar ? (
           <BakedProgressBarMask />
         ) : (
           <ExerciseProgressBar
             sessionOffset={sessionOffset}
-            completedInSection={globalMatchedIds.size}
+            completedInSection={allPairs.filter((pair) => globalMatchedIds.has(pair.id)).length}
             totalSteps={sessionTotalSteps}
           />
         )}
@@ -292,3 +323,4 @@ export function WordMatchScreen({
     </FigmaAssetFrame>
   )
 }
+

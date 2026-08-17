@@ -13,7 +13,9 @@ export function MapCharacter({ style }: MapCharacterProps) {
       alt=""
       aria-hidden
       draggable={false}
-      className="pointer-events-none absolute z-[2] object-contain object-bottom"
+      // object-contain만 — `startMascotBox()`가 정사각+여백 비율로 발끝을 맞춘다.
+      // object-bottom을 쓰면 여백 역산과 어긋날 수 있다.
+      className="pointer-events-none absolute z-[2] object-contain"
       style={style}
     />
   )

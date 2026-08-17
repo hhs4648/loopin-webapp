@@ -1,7 +1,7 @@
 export const FRAME_W = 393
 export const FRAME_H = 852
 
-export const GRAMMAR_TYPE_1_ASSET = '/assets/grammar-type-1.svg'
+export const GRAMMAR_TYPE_1_ASSET = '/assets/grammar-type-1.svg?v=2'
 
 export type GrammarType1QuestionId = string
 

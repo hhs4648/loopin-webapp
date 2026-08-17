@@ -1,0 +1,10 @@
+﻿.git
+.cursor
+tmp-castle-align
+tmp-curriculum
+tmp-*.*
+*.png.png
+build-output.txt
+flag-start-raster.png
+agent-transcripts
+tsconfig.tsbuildinfo

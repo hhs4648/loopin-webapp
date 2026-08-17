@@ -9,10 +9,11 @@ import {
   type GrammarType2Question,
 } from '../../components/grammar-type-2/grammar-type-2'
 import type { WordMatchPair } from '../../components/word-match/word-match'
-import { fillMatchPage, PAGE_SIZE as MATCH_PAGE_SIZE } from '../../components/word-match/word-match'
+import { PAGE_SIZE as MATCH_PAGE_SIZE } from '../../components/word-match/word-match'
 import type { WordQuizQuestion } from '../../components/word-quiz/word-quiz'
 import type { WordSpellQuestion } from '../../components/word-spell/word-spell'
 import type { ContentSnapshot, ProblemGrammarSnapshot } from '../../lib/sync/types'
+import { refineSparseChunks } from './refine-body-chunks'
 
 export type AssignmentSection =
   | { kind: 'word-match'; id: string; pairs: WordMatchPair[]; fillPool: WordMatchPair[] }
@@ -83,9 +84,9 @@ function chunkPages<T>(items: T[], size: number): T[][] {
 }
 
 /**
- * 마지막 페이지가 4짝보다 적게 나오면, 같은 과제(fillPool)에서 랜덤으로
- * 짝을 더 뽑아 4짝을 채운다. 데모 단어는 사용하지 않는다.
- * @see fillMatchPage in word-match.ts
+ * 마지막 페이지가 4짝보다 적게 나오면, WordMatchScreen이 같은 과제(fillPool)에서
+ * 랜덤으로 짝을 더 뽑아 4짝을 채운다. 데모 단어는 사용하지 않는다.
+ * @see fillMatchPage / pickNextPage in word-match.ts
  */
 
 function buildWordMatchSections(snapshot: ContentSnapshot): AssignmentSection[] {
@@ -101,10 +102,11 @@ function buildWordMatchSections(snapshot: ContentSnapshot): AssignmentSection[] 
       })),
   )
 
+  // pairs = 이번 페이지 필수 짝만 (채움은 WordMatchScreen이 fillPool로 처리)
   return chunkPages(pairs, MATCH_PAGE_SIZE).map((page, index) => ({
     kind: 'word-match' as const,
     id: `word-match:${index}`,
-    pairs: fillMatchPage(page, pairs, index),
+    pairs: page,
     fillPool: pairs,
   }))
 }
@@ -137,7 +139,7 @@ function buildWordListenMatchSections(
   return chunkPages(pairs, MATCH_PAGE_SIZE).map((page, index) => ({
     kind: 'word-listen-match' as const,
     id: `word-listen-match:${index}`,
-    pairs: fillMatchPage(page, pairs, `listen:${index}`),
+    pairs: page,
     fillPool: pairs,
   }))
 }
@@ -210,7 +212,10 @@ function buildBodyASections(snapshot: ContentSnapshot): AssignmentSection[] {
 
   const questions: BodyTextAQuestion[] = []
   for (const sentence of snapshot.sentences) {
-    const segments = splitChunks(sentence.chunksKo, sentence.korean)
+    const segments = refineSparseChunks(
+      splitChunks(sentence.chunksKo, sentence.korean),
+      { lang: 'ko' },
+    )
     if (segments.length < 2) continue
     questions.push({
       id: `${sentence.id}:translate`,
@@ -230,7 +235,10 @@ function buildBodyBSections(snapshot: ContentSnapshot): AssignmentSection[] {
 
   const questions: BodyTextBQuestion[] = []
   for (const sentence of snapshot.sentences) {
-    const segments = splitChunks(sentence.chunksEn, sentence.english)
+    const segments = refineSparseChunks(
+      splitChunks(sentence.chunksEn, sentence.english),
+      { lang: 'en' },
+    )
       .map(normalizeBodyTextBChunk)
       .filter(Boolean)
     if (segments.length < 2) continue
@@ -252,6 +260,12 @@ function buildBodyCSections(snapshot: ContentSnapshot): AssignmentSection[] {
 
   const questions: BodyTextCQuestion[] = []
   for (const sentence of snapshot.sentences) {
+    // 한글 지문·영어 정답이 없으면 문제로 만들지 않는다 (빈 문제를 내느니 안 내는 게 낫다).
+    // 교사측 content-snapshot.ts에서 korean이 빈 문자열로 넘어올 수 있다.
+    const promptKo = stripBrackets(sentence.korean)
+    const exampleEn = stripBrackets(sentence.english)
+    if (!promptKo || !exampleEn) continue
+
     const keywords = sentence.hint
       ? sentence.hint
           .split(/[,/]/)
@@ -259,12 +273,16 @@ function buildBodyCSections(snapshot: ContentSnapshot): AssignmentSection[] {
           .filter(Boolean)
           .slice(0, 3)
       : splitChunks(sentence.chunksEn, sentence.english).slice(0, 3)
+    const fallbackKeyword = exampleEn.split(/\s+/).filter(Boolean)[0]
+    const resolvedKeywords =
+      keywords.length > 0 ? keywords : fallbackKeyword ? [fallbackKeyword] : []
+    if (resolvedKeywords.length === 0) continue
 
     questions.push({
       id: `${sentence.id}:write`,
-      promptKo: stripBrackets(sentence.korean),
-      keywords: keywords.length > 0 ? keywords : [stripBrackets(sentence.english).split(/\s+/)[0] ?? ''],
-      exampleEn: stripBrackets(sentence.english),
+      promptKo,
+      keywords: resolvedKeywords,
+      exampleEn,
     })
   }
 
@@ -294,7 +312,8 @@ function buildGrammarType1Sections(snapshot: ContentSnapshot): AssignmentSection
     // 여기서 grammar-type-2 섹션을 따로 만들면 X 교정 UI가 한 번 더 나와 "B유형이 따로" 보인다.
     if (choices.length !== 2) continue
 
-    const [before, after = ''] = grammar.english.split(target)
+    const parts = splitAtFirst(grammar.english, target)
+    if (!parts) continue
     const correct = choices[0]!
     const options = shuffle(choices).map((label, index) => ({
       id: `${grammar.id}:opt:${index}:${label}`,
@@ -306,8 +325,8 @@ function buildGrammarType1Sections(snapshot: ContentSnapshot): AssignmentSection
     twoOption.push({
       id: `${grammar.id}:choice`,
       maskPassage: true,
-      passageBefore: before.trimEnd(),
-      passageAfter: after.trimStart(),
+      passageBefore: parts.before.trimEnd(),
+      passageAfter: parts.after.trimStart(),
       options,
       correctOptionId: correctOption.id,
     })
@@ -322,6 +341,23 @@ function buildGrammarType1Sections(snapshot: ContentSnapshot): AssignmentSection
         },
       ]
     : []
+}
+
+/**
+ * target이 처음 나오는 위치에서만 앞뒤로 나눈다.
+ * String.split(target)은 target이 두 번 이상 나오면 세 번째 조각부터 버려져
+ * 학생에게 뒷부분이 잘린 문장이 보인다.
+ */
+function splitAtFirst(
+  text: string,
+  target: string,
+): { before: string; after: string } | null {
+  const index = text.indexOf(target)
+  if (index < 0) return null
+  return {
+    before: text.slice(0, index),
+    after: text.slice(index + target.length),
+  }
 }
 
 function parseGrammarChoices(choices: string | undefined): string[] {

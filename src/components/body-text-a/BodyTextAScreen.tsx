@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { refineSparseChunks } from '../../features/assignments/refine-body-chunks'
 import { shuffleArray } from '../../lib/shuffle'
 import {
   EXERCISE_COACH_LINE_CLASS,
@@ -7,9 +8,16 @@ import {
   EXERCISE_OPTION_EN_CLASS,
   EXERCISE_PASSAGE_EN_CLASS,
 } from '../exercise/exercise-typography'
+import { ChunkBankTile } from '../exercise/ChunkBankTile'
+import { ChunkOrderRow } from '../exercise/ChunkOrderRow'
 import { ExerciseProgressBar, BakedProgressBarMask } from '../exercise/ExerciseProgressBar'
+import {
+  ExpandablePassageBox,
+  shiftRect,
+} from '../exercise/ExpandablePassageBox'
 import { ExerciseContinueButton } from '../exercise/ExerciseContinueButton'
 import { FigmaAssetFrame } from '../FigmaAssetFrame'
+import { BACK_MASK_WHITE_HEADER } from '../navigation/figma-navigation'
 import {
   BODY_TEXT_A_ASSET,
   BODY_TEXT_A_PASSAGE,
@@ -54,15 +62,12 @@ type BodyTextAScreenProps = {
 
 type BodyResult = 'playing' | 'retry' | 'correct' | 'wrong'
 
+/** 제출(~y=751)이 가려지지 않게 — 지문 성장 상한 ≈64px */
+const BODY_TEXT_A_PASSAGE_MAX_BOTTOM =
+  BODY_TEXT_A_PASSAGE.y + BODY_TEXT_A_PASSAGE.h + 64
+
 function segmentTileClass() {
   return 'rounded-[12px] border-[1.5px] border-[#C9D9EE] bg-white px-3 py-2 shadow-[0_2px_6px_rgba(80,120,180,0.08)]'
-}
-
-function placedSegmentClass(isDragging: boolean, isMarkedWrong = false) {
-  const border = isMarkedWrong ? 'border-[#FF8AC8]' : 'border-[#3C86FF]'
-  return `rounded-lg border bg-white px-2 py-1 shadow-[0_1px_4px_rgba(60,134,255,0.1)] ${
-    isDragging ? `cursor-grabbing ${border} opacity-60` : `cursor-grab ${border}`
-  }`
 }
 
 export function BodyTextAScreen({
@@ -77,8 +82,14 @@ export function BodyTextAScreen({
   onRetryFlowHome,
 }: BodyTextAScreenProps) {
   // questions === [] → 오답 없음(스킵). undefined → 전체 은행.
+  // 청크 ≤5개면 공백 단위로 한 번 더 쪼갠다(과제·데모 공통).
   const [activeQuestions] = useState(() =>
-    shuffleArray([...(questions ?? BODY_TEXT_A_QUESTIONS)]),
+    shuffleArray(
+      [...(questions ?? BODY_TEXT_A_QUESTIONS)].map((q) => ({
+        ...q,
+        segments: refineSparseChunks(q.segments, { lang: 'ko' }),
+      })),
+    ),
   )
   const [questionIndex, setQuestionIndex] = useState(0)
   const question = activeQuestions[questionIndex]
@@ -92,12 +103,12 @@ export function BodyTextAScreen({
     question ? buildBodyTextATiles(question) : [],
   )
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [result, setResult] = useState<BodyResult>('playing')
   const [retryUsed, setRetryUsed] = useState(false)
   /** 재시도 진입 시 틀린 조각 id — 재배열해도 테두리 고정(정답 미리보기 방지) */
   const [frozenWrongIds, setFrozenWrongIds] = useState<Set<string>>(() => new Set())
-  const didDragRef = useRef(false)
+  const [passageGrowth, setPassageGrowth] = useState(0)
+  const sentenceBoxRef = useRef<HTMLDivElement>(null)
 
   const selectedTiles = useMemo(
     () =>
@@ -151,6 +162,10 @@ export function BodyTextAScreen({
   }, [])
 
   useEffect(() => {
+    setPassageGrowth(0)
+  }, [question?.id])
+
+  useEffect(() => {
     if (!question) return
     const timer = window.setTimeout(() => {
       speakEnglishText(question.exampleEn, { audioKey: question.id })
@@ -161,63 +176,39 @@ export function BodyTextAScreen({
   const resetQuestionState = (nextQuestion: BodyTextAQuestion) => {
     setTiles(buildBodyTextATiles(nextQuestion))
     setSelectedIds([])
-    setDragIndex(null)
-    didDragRef.current = false
     setRetryUsed(false)
     setFrozenWrongIds(new Set())
     setResult('playing')
   }
 
-  const handleSegmentTileClick = (tile: BodyTextATile) => {
-    if (!isPlaying || selectedIds.includes(tile.id)) return
-    playTapSfx()
-    setSelectedIds((prev) => [...prev, tile.id])
-  }
-
-  const handlePlacedSegmentClick = (index: number) => {
-    if (!isPlaying || didDragRef.current) {
-      didDragRef.current = false
-      return
-    }
-    playTapSfx()
-    setSelectedIds((prev) => prev.slice(0, index))
-  }
-
-  const reorderSelectedIds = (fromIndex: number, toIndex: number) => {
-    if (fromIndex === toIndex) return
+  const insertBankTile = (tile: BodyTextATile, insertIndex: number) => {
+    if (!isPlaying) return
     setSelectedIds((prev) => {
+      if (prev.includes(tile.id)) return prev
+      playTapSfx()
       const next = [...prev]
-      const [moved] = next.splice(fromIndex, 1)
-      next.splice(toIndex, 0, moved)
+      const at = Math.max(0, Math.min(insertIndex, next.length))
+      next.splice(at, 0, tile.id)
       return next
     })
   }
 
-  const handleDragStart = (event: DragEvent, index: number) => {
+  const handlePlacedTap = (index: number) => {
     if (!isPlaying) return
-    didDragRef.current = false
-    setDragIndex(index)
-    event.dataTransfer.effectAllowed = 'move'
-    event.dataTransfer.setData('text/plain', String(index))
+    playTapSfx()
+    setSelectedIds((prev) => prev.slice(0, index))
   }
 
-  const handleDrag = () => {
-    didDragRef.current = true
-  }
-
-  const handleDragEnd = () => {
-    setDragIndex(null)
-  }
-
-  const handleDragOver = (event: DragEvent) => {
-    event.preventDefault()
-    event.dataTransfer.dropEffect = 'move'
-  }
-
-  const handleDrop = (targetIndex: number) => {
-    if (!isPlaying || dragIndex === null) return
-    reorderSelectedIds(dragIndex, targetIndex)
-    setDragIndex(null)
+  const reorderSelectedIds = (fromIndex: number, insertAmongRemaining: number) => {
+    setSelectedIds((prev) => {
+      if (fromIndex < 0 || fromIndex >= prev.length) return prev
+      const next = [...prev]
+      const [moved] = next.splice(fromIndex, 1)
+      if (!moved) return prev
+      const at = Math.max(0, Math.min(insertAmongRemaining, next.length))
+      next.splice(at, 0, moved)
+      return next
+    })
   }
 
   const handleSubmit = () => {
@@ -274,7 +265,7 @@ export function BodyTextAScreen({
   }
 
   return (
-    <FigmaAssetFrame src={BODY_TEXT_A_ASSET} alt="본문 A" bgClassName="bg-white">
+    <FigmaAssetFrame backButtonMask={BACK_MASK_WHITE_HEADER} src={BODY_TEXT_A_ASSET} alt="본문 A" bgClassName="bg-white">
       <div className={`absolute inset-0 z-10 ${showFeedback ? 'pointer-events-none' : ''}`}>
         {hideProgressBar ? (
           <BakedProgressBarMask />
@@ -294,26 +285,24 @@ export function BodyTextAScreen({
         <div
           aria-hidden
           className="pointer-events-none absolute z-[2] bg-white"
-          style={figmaRectStyle(BODY_TEXT_A_HINT_GAP_MASK)}
+          style={figmaRectStyle(shiftRect(BODY_TEXT_A_HINT_GAP_MASK, passageGrowth))}
         />
         {/* 앱 전체 폭 기준 가운데 — 스피커는 위쪽 별도 행 */}
-        <div
-          className="pointer-events-none absolute z-[3] flex items-center justify-center px-2 py-1"
-          style={figmaRectStyle(BODY_TEXT_A_PASSAGE)}
+        <ExpandablePassageBox
+          rect={BODY_TEXT_A_PASSAGE}
+          maxBottom={BODY_TEXT_A_PASSAGE_MAX_BOTTOM}
+          contentKey={question.id}
+          onGrowthChange={setPassageGrowth}
+          className="pointer-events-none absolute z-[3]"
+          contentClassName="flex w-full items-center justify-center px-2 py-1"
         >
           <p
             className={`w-full whitespace-normal ${EXERCISE_PASSAGE_EN_CLASS}`}
-            style={{
-              display: '-webkit-box',
-              WebkitBoxOrient: 'vertical',
-              WebkitLineClamp: 4,
-              overflow: 'hidden',
-              overflowWrap: 'anywhere',
-            }}
+            style={{ overflowWrap: 'anywhere' }}
           >
             {question.exampleEn}
           </p>
-        </div>
+        </ExpandablePassageBox>
 
         <button
           type="button"
@@ -357,41 +346,28 @@ export function BodyTextAScreen({
         <div
           aria-hidden
           className="pointer-events-none absolute bg-[#F6F9FD]"
-          style={figmaRectStyle(BODY_TEXT_A_SENTENCE_BOX)}
+          style={figmaRectStyle(shiftRect(BODY_TEXT_A_SENTENCE_BOX, passageGrowth))}
         />
         <div
+          ref={sentenceBoxRef}
           className="absolute flex items-center justify-center overflow-y-auto px-4 py-3"
-          style={figmaRectStyle(BODY_TEXT_A_SENTENCE_BOX)}
+          style={figmaRectStyle(shiftRect(BODY_TEXT_A_SENTENCE_BOX, passageGrowth))}
         >
           {selectedTiles.length > 0 ? (
-            <div
-              className="flex flex-wrap items-center justify-center gap-1.5"
-              onDragOver={handleDragOver}
-            >
-              {selectedTiles.map((tile, index) => (
-                <button
-                  key={`placed-${tile.id}-${index}`}
-                  type="button"
-                  draggable={isPlaying}
-                  aria-label={`${index + 1}번째 조각 ${tile.label}`}
-                  className={`whitespace-nowrap ${placedSegmentClass(
-                    dragIndex === index,
-                    result === 'retry' && frozenWrongIds.has(tile.id),
-                  )}`}
-                  onClick={() => handlePlacedSegmentClick(index)}
-                  onDragStart={(event) => handleDragStart(event, index)}
-                  onDrag={handleDrag}
-                  onDragEnd={handleDragEnd}
-                  onDragOver={handleDragOver}
-                  onDrop={() => handleDrop(index)}
-                >
-                  <span className={EXERCISE_OPTION_EN_CLASS}>{tile.label}</span>
-                </button>
-              ))}
-            </div>
+            <ChunkOrderRow
+              items={selectedTiles.map((tile) => ({
+                id: tile.id,
+                label: tile.label,
+                markedWrong: result === 'retry' && frozenWrongIds.has(tile.id),
+              }))}
+              disabled={!isPlaying}
+              onTap={handlePlacedTap}
+              onReorder={reorderSelectedIds}
+              labelClassName={EXERCISE_OPTION_EN_CLASS}
+            />
           ) : (
             <p className={`text-center ${EXERCISE_EMPTY_HINT_CLASS}`}>
-              예문 뜻 조각을 순서대로 눌러 문장을 완성하세요
+              예문 뜻 조각을 누르거나 끌어와 문장을 완성하세요
             </p>
           )}
         </div>
@@ -399,35 +375,32 @@ export function BodyTextAScreen({
         <div
           aria-hidden
           className="pointer-events-none absolute bg-white"
-          style={figmaRectStyle(BODY_TEXT_A_TILES_MASK)}
+          style={figmaRectStyle(shiftRect(BODY_TEXT_A_TILES_MASK, passageGrowth))}
         />
         <div
           className="absolute overflow-y-auto px-3 py-2"
-          style={figmaRectStyle(BODY_TEXT_A_TILES_MASK)}
+          style={figmaRectStyle(shiftRect(BODY_TEXT_A_TILES_MASK, passageGrowth))}
         >
           <div className="flex flex-wrap items-center justify-center gap-2">
             {tiles.map((tile) => {
               const isSelected = selectedIds.includes(tile.id)
 
               return (
-                <button
+                <ChunkBankTile
                   key={tile.id}
-                  type="button"
-                  aria-label={`예문 뜻 ${tile.label}`}
-                  aria-hidden={isSelected}
-                  tabIndex={isSelected ? -1 : 0}
-                  disabled={isSelected}
+                  label={tile.label}
+                  ariaLabel={`예문 뜻 ${tile.label}`}
+                  disabled={!isPlaying || isSelected}
                   className={`whitespace-nowrap ${segmentTileClass()} ${
                     isSelected
                       ? 'invisible pointer-events-none'
-                      : 'cursor-pointer'
+                      : 'cursor-grab'
                   }`}
-                  onClick={() => handleSegmentTileClick(tile)}
-                >
-                  <span className={EXERCISE_OPTION_EN_CLASS}>
-                    {tile.label}
-                  </span>
-                </button>
+                  labelClassName={EXERCISE_OPTION_EN_CLASS}
+                  dropRootRef={sentenceBoxRef}
+                  onTap={() => insertBankTile(tile, selectedIds.length)}
+                  onDropAt={(slot) => insertBankTile(tile, slot)}
+                />
               )
             })}
           </div>
@@ -505,3 +478,4 @@ export function BodyTextAScreen({
     </FigmaAssetFrame>
   )
 }
+

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { FigmaAssetFrame } from '../FigmaAssetFrame'
 import { playAnswerSfx, playTapSfx } from '../exercise/answer-sfx'
 import {
-  CASTLE_HEADER_BACK_HIT,
   CASTLE_LEARNING_STEPS,
   type CastleLearningStepId,
   figmaRectStyle,
@@ -100,7 +99,6 @@ export function CastleLearningScreen({ stepId, onComplete }: CastleLearningScree
       src={step.asset}
       alt={`학습 ${stepId}`}
       bgClassName="bg-white"
-      backButtonHit={CASTLE_HEADER_BACK_HIT}
     >
       {step.kind === 'info' ? (
         <>
@@ -153,3 +151,5 @@ export function CastleLearningScreen({ stepId, onComplete }: CastleLearningScree
     </FigmaAssetFrame>
   )
 }
+
+

@@ -7,3 +7,10 @@ dist
 dist-ssr
 *.local
 .DS_Store
+.vercel
+.env*
+tsconfig.tsbuildinfo
+build-output.txt
+flag-start-raster.png
+tmp-*
+tmp-*/

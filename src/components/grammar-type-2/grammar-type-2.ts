@@ -3,8 +3,8 @@ import { shuffleArray } from '../../lib/shuffle'
 export const FRAME_W = 393
 export const FRAME_H = 852
 
-export const GRAMMAR_TYPE_2_ASSET = '/assets/grammar-type-2.svg'
-export const GRAMMAR_TYPE_2_X_ASSET = '/assets/grammar-type-2-x.svg'
+export const GRAMMAR_TYPE_2_ASSET = '/assets/grammar-type-2.svg?v=2'
+export const GRAMMAR_TYPE_2_X_ASSET = '/assets/grammar-type-2-x.svg?v=2'
 
 export type GrammarType2OptionId = 'o' | 'x'
 

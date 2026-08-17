@@ -15,25 +15,45 @@ import type { StudentAssignment } from '../../lib/sync/types'
 
 type TodayMissionCardProps = {
   assignments: StudentAssignment[]
+  /** 재도전 중이면 그 과제를 카드에 유지 (완료 status여도) */
+  retryingAssignmentId?: string | null
   onOpen: (assignment: StudentAssignment) => void
 }
 
 /** Figma export `current-learning-cta-card.svg`를 그대로 옮긴 좌표 기반 카드 — 실데이터만 얹는다 */
-export function TodayMissionCard({ assignments, onOpen }: TodayMissionCardProps) {
-  const assignment = pickPrimaryAssignment(assignments)
+export function TodayMissionCard({
+  assignments,
+  retryingAssignmentId = null,
+  onOpen,
+}: TodayMissionCardProps) {
+  const assignment = pickPrimaryAssignment(assignments, retryingAssignmentId)
   const remainingCount = assignment ? getRemainingCount(assignment) : 0
   const remainingMinutes = getRemainingMinutes(remainingCount)
+  const isRetrying =
+    !!assignment &&
+    !!retryingAssignmentId &&
+    assignment.assignmentId === retryingAssignmentId
   const started = !!assignment && assignment.progressPercent > 0
-  const fillPercent = assignment ? Math.min(100, Math.max(0, assignment.progressPercent)) : 0
+  const fillPercent = assignment
+    ? Math.min(100, Math.max(0, assignment.progressPercent))
+    : 0
   const percentLabel = `${Math.round(fillPercent)}%`
+
+  /** 과제 자체가 없음 ≠ 오늘 것을 다 풂 — 카드 톤이 달라야 한다 */
+  const isEmpty = !assignment && assignments.length === 0
+  const isAllDone = !assignment && assignments.length > 0 && !retryingAssignmentId
+
+  /* 빈 상태는 **한 단계 조용하게**. 다른 두 상태와 같은 그림자를 쓰면 내용도 없이 */
+  /* 제일 강조된 카드가 떠 있어서 미완성처럼 보인다. */
+  const cardTone = isAllDone
+    ? 'border border-[#D6EBFF] bg-gradient-to-br from-white via-white to-[#EDF6FF] shadow-[0_0_20px_rgba(46,90,130,0.22)]'
+    : isEmpty
+      ? 'border border-[#E6ECF4] bg-gradient-to-br from-white to-[#F6F9FD] shadow-[0_0_12px_rgba(46,90,130,0.10)]'
+      : 'bg-white shadow-[0_0_20px_rgba(46,90,130,0.22)]'
 
   return (
     <div
-      className={`pointer-events-auto absolute rounded-[18px] shadow-[0_0_20px_rgba(46,90,130,0.22)] ${
-        !assignment && assignments.length > 0
-          ? 'border border-[#D6EBFF] bg-gradient-to-br from-white via-white to-[#EDF6FF]'
-          : 'bg-white'
-      }`}
+      className={`pointer-events-auto absolute rounded-[18px] ${cardTone}`}
       style={figmaRectStyle(MISSION_CARD_RECT)}
     >
       {assignment ? (
@@ -43,7 +63,7 @@ export function TodayMissionCard({ assignments, onOpen }: TodayMissionCardProps)
             style={{ ...cardRectStyle(MISSION_BADGE_RECT), width: 'auto' }}
           >
             <p className="whitespace-nowrap text-[14px] font-semibold leading-none text-white">
-              {started ? '현재 학습 중' : '오늘의 미션'}
+              {isRetrying ? '재도전 중' : started ? '현재 학습 중' : '오늘의 미션'}
             </p>
           </div>
 
@@ -117,21 +137,39 @@ export function TodayMissionCard({ assignments, onOpen }: TodayMissionCardProps)
           </button>
         </>
       ) : assignments.length === 0 ? (
+        /*
+          빈 상태 — 문구는 그대로 두고 크기·정렬만 다른 두 상태에 맞췄다.
+          글자를 더 키우고 싶어도 여기가 상한이다: 카드 폭은 프레임 비례인데 글자는 고정 px라
+          360px 폰에서 아이콘(44)+간격(14)을 빼면 글자에 224px밖에 안 남는다.
+          제목 19px면 ≈219px로 한 줄에 들어가고, 20px부터는 넘쳐서 두 줄이 된다.
+          그래서 `truncate`도 뺐다 — 넘칠 땐 잘라내는 것보다 줄바꿈이 낫다(카드 높이 116엔 여유 있음).
+        */
         <div className="flex h-full items-center gap-3.5 px-5">
           <span
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#EAF2FF]"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px] bg-[#EAF2FF]"
             aria-hidden
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F91EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="4" y="5" width="16" height="16" rx="3" />
-              <path d="M8 3v4M16 3v4M4 10h16" />
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#4F91EB"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3.5" y="5" width="17" height="15.5" rx="3.5" />
+              <path d="M8 3v4M16 3v4M3.5 10.5h17" />
+              {/* 가운데 짧은 선 — 「칸이 비어 있음」 */}
+              <path d="M9 15.5h6" opacity="0.55" />
             </svg>
           </span>
-          <div className="min-w-0">
-            <p className="truncate font-['Pretendard',sans-serif] text-[15px] font-bold text-[#1F242E]">
+          <div className="min-w-0 flex-1">
+            <p className="text-[19px] font-bold leading-[1.3] tracking-[-0.02em] text-[#1F242E]">
               아직 배정된 과제가 없어요
             </p>
-            <p className="mt-0.5 truncate font-['Pretendard',sans-serif] text-[12px] font-medium text-[#6B7382]">
+            <p className="mt-1 text-[13px] font-medium leading-[1.4] tracking-[-0.01em] text-[#8A93A3]">
               선생님이 과제를 내주시면 여기에 표시돼요
             </p>
           </div>

@@ -4,9 +4,12 @@ import { OnboardingFigmaFrame } from '../../components/onboarding/OnboardingFigm
 import { useBackNavigation } from '../../components/navigation/BackNavigationProvider'
 import {
   INPUT_FIELD,
-  INPUT_HINT,
+  NAME_MAX_LENGTH,
+  NAME_MIN_LENGTH,
+  NEXT_BTN,
   NextStepButton,
   TermsStep,
+  sanitizeNameInput,
   sanitizeSchoolNameInput,
   type TermId,
   type TermState,
@@ -19,15 +22,19 @@ import {
 } from '../../lib/auth'
 
 const TEACHER_ONBOARDING_ASSETS = [
-  '/assets/onboarding-teacher-01-terms.svg',
-  '/assets/onboarding-teacher-02-school.svg',
-  '/assets/onboarding-teacher-03-name.svg',
-  '/assets/onboarding-teacher-04-complete.svg',
+  '/assets/onboarding-teacher-01-terms.svg?v=2',
+  '/assets/onboarding-teacher-02-school.svg?v=2',
+  '/assets/onboarding-teacher-03-name.svg?v=2',
+  '/assets/onboarding-teacher-04-complete.svg?v=2',
 ] as const
 
-/** Figma 393×852 — step 4 상단/하단 버튼 */
-const INVITE_BTN = 'absolute left-[7.63%] top-[78%] h-[5.16%] w-[84.73%]'
-const HOME_BTN = 'absolute left-[7.63%] top-[86.97%] h-[7.04%] w-[84.73%]'
+/**
+ * Figma 393×852 — step 4 상단/하단 버튼.
+ * 시안의 두 버튼은 하단 CTA와 **같은 크기**(x=30 w=333 h=60 r=16)이고 y만 다르다.
+ * (`onboarding-teacher-04-complete.svg`: y=665 / y=741)
+ */
+const INVITE_BTN = NEXT_BTN.replace('top-[86.97%]', 'top-[78.05%]')
+const HOME_BTN = NEXT_BTN
 
 export function TeacherOnboardingScreen() {
   const navigate = useNavigate()
@@ -37,8 +44,10 @@ export function TeacherOnboardingScreen() {
     privacy: false,
     marketing: false,
   })
-  const [schoolName, setSchoolName] = useState('')
+  // step 1 = 이름(`onboarding-teacher-02-school.svg` — 파일명과 달리 "이름을 적어주세요" 화면)
+  // step 2 = 학교명(`onboarding-teacher-03-name.svg` — 파일명과 달리 "학교명을 적어주세요" 화면)
   const [teacherName, setTeacherName] = useState('')
+  const [schoolName, setSchoolName] = useState('')
 
   useBackNavigation(() => {
     if (step > 0) {
@@ -69,13 +78,14 @@ export function TeacherOnboardingScreen() {
   const requiredTermsAccepted = terms.service && terms.privacy
   const allTermsChecked = Object.values(terms).every(Boolean)
 
+  // 이름 화면 SVG에 "2 ~ 5자 이내여야 하고 특수문자는 허용되지 않아요"가 그려져 있음
   const canProceed =
     step === 0
       ? requiredTermsAccepted
       : step === 1
-        ? schoolName.trim().length > 0
+        ? teacherName.trim().length >= NAME_MIN_LENGTH
         : step === 2
-          ? teacherName.trim().length > 0
+          ? schoolName.trim().length > 0
           : false
 
   const toggleTerm = (id: TermId) => {
@@ -102,7 +112,10 @@ export function TeacherOnboardingScreen() {
       navigate('/login', { replace: true })
       return
     }
-    completeOnboarding(user)
+    completeOnboarding(user, {
+      displayName: teacherName,
+      schoolName,
+    })
     navigate('/teacher/home', { replace: true })
   }
 
@@ -129,8 +142,9 @@ export function TeacherOnboardingScreen() {
             type="text"
             aria-label="이름"
             placeholder="이름을 입력해주세요"
-            value={schoolName}
-            onChange={(e) => setSchoolName(e.target.value)}
+            value={teacherName}
+            maxLength={NAME_MAX_LENGTH}
+            onChange={(e) => setTeacherName(sanitizeNameInput(e.target.value))}
             className={INPUT_FIELD}
           />
           <NextStepButton enabled={canProceed} onClick={goNext} />
@@ -143,15 +157,12 @@ export function TeacherOnboardingScreen() {
             type="text"
             aria-label="학교명"
             placeholder="학교명을 입력해주세요"
-            value={teacherName}
+            value={schoolName}
             onChange={(e) =>
-              setTeacherName(sanitizeSchoolNameInput(e.target.value))
+              setSchoolName(sanitizeSchoolNameInput(e.target.value))
             }
             className={INPUT_FIELD}
           />
-          <p className={INPUT_HINT} aria-live="polite">
-            특수문자는 허용되지 않아요
-          </p>
           <NextStepButton enabled={canProceed} onClick={goNext} />
         </>
       )}

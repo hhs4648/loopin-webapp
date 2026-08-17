@@ -12,8 +12,8 @@
   --color-loopin-kakao-border: #fde33e;
   --color-loopin-text: #111111;
   --color-loopin-text-muted: #666666;
-  --font-sans: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-en: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-en: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
 @layer base {
@@ -38,17 +38,29 @@
 
 
 /* Legacy screens (login, member-type) ? pre-Tailwind */
+/*
+  화면 크기 대응.
+
+  시안이 **393×852 고정 비율**이라, 폭에만 맞춰 늘리면 세로가 짧은 기기에서 아래가
+  잘렸다. 아이폰 SE(375×667)에서는 높이가 813로 계산돼 하단 내비가 통째로 화면 밖으로
+  나갔다. 요즘 폰(19.5:9 이상)은 괜찮지만 16:9 화면은 다 그렇다.
+
+  그래서 **폭과 높이 중 작은 쪽에 맞춘다.** 짧은 화면에서는 프레임이 조금 좁아지고
+  좌우에 여백이 생기지만, 잘려서 못 누르는 것보다 낫다. 태블릿 상한 540px도 그대로다.
+*/
 .app-shell {
-  min-height: 100%;
+  min-height: 100dvh;
   display: flex;
+  align-items: center;
   justify-content: center;
-  background: var(--color-loopin-white, #ffffff);
+  /* 프레임 밖 여백 — 초록 맵과 파란 화면 어디에 붙어도 튀지 않는 중립색 */
+  background: #eef1f5;
 }
 
 .app-frame {
-  width: 100%;
-  max-width: 540px;
-  min-height: 100dvh;
+  width: min(100%, 540px, calc(100dvh * 393 / 852));
+  aspect-ratio: 393 / 852;
+  max-height: 100dvh;
   position: relative;
   overflow: hidden;
   background: #ffffff;
@@ -121,12 +133,6 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-}
-
-.mascot-img {
-  width: 200px;
-  height: 200px;
-  display: block;
 }
 
 .login-actions {
@@ -318,6 +324,32 @@
   color: #111111;
 }
 
+/*
+  콤보 마일스톤 버스트 — 튀어나왔다 위로 사라진다.
+  길이는 `exercise/combo.ts`의 COMBO_BURST_MS(900)와 맞춰야 한다.
+*/
+@keyframes combo-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) translateY(10px);
+  }
+  22% {
+    opacity: 1;
+    transform: scale(1.14) translateY(0);
+  }
+  38% {
+    transform: scale(1);
+  }
+  75% {
+    opacity: 1;
+    transform: scale(1) translateY(-6px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.94) translateY(-26px);
+  }
+}
+
 /* 메인 맵 — 빨간 성 생동감 */
 @keyframes loopin-sparkle {
   0%,
@@ -378,3 +410,128 @@
   }
 }
 
+
+/*
+  연속 학습 축하 화면 (`streak-celebration/`).
+  길이는 `streak-celebration.ts`의 STREAK_* 상수와 맞춰야 한다.
+*/
+@keyframes streak-badge-fly-in {
+  0% {
+    opacity: 0;
+    transform: translate(var(--streak-from-x), var(--streak-from-y)) scale(0.28)
+      rotate(-24deg);
+  }
+  55% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1.16) rotate(6deg);
+  }
+  72% {
+    transform: translate(0, 0) scale(0.96) rotate(-3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+}
+
+/* 착지 순간 별이 한 번 더 눌렸다 펴진다 */
+@keyframes streak-badge-settle {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+/* 별 안 숫자가 바뀌는 순간 — 튀어오르며 커졌다 제자리 */
+@keyframes streak-number-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.75);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 착지 지점에서 퍼지는 링 */
+@keyframes streak-land-ring {
+  0% {
+    opacity: 0.55;
+    transform: scale(0.35);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+@keyframes streak-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes streak-rise-in {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 오늘 칸이 톡 하고 찍힌다 */
+@keyframes streak-today-pop {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  65% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 색종이 — 위에서 떨어지며 돈다 */
+@keyframes streak-confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(-40px) rotate(0deg);
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(420px) rotate(520deg);
+  }
+}
+
+/*
+  움직임을 줄이도록 설정한 기기에서는 애니메이션을 끈다.
+  축하 화면은 정보(일수·주간 현황)가 본체라 정지 상태로도 그대로 읽힌다.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .streak-anim {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

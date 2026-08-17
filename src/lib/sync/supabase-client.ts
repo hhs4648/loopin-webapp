@@ -24,7 +24,12 @@ export function getSupabase(): SupabaseClient | null {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: false,
+        /*
+          OAuth로 돌아올 때 URL에 붙어 오는 `?code=`를 세션으로 바꿔야 한다.
+          예전엔 익명 로그인만 써서 필요가 없었다(2026-08-11 소셜 로그인 도입).
+        */
+        detectSessionInUrl: true,
+        flowType: 'pkce',
         storageKey: 'loopin-student-supabase-auth',
       },
     })

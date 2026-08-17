@@ -1,21 +1,31 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { FigmaAssetFrame } from '../components/FigmaAssetFrame'
-import { ClassRoundPillLabel } from '../components/main-home/ClassRoundPillLabel'
 import {
   PRAISE_CALENDAR_FRAME_RECT,
   PraiseCalendarButton,
 } from '../components/main-home/PraiseCalendarButton'
-import { figmaRectStyle } from '../components/main-home/session-round-dropdown'
+import {
+  figmaRectStyle,
+  MAIN_HOME_SKY,
+  type MainHomeNavTabId,
+} from '../components/main-home/assignment-home'
 import { AssignmentReceivedScreen } from '../components/main-home/AssignmentReceivedScreen'
 import type { CompletedCastleTarget } from '../components/main-home/AssignmentReceivedScreen'
 import { MainHomeMapStartBackdrop } from '../components/main-home/MainHomeMapStartBackdrop'
-import { MAIN_HOME_SKY } from '../components/main-home/session-round-dropdown'
+import { MainHomeBottomNav } from '../components/main-home/MainHomeBottomNav'
+import {
+  NavNoticeToast,
+  VOCAB_COMING_SOON,
+} from '../components/main-home/NavNoticeToast'
+import { ReviewMainWindow } from '../components/review/ReviewMainWindow'
+import { SettingsWindow } from '../components/settings/SettingsWindow'
 import { WordMatchScreen } from '../components/word-match/WordMatchScreen'
 import { WordListenMatchScreen } from '../components/word-listen-match/WordListenMatchScreen'
 import { WordQuizScreen } from '../components/word-quiz/WordQuizScreen'
 import { WordSpellScreen } from '../components/word-spell/WordSpellScreen'
 import { LearningCompleteScreen } from '../components/learning-complete/LearningCompleteScreen'
+import { formatStudyMinutes } from '../components/learning-complete/learning-complete'
 import { BodyTextAScreen } from '../components/body-text-a/BodyTextAScreen'
 import { BodyTextBScreen } from '../components/body-text-b/BodyTextBScreen'
 import { BodyTextCScreen } from '../components/body-text-c/BodyTextCScreen'
@@ -37,10 +47,12 @@ import { NEXT_BTN } from '../components/onboarding/onboarding-ui'
 import { SESSION_SECTION_OFFSETS, resolveDemoSessionStartStep } from '../components/exercise/session-questions'
 import {
   buildRetrySectionSnapshot,
+  countWordPartUniqueWords,
   getFirstRetrySection,
   getNextRetrySectionAfter,
   getWrongGrammarType2Questions,
   isFinalRetrySection as checkIsFinalRetrySection,
+  listLearnedWordPartWords,
   sessionBodyTextAId,
   sessionBodyTextBId,
   sessionBodyTextCId,
@@ -54,6 +66,20 @@ import { BODY_TEXT_B_QUESTIONS } from '../components/body-text-b/body-text-b'
 import { BODY_TEXT_C_QUESTIONS } from '../components/body-text-c/body-text-c'
 import type { RetryWrongExerciseProps } from '../components/exercise/retry-wrong-ui'
 import { AssignmentRunnerScreen } from '../features/assignments/AssignmentRunnerScreen'
+import type { PartCompleteKind } from '../components/part-complete/part-complete'
+import { buildAssignmentSections } from '../features/assignments/build-session-sections'
+import { resolvePresentQuestionIds } from '../features/assignments/filter-assignment-questions'
+import { isWrongReissue } from '../features/assignments/wrong-reissue'
+import {
+  isReviewAssignmentId,
+  type ReviewSession,
+} from '../features/review/build-review-session'
+import { persistReviewSessionOutcome } from '../features/review/persist-review-outcome'
+import { StreakCelebrationScreen } from '../components/streak-celebration/StreakCelebrationScreen'
+import {
+  resolveStreakCelebration,
+  type StreakCelebration,
+} from '../components/streak-celebration/streak-celebration'
 import {
   enrollWithInviteCode,
   fetchMyEnrollments,
@@ -61,15 +87,21 @@ import {
   fetchStudentAssignments,
   fetchWrongQuestionIds,
   resolveActiveClassId,
+  subscribeStudentClassRealtime,
 } from '../lib/sync/student-api'
 import { isSyncEnabled } from '../lib/sync/supabase-client'
 import type { StudentAssignment } from '../lib/sync/types'
+import {
+  clearCastleRetrySession,
+  loadCastleRetrySession,
+  saveCastleRetrySession,
+} from '../lib/castle-retry-session'
 import { DEFAULT_PASS_SCORE_THRESHOLD, resolveCalendarStartMonth } from '../components/praise-calendar/praise-calendar'
 
 const ASSETS = {
   /** 초대 UI 오버레이(딤·입력·CTA) — 맵 배경은 `MainHomeMapStartBackdrop` */
   invite: '/assets/main-home-invite-ui.svg?v=1',
-  waiting: '/assets/main-home-invite-entered.svg?v=2',
+  waiting: '/assets/main-home-invite-entered.svg?v=4',
 } as const
 
 /** Figma 393×852 — 초대코드 입력 필드 (x=66 y=383 w=262 h=49) */
@@ -201,7 +233,6 @@ export function MainHomeScreen() {
   const [serverAssignments, setServerAssignments] = useState<StudentAssignment[]>(
     [],
   )
-  const [activeClassName, setActiveClassName] = useState('A반')
   const [praisePassThreshold, setPraisePassThreshold] = useState(
     DEFAULT_PASS_SCORE_THRESHOLD,
   )
@@ -209,6 +240,14 @@ export function MainHomeScreen() {
   const [enrolledAtList, setEnrolledAtList] = useState<string[]>([])
   const [activeAssignment, setActiveAssignment] =
     useState<StudentAssignment | null>(null)
+  /**
+   * **채점된 회차**의 오답 개수 — 종합 완료 화면의 점수·정답 수 표시용.
+   *
+   * `assignmentWrongQuestionIds`와 갈라 둔다. 그건 「틀린문제만」이 **다음에 낼 문항**
+   * 이라 연습을 하면 줄어드는데, 예전에는 화면 점수도 그 값으로 다시 계산해서
+   * **연습할 때마다 종합 점수가 바뀌었다.** 연습은 기록이 아니므로 점수는 그대로여야 한다.
+   */
+  const [gradedWrongCount, setGradedWrongCount] = useState<number | null>(null)
   /** 서버 과제 오답 question_id — 「틀린문제만」활성화·필터용 */
   const [assignmentWrongQuestionIds, setAssignmentWrongQuestionIds] = useState<
     string[]
@@ -216,7 +255,7 @@ export function MainHomeScreen() {
   /** 과제 러너에 넘길 오답만 필터 (null = 전체) */
   const [assignmentOnlyQuestionIds, setAssignmentOnlyQuestionIds] = useState<
     string[] | null
-  >(null)
+  >(() => loadCastleRetrySession()?.onlyQuestionIds ?? null)
   const [skipQuizInitialSpeak, setSkipQuizInitialSpeak] = useState(false)
   const [sessionResults, setSessionResults] = useState<SessionResults>({})
   const [retryWrongOnly, setRetryWrongOnly] = useState(false)
@@ -224,14 +263,56 @@ export function MainHomeScreen() {
   const [isFinalRetrySection, setIsFinalRetrySection] = useState(false)
   /** 재도전/오답만 진입 시 학습 화면 강제 리마운트 */
   const [sessionEpoch, setSessionEpoch] = useState(0)
-  const [round1MissionCompleted, setRound1MissionCompleted] = useState(false)
+  const [round1MissionCompleted, setRound1MissionCompleted] = useState(
+    () => loadCastleRetrySession()?.round1MissionCompleted === true,
+  )
   const [star2LearningCompleted, setStar2LearningCompleted] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [reviewOpen, setReviewOpen] = useState(false)
+  /** 아직 화면이 없는 탭을 눌렀을 때의 안내 (초대코드 화면용) */
+  const [navNotice, setNavNotice] = useState<string | null>(null)
+  /** 하단 내비 「헬스장」 — 복습하기와 같은 풀스크린 오버레이 */
+  const [gymOpen, setGymOpen] = useState(false)
   /** 완료 성 재도전 중 — 맵 「현재 위치」는 유지하고 해당 성에만 표시 */
   const [retryingAssignmentId, setRetryingAssignmentId] = useState<string | null>(
-    null,
+    () => loadCastleRetrySession()?.retryingAssignmentId ?? null,
   )
-  const [retryingDemoIndex, setRetryingDemoIndex] = useState<0 | 1 | null>(null)
+  /**
+   * **이번 한 번만** 새 attempt로 열 과제.
+   *
+   * 예전엔 `retryingAssignmentId`로 이걸 겸했는데, 그건 맵의 「재도전 중!」 표시용이라
+   * 완료할 때까지 남는다. 그래서 재도전이나 틀린문제만을 한 번 누르고 중간에 나가면,
+   * 그 과제는 **세션 내내** 들어갈 때마다 새 attempt가 열렸다. 새 attempt에는 답안이
+   * 없으니 이어풀기 필터가 아무것도 못 걸러서, 단어 파트를 다 끝내고 나왔는데도
+   * 다시 들어가면 **단어 문제부터** 다시 나왔다.
+   *
+   * 「재도전을 시작한다」와 「재도전 중이다」는 다른 얘기라 갈랐다. 이 값은
+   * sessionStorage에 남기지 않는다 — 새로고침은 이어풀기지 재시작이 아니다.
+   */
+  const [forceNewAssignmentId, setForceNewAssignmentId] = useState<
+    string | null
+  >(null)
+  /**
+   * **틀린문제만 푸는 중인 과제.**
+   *
+   * 예전엔 `retryingAssignmentId`를 같이 썼다. 그래서 (1) 성 위에 「재도전 중!」이라고
+   * 잘못 떴고, (2) 그 성을 다시 누르면 재도전 분기로 들어가 **오답 필터 없이 전체
+   * 과제**가 열렸다 — 풀다 나오면 전부 다시 풀어야 했던 원인이다.
+   */
+  const [wrongOnlyAssignmentId, setWrongOnlyAssignmentId] = useState<
+    string | null
+  >(null)
+  const [retryingDemoIndex, setRetryingDemoIndex] = useState<0 | 1 | null>(
+    () => loadCastleRetrySession()?.retryingDemoIndex ?? null,
+  )
+  /** 재도전 sessionStorage 복원이 끝나기 전엔 덮어쓰지 않음 */
+  const [retrySessionReady, setRetrySessionReady] = useState(
+    () => !isSyncEnabled(),
+  )
+  /** 서버 과제 목록을 한 번이라도 받은 뒤 — 삭제된 재도전/풀이 상태 정리용 */
+  const [assignmentsHydrated, setAssignmentsHydrated] = useState(
+    () => !isSyncEnabled(),
+  )
   /** 완료 성에서 연 완료 화면 — 재도전 시 해당 과제/데모로 복귀 */
   const [completedCastleSource, setCompletedCastleSource] =
     useState<CompletedCastleTarget | null>(null)
@@ -245,10 +326,18 @@ export function MainHomeScreen() {
   const navigationStackRef = useRef<MainNavigationSnapshot[]>([])
   /** 재도전 직후 뒤로가기 오발 방지 (화면 전환 클릭 관통) */
   const blockBackUntilRef = useRef(0)
+  /** 단어 파트(A~D) 시작 시각 — 공부 시간(분) 계산 */
+  const wordSectionStartedAtRef = useRef<number | null>(null)
 
   stepRef.current = step
   retryWrongOnlyRef.current = retryWrongOnly
   retrySnapshotRef.current = retrySnapshot
+
+  const markWordSectionStarted = () => {
+    if (wordSectionStartedAtRef.current == null) {
+      wordSectionStartedAtRef.current = Date.now()
+    }
+  }
 
   const goToStep = (
     nextStep: MainStep,
@@ -271,6 +360,14 @@ export function MainHomeScreen() {
 
   const goBack = () => {
     if (Date.now() < blockBackUntilRef.current) return
+    if (gymOpen) {
+      setGymOpen(false)
+      return
+    }
+    if (reviewOpen) {
+      setReviewOpen(false)
+      return
+    }
     if (settingsOpen) {
       setSettingsOpen(false)
       return
@@ -291,21 +388,168 @@ export function MainHomeScreen() {
   /** 홈 → 학원/학교 메인 맵 (`/student/home`, 구어 student/main) */
   const goToStudentMain = () => {
     setSettingsOpen(false)
+    setReviewOpen(false)
     if (stepRef.current === 'assignment') return
+    // 초대코드 전에는 맵으로 보내지 않음
+    if (stepRef.current === 'invite') return
     navigationStackRef.current = []
     stepRef.current = 'assignment'
     setStep('assignment')
   }
 
-  useBackNavigation(
-    goBack,
-    settingsOpen ||
-      (step !== 'invite' && navigationStackRef.current.length > 0),
-  )
+  /** 초대코드 화면 하단 내비 — 홈은 초대에 머무름 */
+  const handleInviteNavSelect = (id: MainHomeNavTabId) => {
+    if (id === 'home') {
+      setReviewOpen(false)
+      setSettingsOpen(false)
+      return
+    }
+    if (id === 'review') {
+      setSettingsOpen(false)
+      setReviewOpen(true)
+      return
+    }
+    if (id === 'menu') {
+      setReviewOpen(false)
+      setSettingsOpen(true)
+      return
+    }
+    if (id === 'vocab') setNavNotice(VOCAB_COMING_SOON)
+  }
+
+  /** 과제/복습 러너 종료 — 맵으로 복귀, 복습이면 복습 탭 다시 연다 */
+  const exitAssignmentRunner = () => {
+    const running = activeAssignment
+    const wasReview =
+      running != null && isReviewAssignmentId(running.assignmentId)
+    setActiveAssignment(null)
+    setAssignmentOnlyQuestionIds(null)
+    // 새 attempt는 이미 열렸다 — 다시 들어오면 재시작이 아니라 이어풀기다
+    setForceNewAssignmentId(null)
+    void refreshAssignments()
+    goToStep('assignment', { replace: true })
+    if (wasReview) setReviewOpen(true)
+  }
+
+  useBackNavigation(() => {
+    if (gymOpen) {
+      setGymOpen(false)
+      return
+    }
+    if (reviewOpen) {
+      setReviewOpen(false)
+      return
+    }
+    if (settingsOpen) {
+      setSettingsOpen(false)
+      return
+    }
+    // 복습·과제 러너는 스택을 안 쌓는 경로가 있어 goBack만으로는 no-op이 된다
+    if (stepRef.current === 'assignment-runner') {
+      if (Date.now() < blockBackUntilRef.current) return
+      exitAssignmentRunner()
+      return
+    }
+    goBack()
+  }, settingsOpen ||
+      reviewOpen ||
+      gymOpen ||
+      step === 'assignment-runner' ||
+      (step !== 'invite' && navigationStackRef.current.length > 0))
+  useEffect(() => {
+    if (
+      step === 'word-match' ||
+      step === 'word-listen-match' ||
+      step === 'word-quiz' ||
+      step === 'word-spell'
+    ) {
+      markWordSectionStarted()
+    }
+  }, [step])
 
   useEffect(() => {
     sessionResultsRef.current = sessionResults
   }, [sessionResults])
+
+  // 재도전 중 상태를 새로고침 후에도 유지
+  useEffect(() => {
+    if (!retrySessionReady) return
+    const isReviewPractice = isReviewAssignmentId(activeAssignment?.assignmentId)
+    saveCastleRetrySession({
+      retryingAssignmentId,
+      retryingDemoIndex,
+      // 복습 합성 과제는 새로고침 복원 대상이 아님
+      activeAssignmentId: isReviewPractice
+        ? null
+        : (activeAssignment?.assignmentId ?? null),
+      onlyQuestionIds: isReviewPractice ? null : assignmentOnlyQuestionIds,
+      resumeRunner:
+        step === 'assignment-runner' &&
+        activeAssignment != null &&
+        !isReviewPractice,
+      round1MissionCompleted:
+        retryingDemoIndex === 0 ? true : round1MissionCompleted,
+    })
+  }, [
+    retrySessionReady,
+    retryingAssignmentId,
+    retryingDemoIndex,
+    activeAssignment,
+    assignmentOnlyQuestionIds,
+    step,
+    round1MissionCompleted,
+  ])
+
+  /**
+   * 교사가 과제를 삭제하면 목록에서 빠지는데, 재도전/풀이 로컬 상태가
+   * sessionStorage·state에 남아 「재도전 중」이 고이는 문제를 막는다.
+   */
+  useEffect(() => {
+    if (!assignmentsHydrated || !isSyncEnabled()) return
+
+    const ids = new Set(serverAssignments.map((a) => a.assignmentId))
+    let leaveToMap = false
+
+    if (retryingAssignmentId != null && !ids.has(retryingAssignmentId)) {
+      setRetryingAssignmentId(null)
+    }
+
+    // 복습 합성 과제는 서버 목록에 없는 게 정상이라 이 검사에서 빼야 한다.
+    // 안 그러면 「지금 시작하기」로 러너에 들어가는 즉시 「삭제된 과제」로 몰려 맵으로 튕긴다.
+    if (
+      activeAssignment != null &&
+      !isReviewAssignmentId(activeAssignment.assignmentId) &&
+      !ids.has(activeAssignment.assignmentId)
+    ) {
+      setActiveAssignment(null)
+      setAssignmentOnlyQuestionIds(null)
+      if (stepRef.current === 'assignment-runner') {
+        leaveToMap = true
+      }
+    }
+
+    if (
+      completedCastleSource?.kind === 'assignment' &&
+      !ids.has(completedCastleSource.assignment.assignmentId)
+    ) {
+      setCompletedCastleSource(null)
+      if (stepRef.current === 'grammar-complete') {
+        leaveToMap = true
+      }
+    }
+
+    if (leaveToMap && stepRef.current !== 'assignment') {
+      navigationStackRef.current = []
+      stepRef.current = 'assignment'
+      setStep('assignment')
+    }
+  }, [
+    assignmentsHydrated,
+    serverAssignments,
+    retryingAssignmentId,
+    activeAssignment,
+    completedCastleSource,
+  ])
 
   const sessionScoreStats = useMemo(() => {
     const fromState = summarizeSessionResults(sessionResults)
@@ -319,11 +563,33 @@ export function MainHomeScreen() {
     typeof summarizeSessionResults
   > | null>(null)
 
+  /**
+   * 종합 완료 화면 「연속 정답」 배지에 쓸 최고 콤보.
+   * 방금 푼 세션에서만 의미가 있으므로, 맵에서 완료된 성을 다시 열 때는 0으로 지운다
+   * (지난 점수는 서버에서 오지만 콤보는 저장하지 않는다).
+   */
+  const [completeMaxCombo, setCompleteMaxCombo] = useState(0)
+
+  /** 맵에서 파트를 골라 들어왔을 때 러너가 시작할 파트 */
+  const [runnerStartPart, setRunnerStartPart] = useState<PartCompleteKind | null>(
+    null,
+  )
+
+  /**
+   * 연속 학습 축하 화면 — 과제를 끝내고 **스트릭을 늘린 그 한 번**만 뜬다.
+   * 축하를 닫으면 원래 가려던 곳(종합 완료 화면)으로 이어 간다.
+   */
+  const [streakCelebration, setStreakCelebration] =
+    useState<StreakCelebration | null>(null)
+  const afterStreakCelebrationRef = useRef<(() => void) | null>(null)
+
   const openGrammarComplete = () => {
     const results = { ...sessionResultsRef.current }
     completeResultsRef.current = results
     const stats = summarizeSessionResults(results)
     setCompleteScoreStats(stats)
+    // 데모 세션 화면들은 `ComboProvider` 밖에서 그려져 콤보를 세지 않는다
+    setCompleteMaxCombo(0)
     setCompletedCastleSource(null)
     setSettingsOpen(false)
     // goToStep 조기 return에 막히지 않도록 완료 화면은 항상 진입
@@ -343,10 +609,30 @@ export function MainHomeScreen() {
   /** 맵에서 완료된 성 탭 → 세션 완료와 동일한 `GrammarCompleteScreen` */
   const openCompletedCastle = (
     target: CompletedCastleTarget,
-    options: { replace?: boolean } = {},
+    options: {
+      replace?: boolean
+      maxCombo?: number
+      /** 방금 푼 회차 오답 — fetch 전에 버튼이 바로 살아 있게 */
+      seedWrongQuestionIds?: string[]
+      /**
+       * 연습(틀린문제만)으로 열렸을 때 `true`.
+       * 「틀린문제만」이 낼 문항만 갱신하고 **점수는 건드리지 않는다.**
+       */
+      practiceResult?: boolean
+    } = {},
   ) => {
     setCompletedCastleSource(target)
     setSettingsOpen(false)
+    // 방금 푼 러너 peak와 서버 회차 peak 중 큰 값 — 둘 다 MAX COMBO(끝 콤보 아님).
+    // 데모 성은 서버 기록이 없어 0(배지 숨김).
+    const fromRunner = options.maxCombo
+    const fromServer =
+      target.kind === 'assignment'
+        ? (target.assignment.latestMaxCombo ?? 0)
+        : 0
+    setCompleteMaxCombo(
+      fromRunner != null ? Math.max(fromRunner, fromServer) : fromServer,
+    )
 
     if (target.kind === 'assignment') {
       const totalCount = Math.max(0, target.assignment.questionTotal)
@@ -364,12 +650,47 @@ export function MainHomeScreen() {
       })
       completeResultsRef.current = null
 
+      // 이전 과제·복습 연습 오답이 섞이지 않게 비운 뒤, 시드 → 서버 순으로 채운다
+      const seeded = options.seedWrongQuestionIds ?? []
+      setAssignmentWrongQuestionIds(seeded)
+      if (options.practiceResult) {
+        // 연습 결과 — 다음에 낼 문항만 바꾸고 점수·정답 수는 그대로 둔다
+        return
+      }
+      setGradedWrongCount(seeded.length > 0 ? seeded.length : null)
+      if (seeded.length > 0 && totalCount > 0) {
+        const nextCorrect = Math.max(0, totalCount - seeded.length)
+        setCompleteScoreStats({
+          correctCount: nextCorrect,
+          wrongCount: seeded.length,
+          totalCount,
+          score: Math.round((nextCorrect / totalCount) * 100),
+        })
+      }
+
+      /*
+        **방금 푼 결과가 있으면 서버를 다시 보지 않는다.**
+        「틀린문제만」은 연습이라 attempt를 열지 않으므로 `latestAttemptId`는 여전히
+        *예전* 회차를 가리킨다. 그걸 조회하면 방금 맞힌 문항까지 오답으로 되돌아와,
+        다시 「틀린문제만」을 눌렀을 때 원래 오답 전부가 또 나왔다.
+        시드는 이번 회차의 결과이므로 서버 값보다 정확하다.
+      */
       const attemptId = target.assignment.latestAttemptId
-      if (attemptId) {
+      if (attemptId && options.seedWrongQuestionIds === undefined) {
         void fetchWrongQuestionIds(attemptId).then((ids) => {
-          if (ids.length === 0) return
           setAssignmentWrongQuestionIds(ids)
+          setGradedWrongCount(ids.length > 0 ? ids.length : null)
           if (totalCount <= 0) return
+          if (ids.length === 0) {
+            // 점수 추정값으로 되돌림 (오답 id가 없으면 틀린문제만 비활성)
+            setCompleteScoreStats({
+              correctCount,
+              wrongCount,
+              totalCount,
+              score,
+            })
+            return
+          }
           const nextWrong = ids.length
           const nextCorrect = Math.max(0, totalCount - nextWrong)
           setCompleteScoreStats({
@@ -379,6 +700,8 @@ export function MainHomeScreen() {
             score: Math.round((nextCorrect / totalCount) * 100),
           })
         })
+      } else if (seeded.length === 0) {
+        setAssignmentWrongQuestionIds([])
       }
     } else if (target.index === 0) {
       const results = { ...sessionResultsRef.current }
@@ -431,6 +754,8 @@ export function MainHomeScreen() {
   }, [sessionResults])
 
   const handleSessionAnswer = (stepId: string, isCorrect: boolean) => {
+    // 틀린문제만 연습은 세션 정답률(완료 화면 점수)을 덮어쓰지 않음
+    if (retryWrongOnlyRef.current) return
     setSessionResults((prev) => {
       const next = { ...prev, [stepId]: isCorrect }
       sessionResultsRef.current = next
@@ -447,6 +772,8 @@ export function MainHomeScreen() {
     setIsFinalRetrySection(false)
     setRound1MissionCompleted(false)
     setCompleteScoreStats(null)
+    setCompleteMaxCombo(0)
+    wordSectionStartedAtRef.current = null
   }
 
   const seedBackToAssignment = () => {
@@ -479,6 +806,7 @@ export function MainHomeScreen() {
     // 완료 화면 하단 CTA → 퀴즈 전환 시 클릭 관통해 뒤로가기/홈이 눌리는 것 방지
     blockBackUntilRef.current = Date.now() + 600
     const start = resolveDemoSessionStartStep()
+    wordSectionStartedAtRef.current = Date.now()
     stepRef.current = start
     setStep(start)
   }
@@ -498,10 +826,20 @@ export function MainHomeScreen() {
     results: SessionResults,
   ) => {
     if (section === 'grammar-complete') {
+      // 틀린문제만 연습이 끝나면 파트 완료 없이 종합 완료 화면만
       setRetryWrongOnly(false)
       setRetrySnapshot(null)
       setIsFinalRetrySection(false)
-      openGrammarComplete()
+      setRetryingDemoIndex((prev) => (prev === 0 ? null : prev))
+      const frozen = completeResultsRef.current ?? results
+      completeResultsRef.current = frozen
+      setCompleteScoreStats(summarizeSessionResults(frozen))
+      setCompleteMaxCombo(0)
+      setCompletedCastleSource({ kind: 'demo', index: 0 })
+      setSettingsOpen(false)
+      seedBackToAssignment()
+      stepRef.current = 'grammar-complete'
+      setStep('grammar-complete')
       return
     }
 
@@ -550,6 +888,8 @@ export function MainHomeScreen() {
     if (source?.kind === 'assignment') {
       seedBackToAssignment()
       setRetryingAssignmentId(source.assignment.assignmentId)
+      setForceNewAssignmentId(source.assignment.assignmentId)
+      setWrongOnlyAssignmentId(null)
       setRetryingDemoIndex(null)
       setAssignmentOnlyQuestionIds(null)
       setActiveAssignment(source.assignment)
@@ -560,6 +900,7 @@ export function MainHomeScreen() {
       setStep('assignment')
       window.setTimeout(() => {
         if (stepRef.current !== 'assignment') return
+        setRunnerStartPart(null)
         stepRef.current = 'assignment-runner'
         setStep('assignment-runner')
       }, 700)
@@ -596,6 +937,57 @@ export function MainHomeScreen() {
     }, 700)
   }
 
+  /** 복습 탭 — 해당 분류 문항만 연습 모드로 출제 (과제 점수에 영향 없음) */
+  const startReviewSession = (session: ReviewSession) => {
+    if (session.questionIds.length === 0) return
+    setReviewOpen(false)
+    setSettingsOpen(false)
+    setCompletedCastleSource(null)
+    setRetryingAssignmentId(null)
+    setRetryingDemoIndex(null)
+    // 합성 스냅샷에 분류 문항만 들어 있음 — onlyQuestionIds로 재필터하면 0문항이 될 수 있어 비움
+    setAssignmentOnlyQuestionIds(null)
+    seedBackToAssignment()
+    setActiveAssignment(session.assignment)
+    setRunnerStartPart(null)
+    blockBackUntilRef.current = Date.now() + 600
+    stepRef.current = 'assignment-runner'
+    setStep('assignment-runner')
+  }
+
+  /**
+   * 오답 문항만 연습으로 연다. 완료 화면의 「틀린문제만」과, 맵에서 그 성을 다시
+   * 누를 때(이어풀기) **같은 경로**를 쓴다 — 갈리면 한쪽이 전체 과제를 열게 된다.
+   * 출제할 오답이 없으면 아무것도 하지 않고 `false`.
+   */
+  const startWrongOnlyPractice = (assignment: StudentAssignment): boolean => {
+    const sections = buildAssignmentSections(assignment.contentSnapshot)
+    const wrongIds = resolvePresentQuestionIds(
+      sections,
+      assignmentWrongQuestionIds,
+    )
+    if (wrongIds.length <= 0) return false
+    seedBackToAssignment()
+    setWrongOnlyAssignmentId(assignment.assignmentId)
+    setRetryingAssignmentId(null)
+    setForceNewAssignmentId(null)
+    setRetryingDemoIndex(null)
+    setAssignmentOnlyQuestionIds(wrongIds)
+    setActiveAssignment(assignment)
+    setSettingsOpen(false)
+    blockBackUntilRef.current = Date.now() + 600
+    // 맵에 「틀린문제 푸는중!」이 먼저 보이도록 한 뒤 풀이 진입
+    stepRef.current = 'assignment'
+    setStep('assignment')
+    window.setTimeout(() => {
+      if (stepRef.current !== 'assignment') return
+      setRunnerStartPart(null)
+      stepRef.current = 'assignment-runner'
+      setStep('assignment-runner')
+    }, 700)
+    return true
+  }
+
   const handleRetryWrongOnly = () => {
     if (completedCastleSource?.kind === 'demo' && completedCastleSource.index === 1) {
       return
@@ -604,23 +996,9 @@ export function MainHomeScreen() {
     // 서버 과제 — 오답 question_id만 다시 출제
     if (completedCastleSource?.kind === 'assignment') {
       const source = completedCastleSource
-      const wrongIds = assignmentWrongQuestionIds
-      if (wrongIds.length <= 0) return
-      setCompletedCastleSource(null)
-      seedBackToAssignment()
-      setRetryingAssignmentId(source.assignment.assignmentId)
-      setRetryingDemoIndex(null)
-      setAssignmentOnlyQuestionIds(wrongIds)
-      setActiveAssignment(source.assignment)
-      setSettingsOpen(false)
-      blockBackUntilRef.current = Date.now() + 600
-      stepRef.current = 'assignment'
-      setStep('assignment')
-      window.setTimeout(() => {
-        if (stepRef.current !== 'assignment') return
-        stepRef.current = 'assignment-runner'
-        setStep('assignment-runner')
-      }, 700)
+      if (startWrongOnlyPractice(source.assignment)) {
+        setCompletedCastleSource(null)
+      }
       return
     }
 
@@ -681,6 +1059,7 @@ export function MainHomeScreen() {
     const classId = await resolveActiveClassId()
     if (!classId) {
       setServerAssignments([])
+      setAssignmentsHydrated(true)
       return
     }
     const [list, threshold, enrollments] = await Promise.all([
@@ -689,19 +1068,28 @@ export function MainHomeScreen() {
       fetchMyEnrollments(),
     ])
     setServerAssignments(list)
+    setAssignmentsHydrated(true)
     setPraisePassThreshold(threshold)
-    const active = enrollments.find((e) => e.classId === classId)
-    if (active?.className) setActiveClassName(active.className)
     setEnrolledAtList(enrollments.map((e) => e.enrolledAt).filter(Boolean))
   }
 
   useEffect(() => {
-    if (!isSyncEnabled()) return
-    if (forceInviteStepRef.current) return
+    if (!isSyncEnabled()) {
+      setRetrySessionReady(true)
+      return
+    }
+    if (forceInviteStepRef.current) {
+      setRetrySessionReady(true)
+      return
+    }
     let cancelled = false
     void (async () => {
       const classId = await resolveActiveClassId()
-      if (cancelled || !classId) return
+      if (cancelled) return
+      if (!classId) {
+        setRetrySessionReady(true)
+        return
+      }
       const [list, threshold, enrollments] = await Promise.all([
         fetchStudentAssignments(classId),
         fetchPraisePassThreshold(classId),
@@ -709,11 +1097,58 @@ export function MainHomeScreen() {
       ])
       if (cancelled) return
       setServerAssignments(list)
+      setAssignmentsHydrated(true)
       setPraisePassThreshold(threshold)
-      const active = enrollments.find((e) => e.classId === classId)
-      if (active?.className) setActiveClassName(active.className)
       setEnrolledAtList(enrollments.map((e) => e.enrolledAt).filter(Boolean))
+
+      const saved = loadCastleRetrySession()
+      const listIds = new Set(list.map((a) => a.assignmentId))
+
+      // 삭제된 과제에 묶인 재도전/이어풀기 세션은 복원하지 않음
+      if (
+        saved?.retryingAssignmentId &&
+        !listIds.has(saved.retryingAssignmentId)
+      ) {
+        setRetryingAssignmentId(null)
+      }
+      if (
+        saved?.activeAssignmentId &&
+        !listIds.has(saved.activeAssignmentId)
+      ) {
+        clearCastleRetrySession()
+        setActiveAssignment(null)
+        setAssignmentOnlyQuestionIds(null)
+        setRetryingAssignmentId(null)
+      }
+
+      if (saved?.resumeRunner && saved.activeAssignmentId) {
+        const target = list.find(
+          (a) => a.assignmentId === saved.activeAssignmentId,
+        )
+        if (target) {
+          setActiveAssignment(target)
+          setAssignmentOnlyQuestionIds(saved.onlyQuestionIds)
+          if (
+            saved.retryingAssignmentId &&
+            listIds.has(saved.retryingAssignmentId)
+          ) {
+            setRetryingAssignmentId(saved.retryingAssignmentId)
+          }
+          seedBackToAssignment()
+          setRunnerStartPart(null)
+          stepRef.current = 'assignment-runner'
+          setStep('assignment-runner')
+          setRetrySessionReady(true)
+          return
+        }
+        clearCastleRetrySession()
+        setRetryingAssignmentId(null)
+        setActiveAssignment(null)
+        setAssignmentOnlyQuestionIds(null)
+      }
+
       setStep((current) => (current === 'invite' ? 'assignment' : current))
+      setRetrySessionReady(true)
     })()
     return () => {
       cancelled = true
@@ -733,12 +1168,47 @@ export function MainHomeScreen() {
       ])
       if (cancelled) return
       setServerAssignments(list)
+      setAssignmentsHydrated(true)
       setPraisePassThreshold(threshold)
     })()
     return () => {
       cancelled = true
     }
   }, [step])
+
+  // 맵에 머무는 동안 교사 부여 반영 (Realtime + focus/visibility 폴백)
+  // 풀이 중(assignment-runner 등)에는 목록을 건드리지 않아 화면 리셋 방지
+  useEffect(() => {
+    if (!isSyncEnabled()) return
+    let cancelled = false
+    let unsub: (() => void) | undefined
+
+    const pull = () => {
+      if (stepRef.current !== 'assignment') return
+      void refreshAssignments()
+    }
+
+    void (async () => {
+      const classId = await resolveActiveClassId()
+      if (cancelled || !classId) return
+      unsub = subscribeStudentClassRealtime(classId, pull)
+    })()
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') pull()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', pull)
+    window.addEventListener('pageshow', pull)
+
+    return () => {
+      cancelled = true
+      unsub?.()
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', pull)
+      window.removeEventListener('pageshow', pull)
+    }
+  }, [])
 
   useEffect(() => {
     if (step !== 'waiting') return
@@ -811,6 +1281,24 @@ export function MainHomeScreen() {
     })()
   }
 
+  /*
+    연속 학습 축하 — step보다 **먼저** 가로챈다. 과제 완료 직후 종합 완료 화면으로 가는
+    길목에 한 장 끼우는 것이라, step은 이미 완료 화면을 가리키고 있어도 된다.
+  */
+  if (streakCelebration) {
+    return (
+      <StreakCelebrationScreen
+        celebration={streakCelebration}
+        onDone={() => {
+          setStreakCelebration(null)
+          const next = afterStreakCelebrationRef.current
+          afterStreakCelebrationRef.current = null
+          next?.()
+        }}
+      />
+    )
+  }
+
   if (step === 'waiting') {
     return (
       <FigmaAssetFrame
@@ -819,11 +1307,6 @@ export function MainHomeScreen() {
         bgClassName="bg-[#E2F7FF]"
         backButton="labeled"
       >
-        <ClassRoundPillLabel
-          surface="dimmed"
-          classLabel={activeClassName}
-          roundLabel="과제"
-        />
         <PraiseCalendarButton
           surface="dimmed"
           style={figmaRectStyle(PRAISE_CALENDAR_FRAME_RECT)}
@@ -839,17 +1322,83 @@ export function MainHomeScreen() {
       <AssignmentRunnerScreen
         assignment={running}
         onlyQuestionIds={onlyIds}
+        startPart={runnerStartPart}
+        // 재도전은 새 attempt — 이전 풀이 진행률(100%)을 이어받으면 바가 고정된다.
+        // 「재도전 중」 표시(retryingAssignmentId)가 아니라 일회성 플래그를 본다.
+        forceNewAttempt={forceNewAssignmentId === running.assignmentId}
+        /*
+          헬스장(오답 재출제)은 **파트 완료를 건너뛰고 종합 완료만** 띄운다.
+          틀린 것만 모아 놓은 묶음이라 중간 완료 화면이 어울리지 않는다.
+          연습 모드와 달리 **점수는 기록한다** — 선생님이 재출제 결과를 봐야 한다.
+        */
+        skipPartComplete={isWrongReissue(running)}
+        // 틀린문제만·복습은 반드시 연습 모드 — 안 그러면 파트 완료가 뜨고 attempt가 열려 「진행중」이 된다
+        practiceOnly={
+          isReviewAssignmentId(running.assignmentId) ||
+          Boolean(onlyIds?.length)
+        }
         onExit={() => {
-          setActiveAssignment(null)
-          setAssignmentOnlyQuestionIds(null)
-          void refreshAssignments()
-          goToStep('assignment', { replace: true })
+          exitAssignmentRunner()
         }}
         onCompleted={(info) => {
+          const practiceOnly = Boolean(info?.practiceOnly)
+          const wasReview = isReviewAssignmentId(running.assignmentId)
           setRetryingAssignmentId(null)
+          setForceNewAssignmentId(null)
+          setWrongOnlyAssignmentId(null)
+          setRetryingDemoIndex(null)
+          clearCastleRetrySession()
+          // 연습에서 다시 틀린 것만 로컬에 남김(서버 점수는 그대로)
+          // 복습 연습 오답은 과제 오답 목록을 덮지 않는다 — 덮으면 틀린문제만이 0문항이 된다
+          if (practiceOnly) {
+            if (!wasReview) {
+              // 틀린문제만 — 파트 완료 skip, 종합 완료만. 로컬 상태는 완료 유지
+              const finishedWrongIds = info?.wrongQuestionIds ?? []
+              const completedAssignment: StudentAssignment = {
+                ...running,
+                status: 'completed',
+              }
+              setServerAssignments((prev) =>
+                prev.map((a) =>
+                  a.assignmentId === running.assignmentId
+                    ? { ...a, status: 'completed' }
+                    : a,
+                ),
+              )
+              setActiveAssignment(null)
+              setAssignmentOnlyQuestionIds(null)
+              openCompletedCastle(
+                { kind: 'assignment', assignment: completedAssignment },
+                {
+                  replace: true,
+                  maxCombo: info?.maxCombo ?? 0,
+                  seedWrongQuestionIds: finishedWrongIds,
+                  practiceResult: true,
+                },
+              )
+              return
+            }
+            // 복습 결과 저장 후 탭을 연다 — 저장 전에 열면 오답률이 옛값으로 보인다
+            const wrongIds = info?.wrongQuestionIds ?? []
+            const answeredIds = info?.answeredQuestionIds ?? []
+            void (async () => {
+              const classId = await resolveActiveClassId()
+              if (classId) {
+                persistReviewSessionOutcome(
+                  classId,
+                  running.assignmentId,
+                  answeredIds,
+                  wrongIds,
+                )
+              }
+              exitAssignmentRunner()
+            })()
+            return
+          }
           setActiveAssignment(null)
           setAssignmentOnlyQuestionIds(null)
-          setAssignmentWrongQuestionIds(info?.wrongQuestionIds ?? [])
+          const finishedWrongIds = info?.wrongQuestionIds ?? []
+          setAssignmentWrongQuestionIds(finishedWrongIds)
           void (async () => {
             let next: StudentAssignment = {
               ...running,
@@ -859,6 +1408,7 @@ export function MainHomeScreen() {
               try {
                 const list = await fetchStudentAssignments(running.classId)
                 setServerAssignments(list)
+                setAssignmentsHydrated(true)
                 const updated = list.find(
                   (a) => a.assignmentId === running.assignmentId,
                 )
@@ -867,10 +1417,25 @@ export function MainHomeScreen() {
                 /* 목록 갱신 실패해도 완료 화면은 연다 */
               }
             }
-            openCompletedCastle(
-              { kind: 'assignment', assignment: next },
-              { replace: true },
-            )
+            const openComplete = () =>
+              openCompletedCastle(
+                { kind: 'assignment', assignment: next },
+                {
+                  replace: true,
+                  maxCombo: info?.maxCombo ?? 0,
+                  seedWrongQuestionIds: finishedWrongIds,
+                },
+              )
+
+            // 축하는 완료 화면 **앞**에 끼운다 — 점수를 보고 나면 이미 끝난 기분이라 늦다.
+            // 조회가 실패하거나 오늘 이미 축하했으면 null이고 그냥 완료 화면으로 간다.
+            const celebration = await resolveStreakCelebration()
+            if (celebration) {
+              afterStreakCelebrationRef.current = openComplete
+              setStreakCelebration(celebration)
+              return
+            }
+            openComplete()
           })()
         }}
       />
@@ -888,15 +1453,17 @@ export function MainHomeScreen() {
       : isAssignmentCastle
         ? assignmentWrongQuestionIds.length > 0
         : true
+    /*
+      표시는 **채점된 회차** 기준이다. 「틀린문제만」으로 연습해도 이 값은 안 바뀐다 —
+      연습은 기록이 아니다. (`assignmentWrongQuestionIds`는 다음에 낼 문항일 뿐이다.)
+    */
     const displayWrongCount =
-      isAssignmentCastle && assignmentWrongQuestionIds.length > 0
-        ? assignmentWrongQuestionIds.length
+      isAssignmentCastle && gradedWrongCount != null
+        ? gradedWrongCount
         : stats.wrongCount
     const displayCorrectCount =
-      isAssignmentCastle &&
-      assignmentWrongQuestionIds.length > 0 &&
-      stats.totalCount > 0
-        ? Math.max(0, stats.totalCount - assignmentWrongQuestionIds.length)
+      isAssignmentCastle && gradedWrongCount != null && stats.totalCount > 0
+        ? Math.max(0, stats.totalCount - gradedWrongCount)
         : stats.correctCount
     return (
       <GrammarCompleteScreen
@@ -912,9 +1479,8 @@ export function MainHomeScreen() {
         correctCount={displayCorrectCount}
         wrongCount={displayWrongCount}
         totalCount={stats.totalCount}
+        maxCombo={completeMaxCombo}
         roundNumber={1}
-        className={activeClassName}
-        assignments={isSyncEnabled() ? serverAssignments : undefined}
         onRetryAll={handleRetryAll}
         onRetryWrongOnly={allowWrongOnly ? handleRetryWrongOnly : undefined}
         onHome={() =>
@@ -1048,8 +1614,14 @@ export function MainHomeScreen() {
   }
 
   if (step === 'learning-complete') {
+    const learnedWords = listLearnedWordPartWords(sessionResults)
+    const wordCount = countWordPartUniqueWords(sessionResults)
+    const studyMinutes = formatStudyMinutes(wordSectionStartedAtRef.current)
     return (
       <LearningCompleteScreen
+        wordCount={wordCount}
+        studyMinutes={studyMinutes}
+        words={learnedWords}
         onContinue={() => {
           if (retryWrongOnly) {
             advanceAfterRetrySection('word-spell')
@@ -1057,6 +1629,7 @@ export function MainHomeScreen() {
           }
           goToStep('body-text-a')
         }}
+        onHome={() => handleGoHome()}
       />
     )
   }
@@ -1218,12 +1791,20 @@ export function MainHomeScreen() {
     return (
       <AssignmentReceivedScreen
         assignments={isSyncEnabled() ? serverAssignments : undefined}
-        className={activeClassName}
         star1Completed={round1MissionCompleted}
         star2Completed={star2LearningCompleted}
         retryingAssignmentId={retryingAssignmentId}
         retryingDemoIndex={retryingDemoIndex}
+        wrongOnlyAssignmentId={wrongOnlyAssignmentId}
         onOpenAssignment={(assignment, options) => {
+          // 틀린문제만 이어풀기 — 오답 필터를 유지한 채 다시 연다
+          if (options?.isWrongOnly) {
+            if (!startWrongOnlyPractice(assignment)) {
+              setWrongOnlyAssignmentId(null)
+            }
+            return
+          }
+          setWrongOnlyAssignmentId(null)
           if (options?.isRetry) {
             setRetryingAssignmentId(assignment.assignmentId)
           } else {
@@ -1234,6 +1815,8 @@ export function MainHomeScreen() {
           }
           setRetryingDemoIndex(null)
           setAssignmentOnlyQuestionIds(null)
+          // 맵의 「파트별 입장하기」 — 러너가 이 파트부터 시작한다
+          setRunnerStartPart(options?.part ?? null)
           setActiveAssignment(assignment)
           goToStep('assignment-runner')
         }}
@@ -1250,15 +1833,32 @@ export function MainHomeScreen() {
         onOpenPraiseCalendar={() => goToStep('praise-calendar')}
         settingsOpen={settingsOpen}
         onCloseSettings={() => setSettingsOpen(false)}
+        gymOpen={gymOpen}
+        onCloseGym={() => setGymOpen(false)}
+        onOpenGym={() => {
+          setSettingsOpen(false)
+          setReviewOpen(false)
+          setGymOpen(true)
+        }}
+        reviewOpen={reviewOpen}
+        onCloseReview={() => setReviewOpen(false)}
+        onOpenReview={() => {
+          setSettingsOpen(false)
+          setReviewOpen(true)
+        }}
         onGoMain={goToStudentMain}
-        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenSettings={() => {
+          setReviewOpen(false)
+          setSettingsOpen(true)
+        }}
+        onStartReview={startReviewSession}
       />
     )
   }
 
   return (
     <div
-      className="flex min-h-dvh w-full justify-center"
+      className="flex min-h-full w-full justify-center"
       style={{ background: MAIN_HOME_SKY }}
     >
       <div
@@ -1272,11 +1872,6 @@ export function MainHomeScreen() {
           aria-hidden
           draggable={false}
           className="pointer-events-none absolute inset-0 z-10 h-full w-full select-none"
-        />
-        <ClassRoundPillLabel
-          surface="dimmed"
-          classLabel={activeClassName}
-          roundLabel="과제"
         />
         <PraiseCalendarButton
           surface="dimmed"
@@ -1319,6 +1914,28 @@ export function MainHomeScreen() {
           className={`z-20 ${INVITE_SUBMIT} cursor-pointer bg-transparent disabled:cursor-wait`}
           onClick={tryEnter}
         />
+
+        {!settingsOpen && !reviewOpen && !gymOpen ? (
+          <MainHomeBottomNav activeId="home" onSelect={handleInviteNavSelect} />
+        ) : null}
+        <NavNoticeToast
+          message={navNotice}
+          onHide={() => setNavNotice(null)}
+        />
+
+        {reviewOpen ? (
+          <ReviewMainWindow
+            onSelectNav={(id) => handleInviteNavSelect(id)}
+            onStartReview={startReviewSession}
+          />
+        ) : null}
+
+        {settingsOpen ? (
+          <SettingsWindow
+            onClose={() => setSettingsOpen(false)}
+            onSelectNav={(id) => handleInviteNavSelect(id)}
+          />
+        ) : null}
       </div>
     </div>
   )

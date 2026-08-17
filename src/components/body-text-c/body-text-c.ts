@@ -1,7 +1,7 @@
 export const FRAME_W = 393
 export const FRAME_H = 852
 
-export const BODY_TEXT_C_ASSET = '/assets/body-text-c.svg'
+export const BODY_TEXT_C_ASSET = '/assets/body-text-c.svg?v=2'
 
 export type BodyTextCQuestionId = string
 
@@ -301,11 +301,17 @@ export const BODY_TEXT_C_PROGRESS_BAR = { x: 33, y: 142, w: 326, h: 18 }
 /** Figma — 진행률 텍스트 */
 export const BODY_TEXT_C_PROGRESS_LABEL = { x: 168, y: 146, w: 60, h: 18 }
 
-/** Figma — 문제(예문 뜻 · 한국어). 앱 기준 가운데 · 최대 4줄 */
-export const BODY_TEXT_C_PASSAGE = { x: 16, y: 200, w: 361, h: 128 }
+/**
+ * 진행바 아래~제출 위 SVG 데모(빈칸·점선·잔글씨) 전부 가림.
+ * 제시문·입력 박스는 이 위에 React로 다시 그림.
+ */
+export const BODY_TEXT_C_CONTENT_BAKE_MASK = { x: 0, y: 168, w: 393, h: 460 }
 
-/** Figma — 문장 완성 점선 박스 (본문 A/B와 동일) */
-export const BODY_TEXT_C_SENTENCE_BOX = { x: 24, y: 344, w: 345, h: 137 }
+/** Figma — 문제(예문 뜻 · 한국어). 앱 기준 가운데 · 최대 4줄 */
+export const BODY_TEXT_C_PASSAGE = { x: 16, y: 200, w: 361, h: 112 }
+
+/** Figma — 문장 완성 입력 박스 */
+export const BODY_TEXT_C_SENTENCE_BOX = { x: 24, y: 328, w: 345, h: 160 }
 
 /** Figma — 제출하기 버튼 */
 export const BODY_TEXT_C_SUBMIT_BTN = { x: 30, y: 751, w: 333, h: 60 }

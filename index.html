@@ -4,11 +4,38 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#2AA3FF" />
-    <title>Loopin</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
+
+    <title>루핀 — 중학교 영어 내신</title>
+    <meta
+      name="description"
+      content="선생님이 낸 과제를 풀고 오답을 복습하는 중학교 영어 학습 앱."
     />
+
+    <!--
+      아이콘·매니페스트. 없으면 홈 화면에 추가했을 때 회색 기본 아이콘이 붙고,
+      웹앱으로 감싸 배포할 때 이름·아이콘·시작 화면 정보가 아예 없다.
+    -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!--
+      iOS는 매니페스트를 거의 안 읽는다 — 홈 화면에서 전체화면으로 열리게 하려면
+      이 두 줄이 따로 필요하다. `black-translucent`는 상태바 뒤까지 화면을 쓰고,
+      `viewport-fit=cover`와 짝이다.
+    -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="루핀" />
+
+    <!--
+      글꼴은 **자체 호스팅**한다. 예전엔 jsdelivr CDN에서 받아왔는데, 렌더를 막는
+      스타일시트라 학교망이 CDN을 막거나 느리면 첫 화면이 그만큼 늦었다.
+      실패하면 글꼴이 통째로 폴백돼서, 픽셀 단위로 맞춘 시안이 어긋났다.
+    -->
+    <link rel="preload" as="style" href="/fonts/pretendard.css" />
+    <link rel="stylesheet" href="/fonts/pretendard.css" />
   </head>
   <body>
     <div id="root"></div>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { shuffleArray } from '../../lib/shuffle'
 import { ExerciseProgressBar, BakedProgressBarMask } from '../exercise/ExerciseProgressBar'
 import {
@@ -6,7 +6,13 @@ import {
   exerciseOxLabelClass,
 } from '../exercise/exercise-typography'
 import { ExerciseContinueButton } from '../exercise/ExerciseContinueButton'
+import {
+  ExpandablePassageBox,
+  PASSAGE_SAFE_BOTTOM,
+  shiftRect,
+} from '../exercise/ExpandablePassageBox'
 import { FigmaAssetFrame } from '../FigmaAssetFrame'
+import { BACK_MASK_WHITE_HEADER } from '../navigation/figma-navigation'
 import { GRAMMAR_PASSAGE_TEXT_CLASS } from '../grammar/grammar-typography'
 import {
   figmaRectStyle,
@@ -40,6 +46,10 @@ type OptionVisualState = 'idle' | 'correct' | 'wrong'
 
 /** 정답 시 효과음 후 자동 진행 */
 const CORRECT_AUTO_ADVANCE_MS = 1000
+
+/** OX 선택지를 아래로 민 뒤에도 피드백 시트 위에 남도록 */
+const OX_PASSAGE_MAX_BOTTOM =
+  PASSAGE_SAFE_BOTTOM - GRAMMAR_TYPE_2_OPTION_BOXES[0]!.h - 12
 
 function oxOptionFrameClass(state: OptionVisualState) {
   const base = 'box-border rounded-[9px] border-2'
@@ -75,49 +85,70 @@ function wordOptionLabelClass(state: OptionVisualState) {
   return exerciseOptionEnStateClass(state)
 }
 
-function GrammarPassageMask({
-  children,
-  passageRect = GRAMMAR_TYPE_2_PASSAGE,
-}: {
-  children: ReactNode
-  passageRect?: { x: number; y: number; w: number; h: number }
-}) {
-  return (
-    <>
-      {/* SVG 지문 카드와 동일한 좌표로만 덮음 — 잘못된 y면 아래 선택지를 가림 */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute rounded-[19px] border-2 border-[#D9D9D9] bg-white"
-        style={figmaRectStyle(passageRect)}
-      />
-      <div
-        className="pointer-events-none absolute flex items-center justify-center px-6"
-        style={figmaRectStyle(passageRect)}
-      >
-        {children}
-      </div>
-    </>
-  )
+function wordChoicePassageMaxBottom(
+  optionBoxes: readonly { x: number; y: number; w: number; h: number }[],
+): number {
+  const first = optionBoxes[0]
+  const last = optionBoxes[optionBoxes.length - 1]
+  if (!first || !last) return PASSAGE_SAFE_BOTTOM
+  const optionBlockH = last.y + last.h - first.y
+  return PASSAGE_SAFE_BOTTOM - optionBlockH - 12
 }
 
-function GrammarOxPassage({ question }: { question: GrammarType2OxQuestion }) {
+function GrammarOxPassage({
+  question,
+  onGrowthChange,
+}: {
+  question: GrammarType2OxQuestion
+  onGrowthChange: (growth: number) => void
+}) {
+  useEffect(() => {
+    if (!question.maskPassage) onGrowthChange(0)
+  }, [question.maskPassage, question.id, onGrowthChange])
+
   if (!question.maskPassage || !question.passageLines?.length) return null
 
   const passageText = question.passageLines.join(' ')
 
   return (
-    <GrammarPassageMask passageRect={GRAMMAR_TYPE_2_PASSAGE}>
+    <ExpandablePassageBox
+      rect={GRAMMAR_TYPE_2_PASSAGE}
+      maxBottom={OX_PASSAGE_MAX_BOTTOM}
+      contentKey={question.id}
+      onGrowthChange={onGrowthChange}
+      className="pointer-events-none absolute z-[2] rounded-[19px] border-2 border-[#D9D9D9] bg-white"
+      contentClassName="flex w-full items-center justify-center px-6 py-5"
+    >
       <p className={`text-center ${GRAMMAR_PASSAGE_TEXT_CLASS}`}>{passageText}</p>
-    </GrammarPassageMask>
+    </ExpandablePassageBox>
   )
 }
 
 /** X 교정 — 틀린 부분 빨간 글자 + 밑줄 */
-function GrammarXCorrectionPassage({ question }: { question: GrammarType2WordChoiceQuestion }) {
+function GrammarXCorrectionPassage({
+  question,
+  maxBottom,
+  onGrowthChange,
+}: {
+  question: GrammarType2WordChoiceQuestion
+  maxBottom: number
+  onGrowthChange: (growth: number) => void
+}) {
+  useEffect(() => {
+    if (!question.maskPassage) onGrowthChange(0)
+  }, [question.maskPassage, question.id, onGrowthChange])
+
   if (!question.maskPassage || !question.wrongPart) return null
 
   return (
-    <GrammarPassageMask passageRect={GRAMMAR_TYPE_2_X_PASSAGE}>
+    <ExpandablePassageBox
+      rect={GRAMMAR_TYPE_2_X_PASSAGE}
+      maxBottom={maxBottom}
+      contentKey={question.id}
+      onGrowthChange={onGrowthChange}
+      className="pointer-events-none absolute z-[2] rounded-[19px] border-2 border-[#D9D9D9] bg-white"
+      contentClassName="flex w-full items-center justify-center px-6 py-5"
+    >
       <p className={`text-center ${GRAMMAR_PASSAGE_TEXT_CLASS}`}>
         {question.passageBefore ? `${question.passageBefore} ` : null}
         <span className="font-semibold text-[#EF4444] underline decoration-2 underline-offset-[3px]">
@@ -125,7 +156,7 @@ function GrammarXCorrectionPassage({ question }: { question: GrammarType2WordCho
         </span>
         {question.passageAfter ? ` ${question.passageAfter}` : null}
       </p>
-    </GrammarPassageMask>
+    </ExpandablePassageBox>
   )
 }
 
@@ -142,6 +173,12 @@ function GrammarOxQuestionView({
   locked: boolean
   onOptionClick: (optionId: GrammarType2OptionId) => void
 }) {
+  const [passageGrowth, setPassageGrowth] = useState(0)
+
+  useEffect(() => {
+    setPassageGrowth(0)
+  }, [question.id])
+
   const getOptionState = (optionId: GrammarType2OptionId): OptionVisualState => {
     if (!result) return 'idle'
     if (optionId === question.correctOptionId) return 'correct'
@@ -151,11 +188,11 @@ function GrammarOxQuestionView({
 
   return (
     <>
-      <GrammarOxPassage question={question} />
+      <GrammarOxPassage question={question} onGrowthChange={setPassageGrowth} />
 
       {GRAMMAR_TYPE_2_OPTIONS.map((option, index) => {
         const state = getOptionState(option.id)
-        const box = GRAMMAR_TYPE_2_OPTION_BOXES[index]
+        const box = shiftRect(GRAMMAR_TYPE_2_OPTION_BOXES[index]!, passageGrowth)
 
         return (
           <button
@@ -190,6 +227,16 @@ function GrammarWordChoiceQuestionView({
   result: 'correct' | 'wrong' | null
   onOptionClick: (optionId: string) => void
 }) {
+  const [passageGrowth, setPassageGrowth] = useState(0)
+  const passageMaxBottom = useMemo(
+    () => wordChoicePassageMaxBottom(question.optionBoxes),
+    [question.optionBoxes],
+  )
+
+  useEffect(() => {
+    setPassageGrowth(0)
+  }, [question.id])
+
   const displayOptions = useMemo(
     () => shuffleArray(question.options),
     [question.id, question.options],
@@ -204,11 +251,15 @@ function GrammarWordChoiceQuestionView({
 
   return (
     <>
-      <GrammarXCorrectionPassage question={question} />
+      <GrammarXCorrectionPassage
+        question={question}
+        maxBottom={passageMaxBottom}
+        onGrowthChange={setPassageGrowth}
+      />
 
       {displayOptions.map((option, index) => {
         const state = getOptionState(option.id)
-        const box = question.optionBoxes[index]
+        const box = shiftRect(question.optionBoxes[index]!, passageGrowth)
 
         return (
           <button
@@ -366,7 +417,7 @@ export function GrammarType2Screen({
   const correctAnswerLabel = getCorrectAnswerLabel(question)
 
   return (
-    <FigmaAssetFrame
+    <FigmaAssetFrame backButtonMask={BACK_MASK_WHITE_HEADER}
       key={question.id}
       src={getQuestionAsset(question)}
       alt={question.kind === 'word-choice' ? '문법 유형 2 정답 X' : '문법 유형 2'}

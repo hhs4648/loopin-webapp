@@ -1,23 +1,33 @@
 import { useState } from 'react'
 import { TermsDocSheet } from './TermsDocSheet'
 import {
-  ONBOARDING_TERM_LABEL_CLASS,
-} from './onboarding-chrome'
+  ONBOARDING_BODY_CLASS,
+  ONBOARDING_BUTTON_LABEL_CLASS,
+  ONBOARDING_CAPTION_CLASS,
+  ONBOARDING_CHECK_RING,
+  ONBOARDING_CHECK_SIZE,
+  ONBOARDING_CTA_BG,
+  ONBOARDING_CTA_BG_DISABLED,
+  ONBOARDING_CTA_RADIUS_CLASS,
+  ONBOARDING_OPTION_LABEL_X,
+  ONBOARDING_TEXT,
+  ONBOARDING_TEXT_MUTED,
+} from './onboarding-typography'
 
 export const FRAME_W = 393
 export const FRAME_H = 852
 
-/** Figma 393×852 — 다음 버튼 */
+/** Figma 393×852 — 하단 CTA 버튼 자리 (x=30 y=741 w=333 h=60) */
 export const NEXT_BTN =
   'absolute left-[7.63%] top-[86.97%] h-[7.04%] w-[84.73%]'
 
-/** Figma 393×852 — 입력 필드 */
+/** Figma 393×852 — 입력 필드 (x=22.5 y=230.5 w=347 h=60) */
 export const INPUT_FIELD =
-  'absolute left-[5.73%] top-[27.05%] h-[7.04%] w-[88.29%] bg-transparent px-4 text-base text-[#1e1e1e] outline-none placeholder:text-[#767676]'
+  `absolute left-[5.73%] top-[27.05%] h-[7.04%] w-[88.29%] bg-transparent px-4 outline-none ${ONBOARDING_BODY_CLASS} ${ONBOARDING_TEXT} placeholder:text-[#767676]`
 
 /** Figma 393×852 — 입력 필드 하단 안내 */
 export const INPUT_HINT =
-  'absolute left-[5.73%] top-[35.8%] w-[88.29%] pl-3 text-sm text-[#767676]'
+  `absolute left-[5.73%] top-[35.8%] w-[88.29%] pl-3 ${ONBOARDING_CAPTION_CLASS} ${ONBOARDING_TEXT_MUTED}`
 
 /**
  * 약관 행 — 체크/라벨로 동의, `>` 로 전문 보기.
@@ -56,8 +66,15 @@ export const TERM_TOGGLE_HIT = { x: 16, w: 320, h: 52 } as const
 /** Figma › chevron 근처 — 전문 보기 */
 export const TERM_CHEVRON_HIT = { x: 340, w: 44, h: 52 } as const
 
-/** 베이크된 문구 덮개 + React 라벨 */
-export const TERM_LABEL_RECT = { x: 50, w: 280, h: 34 } as const
+/** 시안에 구워진 문구를 가리는 덮개 (라벨보다 넓게) */
+export const TERM_LABEL_COVER = { x: 50, w: 280, h: 34 } as const
+
+/** React 라벨 — 시안 문구와 같은 x에서 시작한다 */
+export const TERM_LABEL_RECT = {
+  x: ONBOARDING_OPTION_LABEL_X,
+  w: 330 - ONBOARDING_OPTION_LABEL_X,
+  h: 34,
+} as const
 
 export const AGREE_ALL_ROW = { cx: 31, cy: 689, label: '모두 동의합니다' }
 
@@ -91,24 +108,50 @@ export function figmaAbsRect(rect: FigmaOnboardingRect) {
   }
 }
 
-export function sanitizeSchoolNameInput(value: string): string {
+/** 특수문자 제거 — 숫자·영문·한글·공백만 남긴다 */
+function stripSpecialCharacters(value: string): string {
   return value.replace(/[^0-9a-zA-Z가-힣ㄱ-ㅎㅏ-ㅣ\s]/g, '')
 }
 
+export function sanitizeSchoolNameInput(value: string): string {
+  return stripSpecialCharacters(value)
+}
+
+/**
+ * 이름 입력 제한 — 학생·선생님 온보딩 공용.
+ * 이름 화면 SVG(`onboarding-teacher-02-school.svg`, 파일명과 달리 "이름을 적어주세요")에
+ * "2 ~ 5자 이내여야 하고 특수문자는 허용되지 않아요"가 그려져 있다.
+ */
+export const NAME_MIN_LENGTH = 2
+export const NAME_MAX_LENGTH = 5
+
+export function sanitizeNameInput(value: string): string {
+  return stripSpecialCharacters(value).slice(0, NAME_MAX_LENGTH)
+}
+
+/**
+ * 온보딩 선택 원 — 약관 동의·학년·회원 유형이 전부 같은 모양을 쓴다.
+ *
+ * `hasBakedRing`(기본 true): 시안 이미지에 회색 링이 이미 그려져 있으므로
+ * 선택됐을 때만 파란 원을 덮어 그린다. Figma 에셋이 없는 화면(회원 유형)은
+ * `hasBakedRing={false}`로 두면 미선택 링까지 직접 그린다.
+ */
 export function CircleCheckbox({
   checked,
   cx,
   cy,
   label,
   onToggle,
+  hasBakedRing = true,
 }: {
   checked: boolean
   cx: number
   cy: number
   label: string
   onToggle: () => void
+  hasBakedRing?: boolean
 }) {
-  const circle = figmaRect(cx, cy, 21)
+  const circle = figmaRect(cx, cy, ONBOARDING_CHECK_SIZE)
 
   return (
     <button
@@ -119,7 +162,7 @@ export function CircleCheckbox({
       style={circle}
       onClick={onToggle}
     >
-      {checked && (
+      {checked ? (
         <span className="flex h-full w-full items-center justify-center rounded-full bg-[#2AA3FF]">
           <svg
             viewBox="0 0 12 10"
@@ -136,37 +179,52 @@ export function CircleCheckbox({
             />
           </svg>
         </span>
+      ) : hasBakedRing ? null : (
+        <span
+          className={`block h-full w-full rounded-full ${ONBOARDING_CHECK_RING}`}
+        />
       )}
     </button>
   )
 }
 
+/**
+ * 온보딩 하단 CTA — 전 화면 같은 자리·크기·글자(18px Bold).
+ *
+ * `hasBakedButton`(기본 true): 시안 이미지에 회색 비활성 버튼이 그려져 있어
+ * 비활성일 땐 투명 히트 영역만 얹는다. 에셋이 없는 화면(회원 유형)은
+ * `hasBakedButton={false}`로 두면 비활성 버튼까지 직접 그린다.
+ */
 export function NextStepButton({
   enabled,
   onClick,
+  label = '다음',
+  hasBakedButton = true,
 }: {
   enabled: boolean
   onClick: () => void
+  label?: string
+  hasBakedButton?: boolean
 }) {
-  if (!enabled) {
-    return (
-      <button
-        type="button"
-        aria-label="다음"
-        className={`${NEXT_BTN} cursor-not-allowed bg-transparent`}
-        disabled
-      />
-    )
-  }
+  const painted = enabled || !hasBakedButton
 
   return (
     <button
       type="button"
-      aria-label="다음"
-      className={`${NEXT_BTN} cursor-pointer rounded-[19px] bg-[#2AA3FF] text-sm font-semibold text-white`}
+      aria-label={label}
+      disabled={!enabled}
       onClick={onClick}
+      className={`${NEXT_BTN} ${ONBOARDING_CTA_RADIUS_CLASS} ${ONBOARDING_BUTTON_LABEL_CLASS} ${
+        enabled
+          ? `cursor-pointer ${ONBOARDING_CTA_BG} text-white`
+          : `cursor-not-allowed ${
+              hasBakedButton
+                ? 'bg-transparent'
+                : `${ONBOARDING_CTA_BG_DISABLED} text-white`
+            }`
+      }`}
     >
-      다음
+      {painted ? label : null}
     </button>
   )
 }
@@ -209,10 +267,15 @@ export function TermsStep({
           w: TERM_CHEVRON_HIT.w,
           h: TERM_CHEVRON_HIT.h,
         })
-        const labelTop = row.cy - TERM_LABEL_RECT.h / 2
+        const coverStyle = figmaAbsRect({
+          x: TERM_LABEL_COVER.x,
+          y: row.cy - TERM_LABEL_COVER.h / 2,
+          w: TERM_LABEL_COVER.w,
+          h: TERM_LABEL_COVER.h,
+        })
         const labelStyle = figmaAbsRect({
           x: TERM_LABEL_RECT.x,
-          y: labelTop,
+          y: row.cy - TERM_LABEL_RECT.h / 2,
           w: TERM_LABEL_RECT.w,
           h: TERM_LABEL_RECT.h,
         })
@@ -233,12 +296,18 @@ export function TermsStep({
               label={display}
               onToggle={() => onToggleTerm(row.id)}
             />
+            {/* 시안에 구워진 문구 덮개 */}
             <span
               aria-hidden
-              className={`pointer-events-none absolute z-[3] flex items-center bg-[#fefefe] px-0 text-left ${ONBOARDING_TERM_LABEL_CLASS}`}
+              className="pointer-events-none absolute z-[3] block bg-[#fefefe]"
+              style={coverStyle}
+            />
+            <span
+              aria-hidden
+              className={`pointer-events-none absolute z-[3] flex items-center text-left ${ONBOARDING_BODY_CLASS} ${ONBOARDING_TEXT}`}
               style={labelStyle}
             >
-              <span className="mr-1 shrink-0 text-[#767676]">
+              <span className={`mr-1 shrink-0 ${ONBOARDING_TEXT_MUTED}`}>
                 {row.required ? '[필수]' : '[선택]'}
               </span>
               <span className="truncate">{row.label}</span>

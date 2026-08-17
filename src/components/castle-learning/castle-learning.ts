@@ -50,7 +50,11 @@ function scaleRect(rect: { x: number; y: number; w: number; h: number }) {
 
 const CONTINUE_BUTTON = scaleRect({ x: 37.207, y: 1454.78, w: 656.696, h: 96.7371 })
 
-/** 학습 SVG 좌상단 `<` (732×1585 원본) */
+/**
+ * @deprecated 쓰지 말 것 — 뒤로가기는 공통 `BACK_BUTTON_HIT` 한 자리로 통일했다(2026-08-08).
+ * 이 값은 상태바 높이(y≈20)에 7.5×10 크기로 잡혀 있어서 혼자 크게 어긋나 있었다.
+ * 지금은 `BACK_MASK_CASTLE_LEARNING`으로 구운 화살표를 덮고 공통 위치에 다시 그린다.
+ */
 export const CASTLE_HEADER_BACK_HIT = scaleRect({ x: 17, y: 38, w: 55, h: 55 })
 
 const QUIZ_OPTION_BOXES_STEP_2 = [
@@ -127,3 +131,4 @@ export function getNextCastleLearningStep(
   if (stepId >= 4) return null
   return (stepId + 1) as CastleLearningStepId
 }
+

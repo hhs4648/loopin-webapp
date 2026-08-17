@@ -1,7 +1,7 @@
 export const FRAME_W = 393
 export const FRAME_H = 852
 
-export const BODY_TEXT_A_ASSET = '/assets/body-text-a.svg'
+export const BODY_TEXT_A_ASSET = '/assets/body-text-a.svg?v=2'
 
 export type BodyTextAQuestionId = string
 

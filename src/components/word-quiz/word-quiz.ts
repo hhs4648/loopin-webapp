@@ -9,7 +9,7 @@ export const FRAME_W = 393
 export const FRAME_H = 852
 
 export const WORD_QUIZ_ASSETS = {
-  base: '/assets/word-b-start.svg',
+  base: '/assets/word-b-start.svg?v=2',
 } as const
 
 export const FEEDBACK_MS = 500
