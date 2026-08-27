@@ -16,7 +16,7 @@
 | 스타일 | Tailwind CSS 4 (`@theme` in `src/index.css`) |
 | 라우팅 | React Router 7 (`BrowserRouter`) |
 | 상태 | 컴포넌트 `useState` / `useRef` (전역 스토어 없음) |
-| 인증 저장 | `localStorage` 키 `loopin_auth` |
+| 인증 저장 | `localStorage` 키 `haksup_auth` |
 
 스크립트: `dev` / `build` (`tsc -b && vite build`) / `preview`  
 테스트·린트·CI: **없음** (TBD)
@@ -107,7 +107,7 @@ type AuthUser = {
 `word-match` → `word-quiz` → `word-spell` → `learning-complete` →  
 `body-text-a` → `body-text-b` → `body-text-c` → `body-text-complete` →  
 `grammar-type-1` → `grammar-type-2` → `grammar-complete`  
-및 분기: `learning-1` … `learning-4`, `praise-calendar`(맵 상단 CTA)
+및 분기: `learning-1` … `learning-4`, `praise-calendar`(맵 상단 CTA), `streak-calendar`(맵 연속 학습 배지)
 
 ### 5.2 세션 결과
 

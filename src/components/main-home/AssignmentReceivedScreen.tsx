@@ -256,6 +256,8 @@ type AssignmentReceivedScreenProps = {
   onOpenWordMatch?: (options?: OpenAssignmentOptions) => void
   onOpenCastleLearning?: (options?: OpenAssignmentOptions) => void
   onOpenPraiseCalendar?: () => void
+  /** 연속 학습 배지 → `StreakCalendarScreen` */
+  onOpenStreakCalendar?: () => void
   /** 하단 내비 → 설정 창 */
   settingsOpen?: boolean
   onCloseSettings?: () => void
@@ -286,6 +288,7 @@ export function AssignmentReceivedScreen({
   onOpenWordMatch,
   onOpenCastleLearning,
   onOpenPraiseCalendar,
+  onOpenStreakCalendar,
   settingsOpen = false,
   onCloseSettings,
   gymOpen = false,
@@ -833,7 +836,17 @@ export function AssignmentReceivedScreen({
             absolute라 스트릭이 늦게 도착해도 카드가 밀리지 않는다.
           */}
           {/* 연속 학습 배지 — Figma 기준 (12, 65). 좌표는 `StudyStreakBadge`의 BADGE 상수 */}
-          <StudyStreakBadge streak={studyStreak} />
+          <StudyStreakBadge
+            streak={studyStreak}
+            onClick={
+              onOpenStreakCalendar
+                ? () => {
+                    playTapSfx()
+                    onOpenStreakCalendar()
+                  }
+                : undefined
+            }
+          />
           <TodayMissionCard
             assignments={serverList}
             retryingAssignmentId={retryingAssignmentId}
@@ -930,6 +943,8 @@ export function AssignmentReceivedScreen({
             onSelectNav={handleNavSelect}
             onStart={(assignment) => {
               onCloseGym?.()
+              // 헬스장 대기는 교사 「오답만 다시 출제」과제. 그대로 러너에 넣으면
+              // 그 스냅샷(오답만)이 문항으로 나온다. 맵의 틀린문제만 연습과 섞지 않는다.
               onOpenAssignment?.(assignment, { isRetry: false })
             }}
           />

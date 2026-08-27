@@ -1,30 +1,41 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-loopin-blue: #2aa3ff;
-  --color-loopin-green: #b2f165;
-  --color-loopin-white: #ffffff;
-  --color-loopin-black: #111111;
-  --color-loopin-gray-100: #f5f5f5;
-  --color-loopin-gray-300: #d9d9d9;
-  --color-loopin-gray-400: #c4c4c4;
-  --color-loopin-kakao: #ffe812;
-  --color-loopin-kakao-border: #fde33e;
-  --color-loopin-text: #111111;
-  --color-loopin-text-muted: #666666;
+  --color-haksup-blue: #2aa3ff;
+  --color-haksup-green: #b2f165;
+  --color-haksup-white: #ffffff;
+  --color-haksup-black: #111111;
+  --color-haksup-gray-100: #f5f5f5;
+  --color-haksup-gray-300: #d9d9d9;
+  --color-haksup-gray-400: #c4c4c4;
+  --color-haksup-kakao: #ffe812;
+  --color-haksup-kakao-border: #fde33e;
+  --color-haksup-text: #111111;
+  --color-haksup-text-muted: #666666;
   --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-en: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
 @layer base {
+  html {
+    /* JS가 visualViewport를 넣기 전 폴백 — dvh는 인앱 브라우저에서 과대 계측됨 */
+    --app-vh: 100svh;
+    --app-vw: 100%;
+    --app-v-top: 0px;
+    --app-v-left: 0px;
+  }
+
   html,
   body,
   #root {
-    @apply h-full m-0;
+    height: var(--app-vh);
+    max-height: var(--app-vh);
+    margin: 0;
+    overflow: hidden;
   }
 
   body {
-    @apply font-sans antialiased text-loopin-text bg-loopin-white;
+    @apply font-sans antialiased text-haksup-text bg-haksup-white;
   }
 
   button {
@@ -47,9 +58,16 @@
 
   그래서 **폭과 높이 중 작은 쪽에 맞춘다.** 짧은 화면에서는 프레임이 조금 좁아지고
   좌우에 여백이 생기지만, 잘려서 못 누르는 것보다 낫다. 태블릿 상한 540px도 그대로다.
+
+  높이는 `100dvh`가 아니라 `--app-vh`(visualViewport)다. 카카오 인앱처럼 주소창·툴바가
+  얹힌 웹뷰에서는 dvh가 실제보다 커서 아래가 잘렸다.
 */
 .app-shell {
-  min-height: 100dvh;
+  position: fixed;
+  top: var(--app-v-top);
+  left: var(--app-v-left);
+  width: var(--app-vw);
+  height: var(--app-vh);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -58,12 +76,14 @@
 }
 
 .app-frame {
-  width: min(100%, 540px, calc(100dvh * 393 / 852));
+  width: min(100%, 540px, calc(var(--app-vh) * 393 / 852));
   aspect-ratio: 393 / 852;
-  max-height: 100dvh;
+  max-height: var(--app-vh);
   position: relative;
   overflow: hidden;
   background: #ffffff;
+  container-type: inline-size;
+  container-name: app;
 }
 
 .screen {
@@ -82,17 +102,17 @@
   color: #111111;
 }
 
-.loopin-logo-img {
+.haksup-logo-img {
   display: block;
   width: auto;
   user-select: none;
 }
 
-.loopin-logo-img--splash {
+.haksup-logo-img--splash {
   height: 48px;
 }
 
-.loopin-logo-img--login {
+.haksup-logo-img--login {
   height: 40px;
 }
 
@@ -351,7 +371,7 @@
 }
 
 /* 메인 맵 — 빨간 성 생동감 */
-@keyframes loopin-sparkle {
+@keyframes haksup-sparkle {
   0%,
   100% {
     opacity: 0.35;

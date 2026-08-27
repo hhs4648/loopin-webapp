@@ -6,6 +6,7 @@
 | 문장·문법 파트 완료 | `PartCompleteScreen` — 에셋 `sentence-grammar-complete.svg` (`문장,문법 완료화면`) · CTA: 계속하기 / 홈 |
 | 본문 완료(레거시 데모) | `BodyTextCompleteScreen` — `body-text-complete` |
 | 종합 완료 | `GrammarCompleteScreen` — `grammar-complete` |
+| 헬스장 완료 | `GymCompleteScreen` — 오답 재출제만. `gym-complete.svg`(오답 있음) / `gym-complete-perfect.svg`(백점). 오답 있으면 「틀린 문제만 다시 풀기」(연습·점수 미반영) · 「다음에 풀게요, 홈으로 가기」 |
 | 재시도 로직 | `MainHomeScreen` + `session-results.ts` |
 | 시트 | `RetryWrongCompleteSheet` |
 
@@ -21,7 +22,11 @@
 | 문법 | `grammar-type-2`(OX) · `grammar-type-1` | `PartCompleteScreen part="grammar"` |
 
 - **계속하기** → 다음 파트의 첫 섹션. **마지막 파트면 과제를 완료 처리**하고
-  `onCompleted`로 빠져나가 **종합 완료화면**(`GrammarCompleteScreen` · 점수대별 `assignment-complete-high/mid/low.svg`)이 열린다.
+  `onCompleted`로 빠져나간다. **성 맵 과제**는 종합 완료화면(`GrammarCompleteScreen`).
+  **헬스장 오답 재출제**는 `GymCompleteScreen` — 오답 있으면 `gym-complete.svg`, 백점이면
+  `gym-complete-perfect.svg`. 오답이 있으면 파란 CTA가 **그 헬스장에서 틀린 문항만**
+  연습으로 다시 낸다(`onlyQuestionIds` · `practiceOnly`, 점수 미반영). 끝나면 다시
+  헬스장 완료. 「다음에 풀게요, 홈으로 가기」와 백점 CTA·내비는 홈/헬스장으로.
 - **홈** → `onExit` (맵/과제 화면). 이미 기록된 답안은 서버에 남아 다시 들어오면 이어서 푼다.
 - **배지 문구** = 선생님이 과제 부여할 때 쓴 버튼명 + 「 완료」.
   `resolvePartCompleteBadgeLabel(part, assignment.title)`가 제목에서
@@ -45,8 +50,10 @@
 | 격려 | `encouragementForPartScore(score)` — 80↑ 「정말 잘했어요!」 |
 | 요약 | `{파트 문항}문제 중 {파트 정답}개 정답` (`정답 = 문항 − 오답`) |
 
-`LearningCompleteScreen`의 「오늘 배운 단어」는 데모 은행이 아니라 **스냅샷에서 실제 출제된 단어**다
+`LearningCompleteScreen`의 「오늘 배운 단어」는 데모 은행이 아니라 **스냅샷에서 실제 출제된 단어 전체**다
 (단어 섹션 문항 id `…:match/:listen/:choice/:spell`에서 원본 `word.id`를 되돌려 매칭).
+이어풀기 때 남은 문항(`sections`)이 아니라 출제분 전체(`allSections`)를 본다 — 중간에 나갔다
+다시 들어오면 앞에서 푼 단어가 빠지던 버그.
 「공부 시간」은 단어 파트 첫 화면 진입 시각 기준(최소 1분).
 
 ## 본문 완료 (레거시 데모 세션)
@@ -77,7 +84,7 @@
 ### 「연속 정답」 배지
 
 흰 결과 카드(**x35 y253 w327**) **오른쪽 위 꼭짓점**에 불꽃 + 최고 콤보 수를 그린다.
-루핀은 왼쪽, 콤보는 오른쪽. **2콤보 미만이면 렌더하지 않는다.** 에셋
+마스코트는 왼쪽, 콤보는 오른쪽. **2콤보 미만이면 렌더하지 않는다.** 에셋
 `combo-streak-badge.svg`는 원본 `연속 정답.svg`에서 흰 숫자 path만 뺀 것이고,
 숫자는 매번 달라지므로 React가 SVG 뷰박스 안에 그린다.
 

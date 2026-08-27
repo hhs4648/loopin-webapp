@@ -65,7 +65,7 @@ export class ErrorBoundary extends Component<Props, State> {
     */
     stopAllAudio()
     this.setState({ componentStack: info.componentStack ?? null })
-    console.error('[loopin] 화면을 그리다 오류', error, info.componentStack)
+    console.error('[haksup] 화면을 그리다 오류', error, info.componentStack)
   }
 
   componentDidUpdate(prev: Props) {
@@ -100,7 +100,7 @@ export class ErrorBoundary extends Component<Props, State> {
   private report(): string {
     const { error, componentStack } = this.state
     return [
-      `루핀 오류 신고`,
+      `학습 오류 신고`,
       `화면: ${window.location.pathname}`,
       `시각: ${new Date().toISOString()}`,
       `기기: ${navigator.userAgent}`,

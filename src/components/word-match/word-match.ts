@@ -31,19 +31,33 @@ export type WordTile = {
 
 const TILE_W = 168
 const TILE_H = 98
+const TILE_ROW_STRIDE = 114
 const EN_X = 21
 const KO_X = 205
-const ROW_Y = [214, 328, 442, 556] as const
+/** Figma 타일 자리 — 단어 A·B는 시안 그대로 (제목만 지움) */
+export const WORD_MATCH_TILE_START_Y = 214
 
 export const PAGE_SIZE = 4
+
+function rowYs(startY: number): [number, number, number, number] {
+  return [
+    startY,
+    startY + TILE_ROW_STRIDE,
+    startY + TILE_ROW_STRIDE * 2,
+    startY + TILE_ROW_STRIDE * 3,
+  ]
+}
 
 /** `fillMatchPage`가 붙인 채움 짝 id (`{base}:fill:{pageKey}:{n}`) */
 export function isFillPairId(id: string): boolean {
   return id.includes(':fill:')
 }
 
+/** 시안 카드 그림자 — 흰 덮개로 SVG 그림자가 가려져도 네모 칸이 보이게 */
+export const MATCH_TILE_SHADOW = 'shadow-[0_0_12px_#CFDCE9]'
+
 /** SVG에 구워진 데모 타일을 가리기 위한 8칸 커버 좌표 */
-export const WORD_MATCH_TILE_COVERS = ROW_Y.flatMap((y, row) => [
+export const WORD_MATCH_TILE_COVERS = rowYs(WORD_MATCH_TILE_START_Y).flatMap((y, row) => [
   { id: `cover-en-${row}`, x: EN_X, y, w: TILE_W, h: TILE_H },
   { id: `cover-ko-${row}`, x: KO_X, y, w: TILE_W, h: TILE_H },
 ])
@@ -61,15 +75,19 @@ function shuffle<T>(items: T[]): T[] {
  * Build EN (left) + KO (right) tiles for up to 4 pairs.
  * 양쪽 열을 각각 독립적으로 섞어, 페이지/재풀이마다 배열이 달라진다.
  */
-export function buildTilesFromPairs(pairs: WordMatchPair[]): WordTile[] {
-  const limited = pairs.slice(0, ROW_Y.length)
+export function buildTilesFromPairs(
+  pairs: WordMatchPair[],
+  startY = WORD_MATCH_TILE_START_Y,
+): WordTile[] {
+  const rows = rowYs(startY)
+  const limited = pairs.slice(0, rows.length)
   const english = shuffle(limited).map((pair, index) => ({
     id: `${pair.id}:en`,
     pairId: pair.id,
     label: pair.english,
     side: 'en' as const,
     x: EN_X,
-    y: ROW_Y[index]!,
+    y: rows[index]!,
     w: TILE_W,
     h: TILE_H,
   }))
@@ -80,7 +98,7 @@ export function buildTilesFromPairs(pairs: WordMatchPair[]): WordTile[] {
     label: pair.korean,
     side: 'ko' as const,
     x: KO_X,
-    y: ROW_Y[index]!,
+    y: rows[index]!,
     w: TILE_W,
     h: TILE_H,
   }))
@@ -90,7 +108,8 @@ export function buildTilesFromPairs(pairs: WordMatchPair[]): WordTile[] {
 
 /**
  * 페이지가 4짝보다 적으면 `fillPool`(출제된 단어)에서 랜덤으로 채운다.
- * 이미 페이지에 있는 id는 우선 피하고, 풀이 4개 미만이면 중복 허용(fill 전용 id).
+ * 같은 영어·같은 뜻은 한 화면에 다시 넣지 않는다 — 오답 1개를 4칸에 복제하면
+ * 짝맞추기가 성립하지 않는다. 풀이 모자라면 4칸 미만으로 둔다.
  * 데모(wave/latest/various/run errands) 단어는 쓰지 않는다.
  */
 export function fillMatchPage(
@@ -101,31 +120,33 @@ export function fillMatchPage(
 ): WordMatchPair[] {
   if (page.length >= PAGE_SIZE || fillPool.length === 0) return page.slice(0, PAGE_SIZE)
 
-  const usedIds = new Set(page.map((pair) => pair.id))
+  const baseId = (id: string) => id.replace(/:fill:.*$/, '')
+  const usedIds = new Set(page.flatMap((pair) => [pair.id, baseId(pair.id)]))
+  const usedEnglish = new Set(
+    page.map((pair) => pair.english.trim().toLowerCase()),
+  )
+  const usedKorean = new Set(page.map((pair) => pair.korean.trim()))
   const filled = [...page]
   let fillCount = 0
 
-  const baseId = (id: string) => id.replace(/:fill:.*$/, '')
+  const isUsable = (pair: WordMatchPair) => {
+    if (usedIds.has(pair.id) || usedIds.has(baseId(pair.id))) return false
+    if (excludeIds?.has(pair.id) || excludeIds?.has(baseId(pair.id))) return false
+    if (usedEnglish.has(pair.english.trim().toLowerCase())) return false
+    if (usedKorean.has(pair.korean.trim())) return false
+    return true
+  }
 
   while (filled.length < PAGE_SIZE) {
-    const unusedPool = fillPool.filter((pair) => {
-      if (usedIds.has(pair.id)) return false
-      if (excludeIds?.has(pair.id)) return false
-      if (excludeIds?.has(baseId(pair.id))) return false
-      return true
-    })
-    const pool =
-      unusedPool.length > 0
-        ? unusedPool
-        : fillPool.filter(
-            (pair) => !excludeIds?.has(pair.id) && !excludeIds?.has(baseId(pair.id)),
-          )
-    const fallback = pool.length > 0 ? pool : fillPool
-    const pick = fallback[Math.floor(Math.random() * fallback.length)]!
+    const unusedPool = fillPool.filter(isUsable)
+    if (unusedPool.length === 0) break
+    const pick = unusedPool[Math.floor(Math.random() * unusedPool.length)]!
     const fillId = `${baseId(pick.id)}:fill:${pageKey}:${fillCount}`
     filled.push({ ...pick, id: fillId })
     usedIds.add(pick.id)
     usedIds.add(fillId)
+    usedEnglish.add(pick.english.trim().toLowerCase())
+    usedKorean.add(pick.korean.trim())
     fillCount += 1
   }
 

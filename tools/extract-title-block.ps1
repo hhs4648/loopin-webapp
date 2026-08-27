@@ -25,7 +25,7 @@ $titleBlock = $rawC.Substring($searchStart + $before.LastIndexOf('<g'), ($idxEnd
 Write-Host "title block length=$($titleBlock.Length)"
 [IO.File]::WriteAllText((Join-Path $outDir 'title-block.svg'), $titleBlock)
 
-# Check if LONG already has similar title text path (루핀-like)
+# Check if LONG already has similar title text path (제목 글리프)
 if ($rawL -match 'M175\.709 141') { Write-Host 'LONG already has title glyph' } else { Write-Host 'LONG missing title glyph' }
 if ($rawL -match 'filter19_d_5846') { Write-Host 'LONG has filter19' }
 

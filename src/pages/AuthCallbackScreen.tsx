@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LoopinLogo } from '../components/LoopinLogo'
+import { SplashBrandFrame } from '../components/SplashBrandFrame'
 import {
   createUserFromSession,
   getPostAuthPath,
@@ -81,32 +81,27 @@ export function AuthCallbackScreen() {
   }, [navigate])
 
   return (
-    <div className="relative flex min-h-full w-full flex-col bg-[#2aa3ff]">
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 px-8 text-center">
-        <div className="relative h-[67.427px] w-[176px] shrink-0">
-          <LoopinLogo variant="splash" />
-        </div>
-        {failed ? (
-          <>
-            <p className="font-sans text-[15px] font-semibold leading-relaxed text-white">
-              로그인을 마치지 못했어요.
-              <br />
-              다시 시도해 주세요.
-            </p>
-            <button
-              type="button"
-              className="rounded-xl bg-white px-6 py-3 font-sans text-[15px] font-bold text-[#2AA3FF]"
-              onClick={() => navigate('/login', { replace: true })}
-            >
-              로그인으로 돌아가기
-            </button>
-          </>
-        ) : (
-          <p className="font-sans text-[15px] font-semibold text-white/90">
-            로그인 중이에요…
+    <SplashBrandFrame>
+      {failed ? (
+        <div className="absolute inset-x-8 bottom-[10%] z-10 flex flex-col items-center gap-4 text-center">
+          <p className="font-sans text-[15px] font-semibold leading-relaxed text-[#1E242F]">
+            로그인을 마치지 못했어요.
+            <br />
+            다시 시도해 주세요.
           </p>
-        )}
-      </div>
-    </div>
+          <button
+            type="button"
+            className="rounded-xl bg-[#2AA3FF] px-6 py-3 font-sans text-[15px] font-bold text-white"
+            onClick={() => navigate('/login', { replace: true })}
+          >
+            로그인으로 돌아가기
+          </button>
+        </div>
+      ) : (
+        <p className="absolute inset-x-8 bottom-[12%] z-10 text-center font-sans text-[15px] font-semibold text-[#5A6472]">
+          로그인 중이에요…
+        </p>
+      )}
+    </SplashBrandFrame>
   )
 }

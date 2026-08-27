@@ -14,6 +14,7 @@ import {
   isMatchingPair,
   pickNextPage,
   WORD_MATCH_ASSETS,
+  MATCH_TILE_SHADOW,
   WORD_MATCH_TILE_COVERS,
   type WordMatchPair,
   type WordPairId,
@@ -45,7 +46,7 @@ type WordMatchScreenProps = {
 type TileVisualState = 'idle' | 'selected' | 'correct' | 'wrong' | 'disabled'
 
 function tileFrameClass(state: TileVisualState) {
-  const base = 'box-border border-[3px]'
+  const base = `box-border border-[3px] ${MATCH_TILE_SHADOW}`
 
   switch (state) {
     case 'selected':
@@ -308,7 +309,7 @@ export function WordMatchScreen({
               type="button"
               aria-label={tile.label}
               disabled={completed}
-              className={`absolute flex items-center justify-center px-3 text-center ${tileFrameClass(state)} ${completed ? 'cursor-default' : 'cursor-pointer'}`}
+              className={`absolute z-[2] flex items-center justify-center px-3 text-center ${tileFrameClass(state)} ${completed ? 'cursor-default' : 'cursor-pointer'}`}
               style={figmaRectStyle(tile)}
               onClick={() => handleTileClick(tile)}
             >

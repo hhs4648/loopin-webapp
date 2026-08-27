@@ -1,9 +1,9 @@
-import { speakLoopinKorean, stopLoopinTts } from '../../lib/tts/loopin-tts'
+import { speakHaksupKorean, stopHaksupTts } from '../../lib/tts/haksup-tts'
 
 export function stopKoreanSpeech() {
-  stopLoopinTts()
+  stopHaksupTts()
 }
 
 export function speakKoreanText(text: string, _options?: { force?: boolean }) {
-  speakLoopinKorean(text, _options)
+  speakHaksupKorean(text, _options)
 }

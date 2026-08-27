@@ -17,6 +17,7 @@ import {
   figmaRectStyle,
   getAnswerWordGroups,
   getSpaceAfterSlotIndices,
+  getSlotLayouts,
   getSpellingLength,
   getWordSpellTile,
   isPrefilledSlotIndex,
@@ -26,6 +27,7 @@ import {
   WORD_SPELL_CARD,
   WORD_SPELL_CONTENT_BAKE_MASK,
   WORD_SPELL_QUESTIONS,
+  WORD_SPELL_SLOT_AREA,
   WORD_SPELL_SLOTS_MASK,
   WORD_SPELL_SUBMIT_BTN,
   WORD_SPELL_TRAY_MASK,
@@ -51,8 +53,8 @@ type WordSpellScreenProps = {
 
 type SpellResult = 'playing' | 'correct' | 'wrong'
 
-/** 트레이(~y=548) 직전까지 — 카드가 슬롯 마스크 영역으로만 자람 */
-const WORD_SPELL_PASSAGE_MAX_BOTTOM = WORD_SPELL_TRAY_MASK.y - 8
+/** 하단 글자 칸 직전까지 — 카드가 슬롯과 겹치지 않게 */
+const WORD_SPELL_PASSAGE_MAX_BOTTOM = WORD_SPELL_SLOT_AREA.y - 8
 
 function trayTileClass() {
   return 'box-border rounded-[14px] border-[3px] border-transparent bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)]'
@@ -60,6 +62,13 @@ function trayTileClass() {
 
 function trayLabelClass() {
   return EXERCISE_OPTION_EN_CLASS
+}
+
+function slotBoxClass(isFilled: boolean) {
+  if (!isFilled) {
+    return 'rounded-[12px] border-2 border-[#E2E8F2] bg-[#F4F7FB]'
+  }
+  return 'rounded-[12px] border-2 border-[#3C86FF] bg-white'
 }
 
 function InlineAnswerLine({
@@ -158,6 +167,10 @@ export function WordSpellScreen({
   const spaceAfterSlotIndices = question
     ? getSpaceAfterSlotIndices(question.answer)
     : []
+  const slotLayouts = useMemo(
+    () => getSlotLayouts(spellingLength, spaceAfterSlotIndices),
+    [spellingLength, spaceAfterSlotIndices],
+  )
 
   const [{ tiles, slots }, setSpellState] = useState(() => {
     const first = activeQuestions[0]
@@ -284,12 +297,12 @@ export function WordSpellScreen({
           style={figmaRectStyle(WORD_SPELL_CONTENT_BAKE_MASK)}
         />
 
-        {/* 회색 카드 + 본문 — 긴 문장은 트레이 직전까지 박스가 자람 */}
+        {/* 회색 카드 + 본문 — 하단 글자 칸 직전까지 */}
         <ExpandablePassageBox
           rect={WORD_SPELL_CARD}
           maxBottom={WORD_SPELL_PASSAGE_MAX_BOTTOM}
           contentKey={question.id}
-          className="absolute z-[2] rounded-[22px] bg-[#F7FAFF]"
+          className="absolute z-[2] rounded-[22px] bg-[#F7FAFF] shadow-[0_0_12px_#CFDCE9]"
           contentClassName="flex w-full flex-col items-center justify-center gap-3 px-4 py-5 text-center"
         >
           <p
@@ -318,12 +331,39 @@ export function WordSpellScreen({
           </p>
         </ExpandablePassageBox>
 
-        {/* 카드~트레이 사이 SVG 잔상 */}
+        {/* 시안 8칸 잔상 가림 — React 슬롯을 위에 올림 */}
         <div
           aria-hidden
           className="pointer-events-none absolute z-[1] bg-white"
           style={figmaRectStyle(WORD_SPELL_SLOTS_MASK)}
         />
+
+        {slotLayouts.map((rect, slotIndex) => {
+          const tileId = slots[slotIndex]
+          const letter = tileId ? getWordSpellTile(tiles, tileId)?.letter : null
+          const isFilled = Boolean(letter)
+          const isPrefilled = isPrefilledSlotIndex(slotIndex, slots)
+
+          return (
+            <button
+              key={`slot-${slotIndex}`}
+              type="button"
+              disabled={!isPlaying || !isFilled || isPrefilled}
+              aria-label={
+                isFilled
+                  ? `${slotIndex + 1}번째 글자 ${letter}${isPrefilled ? ' (힌트)' : ''}`
+                  : `${slotIndex + 1}번째 빈칸`
+              }
+              className={`absolute z-[2] flex items-center justify-center disabled:opacity-100 ${slotBoxClass(isFilled)} ${
+                isFilled && !isPrefilled ? 'cursor-pointer' : 'cursor-default'
+              }`}
+              style={figmaRectStyle(rect)}
+              onClick={() => handleSlotClick(slotIndex)}
+            >
+              {isFilled ? <span className={trayLabelClass()}>{letter}</span> : null}
+            </button>
+          )
+        })}
 
         <div
           aria-hidden

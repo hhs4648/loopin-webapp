@@ -4,5 +4,5 @@ project_id = "loopin-webapp"
 [api]
 enabled = true
 
-[functions.loopin-tts]
+[functions.haksup-tts]
 verify_jwt = false

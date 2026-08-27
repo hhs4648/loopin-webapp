@@ -6,7 +6,7 @@
  * 없으면 해당 분류를 감춘다 — 다시 틀리면 목록에 되살아난다.
  */
 
-const STORAGE_KEY = 'loopin-review-cleared-at'
+const STORAGE_KEY = 'haksup-review-cleared-at'
 
 /** classId → (categoryKey → ISO 완료 시각) */
 type ReviewedStore = Record<string, Record<string, string>>

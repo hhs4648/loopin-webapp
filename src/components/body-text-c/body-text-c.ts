@@ -72,7 +72,11 @@ export function formatBodyTextCInitialBlank(exampleEn: string): string {
 }
 
 export type BodyTextCDisplayChar =
-  | { kind: 'hint' | 'filled' | 'blank' | 'locked'; char: string; typeIndex: number }
+  | {
+      kind: 'hint' | 'filled' | 'blank' | 'locked' | 'revealed'
+      char: string
+      typeIndex: number
+    }
   | { kind: 'punct'; char: string }
   | { kind: 'gap' }
 
@@ -271,6 +275,60 @@ export function buildBodyTextCDisplayCharsFromSlots(
   return chars
 }
 
+/**
+ * 재도전 실패 후 스펠링 칸 공개 — 맞은 칸은 초록, 틀린 칸은 정답 글자를 빨강으로.
+ */
+export function buildBodyTextCRevealChars(
+  exampleEn: string,
+  correctMask: readonly boolean[],
+): BodyTextCDisplayChar[] {
+  const target = exampleEn.trim()
+  const chars: BodyTextCDisplayChar[] = []
+  let letterIndex = 0
+
+  for (let i = 0; i < target.length; i += 1) {
+    const ch = target[i]!
+
+    if (/\s/.test(ch)) {
+      chars.push({ kind: 'gap' })
+      continue
+    }
+
+    if (/[^A-Za-z]/.test(ch)) {
+      chars.push({ kind: 'punct', char: ch })
+      continue
+    }
+
+    if (correctMask[letterIndex]) {
+      chars.push({ kind: 'locked', char: ch, typeIndex: letterIndex })
+    } else {
+      chars.push({ kind: 'revealed', char: ch, typeIndex: letterIndex })
+    }
+    letterIndex += 1
+  }
+
+  return chars
+}
+
+/**
+ * 마지막 제출 기준 정답 칸. 1차에서 잠근 칸 + 재도전에서 맞힌 칸.
+ */
+export function buildBodyTextCFinalCorrectMask(
+  exampleEn: string,
+  lockedMask: readonly boolean[] | null,
+  slots: readonly (string | null)[] | null,
+  typedLetters: string,
+): boolean[] {
+  const answer = extractBodyTextCLetters(exampleEn)
+  return answer.map((ch, index) => {
+    if (lockedMask?.[index]) return true
+    const typed =
+      slots && index < slots.length ? slots[index] : typedLetters[index]
+    if (typed == null || typed === '') return false
+    return typed.toLowerCase() === ch.toLowerCase()
+  })
+}
+
 /** 표시 토큰을 단어 단위로 묶어 flex gap으로 띄어쓰기를 준다 */
 export function groupBodyTextCDisplayWords(
   chars: BodyTextCDisplayChar[],
@@ -302,16 +360,16 @@ export const BODY_TEXT_C_PROGRESS_BAR = { x: 33, y: 142, w: 326, h: 18 }
 export const BODY_TEXT_C_PROGRESS_LABEL = { x: 168, y: 146, w: 60, h: 18 }
 
 /**
- * 진행바 아래~제출 위 SVG 데모(빈칸·점선·잔글씨) 전부 가림.
+ * 헤더 아래~제출 위 SVG 데모(빈칸·점선·잔글씨) 전부 가림.
  * 제시문·입력 박스는 이 위에 React로 다시 그림.
  */
-export const BODY_TEXT_C_CONTENT_BAKE_MASK = { x: 0, y: 168, w: 393, h: 460 }
+export const BODY_TEXT_C_CONTENT_BAKE_MASK = { x: 0, y: 108, w: 393, h: 540 }
 
-/** Figma — 문제(예문 뜻 · 한국어). 앱 기준 가운데 · 최대 4줄 */
-export const BODY_TEXT_C_PASSAGE = { x: 16, y: 200, w: 361, h: 112 }
+/** Figma — 문제(예문 뜻 · 한국어). 헤더 바로 아래. 짧으면 낮게, 길면 박스가 자람 */
+export const BODY_TEXT_C_PASSAGE = { x: 16, y: 118, w: 361, h: 72 }
 
-/** Figma — 문장 완성 입력 박스 */
-export const BODY_TEXT_C_SENTENCE_BOX = { x: 24, y: 328, w: 345, h: 160 }
+/** 문장 완성 입력 박스 — 제시문 바로 아래. 긴 영작은 아래로 자람 */
+export const BODY_TEXT_C_SENTENCE_BOX = { x: 24, y: 198, w: 345, h: 240 }
 
 /** Figma — 제출하기 버튼 */
 export const BODY_TEXT_C_SUBMIT_BTN = { x: 30, y: 751, w: 333, h: 60 }

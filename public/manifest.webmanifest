@@ -1,6 +1,6 @@
 {
-  "name": "루핀 — 중학교 영어 내신",
-  "short_name": "루핀",
+  "name": "학습 — 중학교 영어 내신",
+  "short_name": "학습",
   "lang": "ko",
   "description": "선생님이 낸 과제를 풀고 오답을 복습하는 중학교 영어 학습 앱",
   "start_url": "/",

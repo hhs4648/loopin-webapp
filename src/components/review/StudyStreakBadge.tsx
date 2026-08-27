@@ -12,6 +12,9 @@ import {
  * 그림 자체는 `StudyStreakBadgeArt`가 그린다 — 축하 화면
  * (`streak-celebration/StreakCelebrationScreen`)이 같은 그림을 크게 쓰기 때문에
  * 안쪽 글자 좌표를 한 곳에 모아 뒀다. 여기는 **프레임 위 자리 잡기**만 한다.
+ *
+ * 탭하면 연속 학습 캘린더(`StreakCalendarScreen`)를 연다. 부모 맵 레이어가
+ * `pointer-events-none`이라 버튼에 `pointer-events-auto`가 필요하다.
  */
 
 /**
@@ -39,24 +42,53 @@ export const STREAK_BADGE_HOME_CENTER = {
   cy: SHAPE.y + SHAPE.h / 2,
 } as const
 
-export function StudyStreakBadge({ streak }: { streak: StudyStreak }) {
+function streakBadgeAriaLabel(streak: StudyStreak): string {
+  const status = isStreakDay1(streak.days)
+    ? '학습 시작 · 1일째'
+    : `${streak.days}일 연속 학습 중${streak.includesToday ? '' : ' · 오늘 학습 전'}`
+  return `연속 학습 캘린더 열기 · ${status}`
+}
+
+export function StudyStreakBadge({
+  streak,
+  onClick,
+}: {
+  streak: StudyStreak
+  onClick?: () => void
+}) {
   if (streak.days < 1) return null
 
-  return (
+  const positionStyle = {
+    left: `${(BADGE.x / 393) * 100}%`,
+    top: `${(BADGE.y / 852) * 100}%`,
+    width: `${(BADGE.w / 393) * 100}%`,
+    aspectRatio: `${BADGE.w} / ${BADGE.h}`,
+  }
+
+  const art = (
     <StudyStreakBadgeArt
       days={streak.days}
-      ariaLabel={
-        isStreakDay1(streak.days)
-          ? '학습 시작 · 1일째'
-          : `${streak.days}일 연속 학습 중${streak.includesToday ? '' : ' · 오늘 학습 전'}`
+      className={
+        onClick
+          ? 'h-full w-full select-none'
+          : 'pointer-events-none absolute z-[3] select-none'
       }
-      className="pointer-events-none absolute z-[3] select-none"
-      style={{
-        left: `${(BADGE.x / 393) * 100}%`,
-        top: `${(BADGE.y / 852) * 100}%`,
-        width: `${(BADGE.w / 393) * 100}%`,
-        aspectRatio: `${BADGE.w} / ${BADGE.h}`,
-      }}
+      style={onClick ? undefined : positionStyle}
+      ariaLabel={onClick ? undefined : streakBadgeAriaLabel(streak)}
     />
+  )
+
+  if (!onClick) return art
+
+  return (
+    <button
+      type="button"
+      aria-label={streakBadgeAriaLabel(streak)}
+      className="pointer-events-auto absolute z-[3] cursor-pointer bg-transparent"
+      style={positionStyle}
+      onClick={onClick}
+    >
+      {art}
+    </button>
   )
 }

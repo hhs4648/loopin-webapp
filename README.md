@@ -1,6 +1,6 @@
-# Loopin Web App (`loopin-webapp`)
+# Haksup Web App (`loopin-webapp`)
 
-Loopin B2G **학생용** 모바일 웹앱입니다.  
+Haksup B2G **학생용** 모바일 웹앱입니다.  
 교사용 웹은 별도 저장소 `loopin-project`이며, 두 앱은 공통 Supabase 백엔드로 동기화합니다
 (env 설정 필요 — 미설정 시 동기화 비활성).  
 자세한 연동 설계는 [`docs/student-teacher-sync.md`](docs/student-teacher-sync.md)를 참고하세요.

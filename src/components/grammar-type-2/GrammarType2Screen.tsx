@@ -116,10 +116,15 @@ function GrammarOxPassage({
       maxBottom={OX_PASSAGE_MAX_BOTTOM}
       contentKey={question.id}
       onGrowthChange={onGrowthChange}
-      className="pointer-events-none absolute z-[2] rounded-[19px] border-2 border-[#D9D9D9] bg-white"
-      contentClassName="flex w-full items-center justify-center px-6 py-5"
+      className="pointer-events-none absolute z-[2] justify-center rounded-[19px] border-2 border-[#D9D9D9] bg-white"
+      contentClassName="flex w-full flex-col items-center justify-center px-6 py-5 text-center"
     >
-      <p className={`text-center ${GRAMMAR_PASSAGE_TEXT_CLASS}`}>{passageText}</p>
+      <p
+        className={`w-full text-center leading-[1.5] ${GRAMMAR_PASSAGE_TEXT_CLASS}`}
+        style={{ overflowWrap: 'break-word' }}
+      >
+        {passageText}
+      </p>
     </ExpandablePassageBox>
   )
 }
@@ -146,10 +151,13 @@ function GrammarXCorrectionPassage({
       maxBottom={maxBottom}
       contentKey={question.id}
       onGrowthChange={onGrowthChange}
-      className="pointer-events-none absolute z-[2] rounded-[19px] border-2 border-[#D9D9D9] bg-white"
-      contentClassName="flex w-full items-center justify-center px-6 py-5"
+      className="pointer-events-none absolute z-[2] justify-center rounded-[19px] border-2 border-[#D9D9D9] bg-white"
+      contentClassName="flex w-full flex-col items-center justify-center px-6 py-5 text-center"
     >
-      <p className={`text-center ${GRAMMAR_PASSAGE_TEXT_CLASS}`}>
+      <p
+        className={`w-full text-center leading-[1.5] ${GRAMMAR_PASSAGE_TEXT_CLASS}`}
+        style={{ overflowWrap: 'break-word' }}
+      >
         {question.passageBefore ? `${question.passageBefore} ` : null}
         <span className="font-semibold text-[#EF4444] underline decoration-2 underline-offset-[3px]">
           {question.wrongPart}

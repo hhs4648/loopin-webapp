@@ -3,14 +3,15 @@
 | 항목 | 값 |
 |------|-----|
 | 경로 | `/` |
-| 구현 | `src/pages/SplashScreen.tsx` |
-| Figma | https://www.figma.com/design/NFmd87QHBjrA3r9zV9s8Q7/Haksup?node-id=2917-5988 |
-| node-id | `2917:5988` |
-| Export | `logo-loopin.svg`, `status-*.svg` (문서의 `logo-loopin.png`는 구버전 — SVG 우선) |
+| 구현 | `src/pages/SplashScreen.tsx` · `SplashBrandFrame` |
+| Figma | Haksup / 플래시화면 |
+| Export | `플래시화면.svg` → `splash-screen.svg` (원본 `_design-source/플래시화면.svg`) |
 
 ## 목적
 
-앱 실행 시 브랜드 노출 후 인증 상태에 따라 분기.
+앱 실행 시 브랜드 노출 후 인증 상태에 따라 분기. **워드마크는 학습** (구 브랜드 로고 아님).
+
+온보딩 화면을 받아오는 동안의 로딩(`App.tsx` `ScreenLoading`)과 소셜 로그인 콜백도 같은 에셋을 쓴다.
 
 ## 진입 조건
 
@@ -20,7 +21,7 @@
 
 | 상태 | 동작 |
 |------|------|
-| 표시 | 배경 `#2AA3FF`, 로고 중앙, 상태바 |
+| 표시 | `splash-screen.svg` 풀프레임 (흰→하늘 그라데이션, 가운데 학습 워드마크) · 시안에 구워진 **18:00·신호·배터리는 흰 덮개로 가림**(실기기 OS 상태바와 두 겹이 되지 않게) |
 | 1.8초 후 | `getStoredAuth()` → `getPostAuthPath` 또는 `/login` |
 
 ## 레이아웃
@@ -28,15 +29,14 @@
 | 요소 | 스펙 |
 |------|------|
 | 프레임 | 393 × 852 |
-| 배경 | `#2AA3FF` |
-| Status Bar | iOS 스타일 |
-| 로고 | 중앙, ∞ 강조 `#B2F165` |
+| 배경 | 에셋 그라데이션 (흰 → `#A3D7FF`) |
 
 ## 접근성
 
-- 장식적 로고; 자동 전환이므로 CTA 없음
+- 장식적 워드마크; 자동 전환이므로 CTA 없음
+- `alt="학습"`
 
 ## 주의사항
 
 - 임의 딜레이/카피 변경 금지
-- 에셋은 Figma Export 사용
+- 에셋은 Figma Export 사용. 한글 파일명은 `public/assets`에 두지 않는다.

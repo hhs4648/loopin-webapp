@@ -31,9 +31,8 @@ function ComboBadge({ combo }: { combo: number }) {
     <div
       className="pointer-events-none absolute z-30 flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[13px] leading-none font-bold whitespace-nowrap"
       style={{
-        // 뒤로가기(좌상단)·진행바(상단 중앙)를 피해 오른쪽으로 붙인다
         right: `${(14 / 393) * 100}%`,
-        top: `${(62 / 852) * 100}%`,
+        top: `${(78 / 852) * 100}%`,
         color: tone.text,
         boxShadow: `0 2px 10px ${tone.glow}`,
       }}

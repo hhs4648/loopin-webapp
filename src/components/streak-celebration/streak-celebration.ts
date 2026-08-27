@@ -28,7 +28,7 @@ export type StreakCelebration = {
  * 같은 날 또 뜬다. 서버에 둘 만한 값은 아니다(기기별로 한 번 보여주면 충분하고,
  * 이것 때문에 컬럼을 추가할 이유가 없다).
  */
-const LAST_CELEBRATED_KEY = 'loopin-streak-celebrated-day'
+const LAST_CELEBRATED_KEY = 'haksup-streak-celebrated-day'
 
 function loadLastCelebratedDay(): number | null {
   try {

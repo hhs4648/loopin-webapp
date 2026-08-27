@@ -1,19 +1,35 @@
+import { useEffect, useMemo, useState } from 'react'
 import { playTapSfx } from '../exercise/answer-sfx'
 import {
   FRAME_H,
-  FRAME_W,
-  MAIN_HOME_NAV_TABS,
   type MainHomeNavTabId,
 } from '../main-home/assignment-home'
 import type { StudentAssignment } from '../../lib/sync/types'
+import { gymStartHeading } from '../../lib/sync/assignment-title'
+import {
+  buildAssignmentSections,
+  listSectionQuestionIds,
+} from '../../features/assignments/build-session-sections'
+import { estimateMinutesForQuestionIds } from '../../features/review/review-stats'
 import {
   GYM_ASSET,
+  GYM_EMPTY_ASSET,
+  GYM_START_ASSET,
   GYM_CHARACTER_HIT,
-  GYM_NAV_BAR,
-  GYM_NAV_HIT_WIDTH_RATIO,
-  GYM_NAV_TAB_COUNT,
+  GYM_EMPTY_HOME_HIT,
+  GYM_EMPTY_STATUS_BAR_H,
+  GYM_START_BACK_HIT,
+  GYM_START_BADGE,
+  GYM_START_CARD_BLUE,
+  GYM_START_CTA_HIT,
+  GYM_START_METRIC_LABEL_COLOR,
+  GYM_START_METRICS,
+  GYM_START_METRICS_MASK,
+  GYM_START_TITLE,
+  GYM_START_TITLE_MASK,
   gymRectStyle,
 } from './gym'
+import { GymNavHits } from './GymNavHits'
 
 /**
  * 헬스장 — 하단 내비 「헬스장」 탭으로 들어온다.
@@ -37,6 +53,27 @@ export function GymScreen({
   // 여러 개 쌓여 있으면 **먼저 낸 것부터** 푼다(사용자 지정 2026-08-11)
   const next = assignments[0] ?? null
   const waitingExtra = Math.max(0, assignments.length - 1)
+  const [readyToStart, setReadyToStart] = useState(false)
+  const startStats = useMemo(() => {
+    if (!next) return { wrongCount: 0, estimatedMinutes: 0 }
+    const questionIds = listSectionQuestionIds(
+      buildAssignmentSections(next.contentSnapshot),
+    )
+    return {
+      wrongCount: questionIds.length,
+      estimatedMinutes: estimateMinutesForQuestionIds(questionIds),
+    }
+  }, [next])
+
+  useEffect(() => {
+    if (!next) setReadyToStart(false)
+  }, [next])
+
+  const asset = !next
+    ? GYM_EMPTY_ASSET
+    : readyToStart
+      ? GYM_START_ASSET
+      : GYM_ASSET
 
   return (
     <div
@@ -46,18 +83,14 @@ export function GymScreen({
       aria-label="헬스장"
     >
       <img
-        src={GYM_ASSET}
+        src={asset}
         alt=""
         aria-hidden
         draggable={false}
         className="pointer-events-none absolute inset-0 h-full w-full max-w-none select-none object-fill"
       />
 
-      {/*
-        운동하는 캐릭터 = 오답 풀기 진입. 밀린 과제가 없으면 버튼을 아예 두지 않는다 —
-        눌러도 아무 일 없는 버튼보다 없는 게 낫다.
-      */}
-      {next ? (
+      {next && !readyToStart ? (
         <>
           <button
             type="button"
@@ -66,73 +99,122 @@ export function GymScreen({
             }`}
             onClick={() => {
               playTapSfx()
-              onStart?.(next)
+              setReadyToStart(true)
             }}
             className="absolute z-10 cursor-pointer bg-transparent"
             style={gymRectStyle(GYM_CHARACTER_HIT)}
           />
-          {/* 캐릭터 위에 대기 알림 — 투명 히트라 어디를 눌러야 할지 보이게 */}
-          <div
-            className="pointer-events-none absolute z-[11] flex justify-center"
-            style={{
-              left: `${(GYM_CHARACTER_HIT.x / FRAME_W) * 100}%`,
-              top: `${((GYM_CHARACTER_HIT.y - 36) / FRAME_H) * 100}%`,
-              width: `${(GYM_CHARACTER_HIT.w / FRAME_W) * 100}%`,
+        </>
+      ) : null}
+
+      {next && readyToStart ? (
+        <>
+          <button
+            type="button"
+            aria-label="뒤로가기"
+            onClick={() => {
+              playTapSfx()
+              setReadyToStart(false)
             }}
+            className="absolute z-20 cursor-pointer bg-transparent"
+            style={gymRectStyle(GYM_START_BACK_HIT)}
+          />
+          <button
+            type="button"
+            aria-label={`지금 시작하기 · 틀린 문항 ${startStats.wrongCount}문제 · 예상 시간 ${startStats.estimatedMinutes}분`}
+            onClick={() => {
+              playTapSfx()
+              onStart?.(next)
+            }}
+            className="absolute z-20 cursor-pointer bg-transparent"
+            style={gymRectStyle(GYM_START_CTA_HIT)}
+          />
+          {/* 시안 데모 단원·제목을 가리고 실제 출제 정보를 올린다 */}
+          <div
+            className="pointer-events-none absolute z-[21] flex items-center justify-center overflow-hidden rounded-full bg-white"
+            style={gymRectStyle(GYM_START_BADGE)}
             aria-hidden
           >
-            <span className="rounded-full bg-[#1E9EFF] px-3 py-1.5 text-[13px] font-bold leading-none text-white shadow-[0_2px_8px_rgba(30,158,255,0.35)]">
-              {waitingExtra > 0
-                ? `오답 ${assignments.length}개 · 탭해서 풀기`
-                : '오답 다시 풀기 · 탭'}
+            <span className="text-[12px] font-semibold leading-none text-[#2F80ED]">
+              오답 풀기
             </span>
           </div>
-        </>
-      ) : (
-        <p
-          className="pointer-events-none absolute z-10 px-6 text-center text-[14px] font-medium leading-snug text-[#6B7280]"
-          style={{
-            left: 0,
-            right: 0,
-            top: `${((GYM_CHARACTER_HIT.y + GYM_CHARACTER_HIT.h + 12) / FRAME_H) * 100}%`,
-          }}
-        >
-          선생님이 오답만 다시 내주시면
-          <br />
-          캐릭터를 눌러 풀 수 있어요
-        </p>
-      )}
-
-      <nav
-        aria-label="메인 메뉴"
-        className="pointer-events-none absolute inset-0 z-10"
-      >
-        {MAIN_HOME_NAV_TABS.map((tab, index) => {
-          const slotCenterPct = ((index + 0.5) / GYM_NAV_TAB_COUNT) * 100
-          const hitWidthPct = (GYM_NAV_HIT_WIDTH_RATIO / GYM_NAV_TAB_COUNT) * 100
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              aria-label={tab.ariaLabel}
-              aria-current={tab.id === 'gym' ? 'page' : undefined}
-              className="pointer-events-auto absolute bg-transparent"
-              style={{
-                ...gymRectStyle({
-                  x: 0,
-                  y: GYM_NAV_BAR.y,
-                  w: 0,
-                  h: GYM_NAV_BAR.h,
-                }),
-                left: `${slotCenterPct}%`,
-                width: `${hitWidthPct}%`,
-                transform: 'translateX(-50%)',
-              }}
-              onClick={() => onSelectNav?.(tab.id)}
+          <div
+            className="pointer-events-none absolute z-[21]"
+            style={{
+              ...gymRectStyle(GYM_START_TITLE_MASK),
+              background: GYM_START_CARD_BLUE,
+            }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute z-[22] flex items-center overflow-hidden"
+            style={gymRectStyle(GYM_START_TITLE)}
+          >
+            <p className="line-clamp-2 text-[22px] font-bold leading-tight text-white">
+              {gymStartHeading(next.contentSnapshot)}
+            </p>
+          </div>
+          <div
+            className="pointer-events-none absolute z-[21]"
+            style={{
+              ...gymRectStyle(GYM_START_METRICS_MASK),
+              background: GYM_START_CARD_BLUE,
+            }}
+            aria-hidden
+          />
+          <dl
+            className="pointer-events-none absolute z-[22] grid grid-cols-2"
+            style={gymRectStyle(GYM_START_METRICS)}
+          >
+            <GymStartMetric
+              value={`${startStats.wrongCount}문제`}
+              label="틀린 문항"
             />
-          )
-        })}
-      </nav>
+            <GymStartMetric
+              value={`${startStats.estimatedMinutes}분`}
+              label="예상 시간"
+            />
+          </dl>
+        </>
+      ) : null}
+
+      {!next ? (
+        <>
+          {/* 시안 가짜 시계 — OS 상태바와 두 겹이 되지 않게 가림 */}
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 z-[14] bg-white"
+            style={{ height: `${(GYM_EMPTY_STATUS_BAR_H / FRAME_H) * 100}%` }}
+            aria-hidden
+          />
+          <button
+            type="button"
+            aria-label="홈으로 가기"
+            onClick={() => {
+              playTapSfx()
+              onSelectNav?.('home')
+            }}
+            className="absolute z-10 cursor-pointer bg-transparent"
+            style={gymRectStyle(GYM_EMPTY_HOME_HIT)}
+          />
+        </>
+      ) : null}
+
+      <GymNavHits onSelectNav={onSelectNav} />
+    </div>
+  )
+}
+
+function GymStartMetric({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="relative">
+      <dd className="text-[22px] font-bold leading-none text-white">{value}</dd>
+      <dt
+        className="absolute top-[28px] text-[12px] leading-none"
+        style={{ color: GYM_START_METRIC_LABEL_COLOR }}
+      >
+        {label}
+      </dt>
     </div>
   )
 }

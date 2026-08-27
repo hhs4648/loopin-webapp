@@ -6,12 +6,13 @@ import {
   EXERCISE_INPUT_EN_CLASS,
   EXERCISE_PASSAGE_KO_CLASS,
   EXERCISE_EN_BASE_UNSIZED,
-  EXERCISE_EN_PX,
 } from '../exercise/exercise-typography'
 import { ExerciseProgressBar, BakedProgressBarMask } from '../exercise/ExerciseProgressBar'
 import { useShrinkToFit } from '../exercise/use-shrink-to-fit'
 import {
   ExpandablePassageBox,
+  expandablePassageStyle,
+  EXPANDABLE_FRAME_H,
   shiftRect,
 } from '../exercise/ExpandablePassageBox'
 import { ExerciseContinueButton } from '../exercise/ExerciseContinueButton'
@@ -29,6 +30,8 @@ import {
   buildBodyTextCCorrectMask,
   buildBodyTextCDisplayChars,
   buildBodyTextCDisplayCharsFromSlots,
+  buildBodyTextCFinalCorrectMask,
+  buildBodyTextCRevealChars,
   buildBodyTextCRetrySlots,
   countBodyTextCTypeableLetters,
   figmaRectStyle,
@@ -57,9 +60,9 @@ type BodyTextCScreenProps = {
 
 type BodyResult = 'playing' | 'retry' | 'correct' | 'wrong'
 
-/** 제출(~y=751)이 가려지지 않게 — 지문 성장 상한 ≈64px */
-const BODY_TEXT_C_PASSAGE_MAX_BOTTOM =
-  BODY_TEXT_C_PASSAGE.y + BODY_TEXT_C_PASSAGE.h + 64
+/** 긴 제시문이 입력 박스를 밀 여지 */
+const BODY_TEXT_C_PASSAGE_MAX_BOTTOM = 420
+const BODY_TEXT_C_SENTENCE_MAX_BOTTOM = BODY_TEXT_C_SUBMIT_BTN.y - 16
 
 function displayCharClass(ch: BodyTextCDisplayChar): string {
   if (ch.kind === 'filled') return 'text-[#1F242E]'
@@ -152,6 +155,17 @@ export function BodyTextCScreen({
 
   const displayWords = useMemo(() => {
     if (!question) return []
+    if (result === 'wrong') {
+      const correctMask = buildBodyTextCFinalCorrectMask(
+        question.exampleEn,
+        lockedMask,
+        retrySlots,
+        typedLetters,
+      )
+      return groupBodyTextCDisplayWords(
+        buildBodyTextCRevealChars(question.exampleEn, correctMask),
+      )
+    }
     const chars =
       lockedMask && retrySlots
         ? buildBodyTextCDisplayCharsFromSlots(
@@ -161,7 +175,7 @@ export function BodyTextCScreen({
           )
         : buildBodyTextCDisplayChars(question.exampleEn, typedLetters)
     return groupBodyTextCDisplayWords(chars)
-  }, [question, typedLetters, lockedMask, retrySlots])
+  }, [question, typedLetters, lockedMask, retrySlots, result])
 
   /** 내용이 바뀔 때마다 다시 맞춘다 — 문항이 바뀌면 길이가 달라진다 */
   const answerNeedsScroll = useShrinkToFit(fitBoxRef, fitContentRef, [
@@ -385,12 +399,28 @@ export function BodyTextCScreen({
         <div
           aria-hidden
           className="pointer-events-none absolute z-[4] rounded-[12px] bg-[#F6F9FD]"
-          style={figmaRectStyle(shiftRect(BODY_TEXT_C_SENTENCE_BOX, passageGrowth))}
+          style={{
+            ...expandablePassageStyle(shiftRect(BODY_TEXT_C_SENTENCE_BOX, passageGrowth)),
+            maxHeight: `${
+              ((BODY_TEXT_C_SENTENCE_MAX_BOTTOM -
+                (BODY_TEXT_C_SENTENCE_BOX.y + passageGrowth)) /
+                EXPANDABLE_FRAME_H) *
+              100
+            }%`,
+          }}
         />
         <form
           id="body-text-c-answer-form"
-          className="absolute z-[5] flex cursor-text flex-col overflow-hidden px-4 py-4"
-          style={figmaRectStyle(shiftRect(BODY_TEXT_C_SENTENCE_BOX, passageGrowth))}
+          className="absolute z-[5] flex cursor-text flex-col justify-center overflow-y-auto rounded-[12px] px-4 py-4"
+          style={{
+            ...expandablePassageStyle(shiftRect(BODY_TEXT_C_SENTENCE_BOX, passageGrowth)),
+            maxHeight: `${
+              ((BODY_TEXT_C_SENTENCE_MAX_BOTTOM -
+                (BODY_TEXT_C_SENTENCE_BOX.y + passageGrowth)) /
+                EXPANDABLE_FRAME_H) *
+              100
+            }%`,
+          }}
           onSubmit={handleFormSubmit}
           onPointerDown={(event) => {
             if (!isPlaying) return
@@ -408,13 +438,12 @@ export function BodyTextCScreen({
             ref={fitBoxRef}
             aria-hidden
             className={`pointer-events-none flex min-h-0 flex-1 items-center justify-center ${
-              answerNeedsScroll ? 'overflow-y-auto' : 'overflow-hidden'
+              answerNeedsScroll ? 'overflow-y-auto' : 'overflow-visible'
             }`}
           >
           <div
             ref={fitContentRef}
-            className="flex w-full flex-wrap justify-center gap-x-6 gap-y-3"
-            style={{ fontSize: `${EXERCISE_EN_PX}px` }}
+            className="flex w-full flex-wrap justify-center gap-x-3 gap-y-2 text-[length:clamp(12px,4.07cqw,16px)]"
           >
             {displayWords.map((word, wordIndex) => (
               <span
@@ -429,21 +458,23 @@ export function BodyTextCScreen({
                     ch.typeIndex === caretTypeIndex
                   const isHint = ch.kind === 'hint'
                   const isLocked = ch.kind === 'locked'
+                  const isRevealedWrong = ch.kind === 'revealed'
                   const isRetryWrongSlot =
                     result === 'retry' &&
                     !isLocked &&
                     (ch.kind === 'hint' || ch.kind === 'blank' || ch.kind === 'filled')
+                  const isRedSlot = isRetryWrongSlot || isRevealedWrong
                   const showUnderline =
                     isLocked ||
-                    isRetryWrongSlot ||
-                    (!isRetryWrongSlot &&
+                    isRedSlot ||
+                    (!isRedSlot &&
                       (ch.kind === 'hint' || ch.kind === 'blank' || ch.kind === 'filled'))
 
                   return (
                     <span
                       key={`ch-${wordIndex}-${charIndex}`}
                       className={`relative inline-flex w-[0.85em] flex-col items-center justify-end rounded-sm pb-[2px] ${
-                        isRetryWrongSlot
+                        isRedSlot
                           ? `${isCaret ? 'bg-[#FECDD3]' : 'bg-[#FEE2E2]'} text-[#DC2626]`
                           : `${displayCharClass(ch)} ${
                               isCaret
@@ -456,7 +487,7 @@ export function BodyTextCScreen({
                             }`
                       } ${
                         showUnderline
-                          ? isRetryWrongSlot
+                          ? isRedSlot
                             ? 'border-b-2 border-[#DC2626]'
                             : 'border-b-2 border-current'
                           : ''
@@ -564,9 +595,6 @@ export function BodyTextCScreen({
           kind={result === 'correct' ? 'correct' : 'wrong'}
           rect={BODY_TEXT_C_SUBMIT_BTN}
           title={result === 'correct' ? '정답입니다.' : '오답입니다.'}
-          hint={
-            result === 'wrong' ? `예문은 ${question.exampleEn}` : undefined
-          }
           onContinue={handleFeedbackContinue}
         />
       ) : null}

@@ -34,7 +34,7 @@ function Sparkle({ style }: { style: CSSProperties }) {
 }
 
 /**
- * 완료(현재 위치) 성 — 맵 성 위 만세 루핀(`mascot-banzai.svg`).
+ * 완료(현재 위치) 성 — 맵 성 위 만세 마스코트(`mascot-banzai.svg`).
  *
  * 배치는 `캐릭터 성도착` 참고:
  * 가로 중앙 · 발끝 Y = 성 바닥 Y · 크기는 성 대비 참고 비율.

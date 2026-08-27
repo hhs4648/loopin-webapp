@@ -5,7 +5,7 @@ import {
   EXERCISE_COACH_LINE_CLASS,
   EXERCISE_CTA_CLASS,
   EXERCISE_EMPTY_HINT_CLASS,
-  EXERCISE_OPTION_EN_CLASS,
+  EXERCISE_CHUNK_CLASS,
   EXERCISE_PASSAGE_EN_CLASS,
 } from '../exercise/exercise-typography'
 import { ChunkBankTile } from '../exercise/ChunkBankTile'
@@ -30,10 +30,12 @@ import {
   BODY_TEXT_A_SPEAKER_HIT,
   BODY_TEXT_A_SUBMIT_BTN,
   BODY_TEXT_A_TILES_MASK,
+  bodyTextATilesCoachPadPct,
+  figmaRectBottomGrowStyle,
   BODY_TEXT_COACH_RETRY,
   BODY_TEXT_RETRY_WRONG_LIMIT,
-  LOOPIN_COACH_BLUSH_ASSET,
-  LOOPIN_COACH_SAD_ASSET,
+  MASCOT_COACH_BLUSH_ASSET,
+  MASCOT_COACH_SAD_ASSET,
   buildBodyTextATiles,
   countBodyTextWrongPositions,
   figmaRectStyle,
@@ -62,12 +64,12 @@ type BodyTextAScreenProps = {
 
 type BodyResult = 'playing' | 'retry' | 'correct' | 'wrong'
 
-/** 제출(~y=751)이 가려지지 않게 — 지문 성장 상한 ≈64px */
-const BODY_TEXT_A_PASSAGE_MAX_BOTTOM =
-  BODY_TEXT_A_PASSAGE.y + BODY_TEXT_A_PASSAGE.h + 64
+/** 긴 제시문이 문장 박스·타일을 밀 여지. 코치 직전까지 */
+const BODY_TEXT_A_PASSAGE_MAX_BOTTOM = BODY_TEXT_A_TILES_MASK.y - 8
+const BODY_TEXT_A_SENTENCE_MAX_BOTTOM = BODY_TEXT_A_COACH_IMAGE.y - 24
 
 function segmentTileClass() {
-  return 'rounded-[12px] border-[1.5px] border-[#C9D9EE] bg-white px-3 py-2 shadow-[0_2px_6px_rgba(80,120,180,0.08)]'
+  return 'rounded-[10px] border-[1.5px] border-[#C9D9EE] bg-white px-2 py-1 shadow-[0_2px_6px_rgba(80,120,180,0.08)]'
 }
 
 export function BodyTextAScreen({
@@ -108,7 +110,9 @@ export function BodyTextAScreen({
   /** 재시도 진입 시 틀린 조각 id — 재배열해도 테두리 고정(정답 미리보기 방지) */
   const [frozenWrongIds, setFrozenWrongIds] = useState<Set<string>>(() => new Set())
   const [passageGrowth, setPassageGrowth] = useState(0)
+  const [sentenceGrowth, setSentenceGrowth] = useState(0)
   const sentenceBoxRef = useRef<HTMLDivElement>(null)
+  const contentShift = passageGrowth + sentenceGrowth
 
   const selectedTiles = useMemo(
     () =>
@@ -140,8 +144,8 @@ export function BodyTextAScreen({
 
   const coachImgSrc =
     result === 'wrong' || result === 'retry'
-      ? LOOPIN_COACH_SAD_ASSET
-      : LOOPIN_COACH_BLUSH_ASSET
+      ? MASCOT_COACH_SAD_ASSET
+      : MASCOT_COACH_BLUSH_ASSET
 
   const [coachAnimNonce, setCoachAnimNonce] = useState(0)
   useEffect(() => {
@@ -163,6 +167,7 @@ export function BodyTextAScreen({
 
   useEffect(() => {
     setPassageGrowth(0)
+    setSentenceGrowth(0)
   }, [question?.id])
 
   useEffect(() => {
@@ -223,14 +228,14 @@ export function BodyTextAScreen({
       return
     }
 
-    const wrongCount = countBodyTextWrongPositions(selectedTiles)
+    const wrongCount = countBodyTextWrongPositions(selectedTiles, question)
     if (!retryUsed && wrongCount <= BODY_TEXT_RETRY_WRONG_LIMIT) {
       playAnswerSfx(false)
       setRetryUsed(true)
       setFrozenWrongIds(
         new Set(
           selectedTiles
-            .filter((tile, index) => tile.segmentIndex !== index)
+            .filter((tile, index) => tile.label !== question.segments[index])
             .map((tile) => tile.id),
         ),
       )
@@ -279,7 +284,7 @@ export function BodyTextAScreen({
 
         <div
           aria-hidden
-          className="pointer-events-none absolute bg-white"
+          className="pointer-events-none absolute z-[1] bg-white"
           style={figmaRectStyle(BODY_TEXT_A_PASSAGE_BAKE_MASK)}
         />
         <div
@@ -343,15 +348,14 @@ export function BodyTextAScreen({
           </svg>
         </button>
 
-        <div
-          aria-hidden
-          className="pointer-events-none absolute bg-[#F6F9FD]"
-          style={figmaRectStyle(shiftRect(BODY_TEXT_A_SENTENCE_BOX, passageGrowth))}
-        />
-        <div
-          ref={sentenceBoxRef}
-          className="absolute flex items-center justify-center overflow-y-auto px-4 py-3"
-          style={figmaRectStyle(shiftRect(BODY_TEXT_A_SENTENCE_BOX, passageGrowth))}
+        <ExpandablePassageBox
+          rect={shiftRect(BODY_TEXT_A_SENTENCE_BOX, passageGrowth)}
+          maxBottom={BODY_TEXT_A_SENTENCE_MAX_BOTTOM}
+          contentKey={`${question.id}:${selectedIds.length}`}
+          onGrowthChange={setSentenceGrowth}
+          containerRef={sentenceBoxRef}
+          className="absolute z-[4] bg-[#F6F9FD]"
+          contentClassName="flex w-full items-center justify-center px-4 py-3"
         >
           {selectedTiles.length > 0 ? (
             <ChunkOrderRow
@@ -363,25 +367,28 @@ export function BodyTextAScreen({
               disabled={!isPlaying}
               onTap={handlePlacedTap}
               onReorder={reorderSelectedIds}
-              labelClassName={EXERCISE_OPTION_EN_CLASS}
+              labelClassName={EXERCISE_CHUNK_CLASS}
             />
           ) : (
             <p className={`text-center ${EXERCISE_EMPTY_HINT_CLASS}`}>
               예문 뜻 조각을 누르거나 끌어와 문장을 완성하세요
             </p>
           )}
-        </div>
+        </ExpandablePassageBox>
 
         <div
           aria-hidden
-          className="pointer-events-none absolute bg-white"
-          style={figmaRectStyle(shiftRect(BODY_TEXT_A_TILES_MASK, passageGrowth))}
+          className="pointer-events-none absolute z-[1] bg-white"
+          style={figmaRectStyle(shiftRect(BODY_TEXT_A_TILES_MASK, contentShift))}
         />
         <div
-          className="absolute overflow-y-auto px-3 py-2"
-          style={figmaRectStyle(shiftRect(BODY_TEXT_A_TILES_MASK, passageGrowth))}
+          className="absolute z-[2] overflow-y-auto px-3 pt-1"
+          style={{
+            ...figmaRectStyle(shiftRect(BODY_TEXT_A_TILES_MASK, contentShift)),
+            paddingBottom: `${bodyTextATilesCoachPadPct(contentShift)}%`,
+          }}
         >
-          <div className="flex flex-wrap items-center justify-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
             {tiles.map((tile) => {
               const isSelected = selectedIds.includes(tile.id)
 
@@ -391,12 +398,12 @@ export function BodyTextAScreen({
                   label={tile.label}
                   ariaLabel={`예문 뜻 ${tile.label}`}
                   disabled={!isPlaying || isSelected}
-                  className={`whitespace-nowrap ${segmentTileClass()} ${
+                  className={`max-w-full ${segmentTileClass()} ${
                     isSelected
                       ? 'invisible pointer-events-none'
                       : 'cursor-grab'
                   }`}
-                  labelClassName={EXERCISE_OPTION_EN_CLASS}
+                  labelClassName={EXERCISE_CHUNK_CLASS}
                   dropRootRef={sentenceBoxRef}
                   onTap={() => insertBankTile(tile, selectedIds.length)}
                   onDropAt={(slot) => insertBankTile(tile, slot)}
@@ -406,16 +413,16 @@ export function BodyTextAScreen({
           </div>
         </div>
 
-        {/* 루핀 미니 코치(말풍선+캐릭터) — 오답은 계속하기 버튼 위로 말풍선 확장 */}
+        {/* 마스코트 미니 코치(말풍선+캐릭터) — 오답은 계속하기 버튼 위로 말풍선 확장 */}
         <div
           aria-hidden
-          className={`pointer-events-none absolute z-[11] flex items-center overflow-hidden rounded-[14px] rounded-br-[4px] bg-[#F2F7FF] px-3 py-2 ${EXERCISE_COACH_LINE_CLASS}`}
+          className={`pointer-events-none absolute z-[11] flex items-center rounded-[14px] rounded-br-[4px] bg-[#F2F7FF] px-3 py-2 ${EXERCISE_COACH_LINE_CLASS}`}
           style={
             result === 'wrong'
-              ? figmaRectStyle({ x: 18, y: 600, w: 275, h: 136 })
+              ? figmaRectBottomGrowStyle({ x: 18, y: 600, w: 275, h: 136 })
               : result === 'retry'
-                ? figmaRectStyle({ x: 18, y: 640, w: 275, h: 100 })
-                : figmaRectStyle(BODY_TEXT_A_COACH_BUBBLE)
+                ? figmaRectBottomGrowStyle({ x: 18, y: 640, w: 275, h: 100 })
+                : figmaRectBottomGrowStyle(BODY_TEXT_A_COACH_BUBBLE)
           }
         >
           {result === 'wrong' ? (

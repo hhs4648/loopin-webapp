@@ -48,14 +48,14 @@ NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
 ```
 
-스키마: 교사 저장소 `loopin-web/supabase/migrations/001_loopin_sync.sql`  
+스키마: 교사 저장소 `loopin-web/supabase/migrations/001_haksup_sync.sql`  
 Authentication → **Allow anonymous sign-ins** ON 필요
 
-**Loopin TTS (영·한):** 학생 앱은 PC 음성 설정 없이 앱 제공 TTS만 사용한다.  
-Supabase Edge Function `loopin-tts` 배포 필요 (1회):
+**Haksup TTS (영·한):** 학생 앱은 PC 음성 설정 없이 앱 제공 TTS만 사용한다.  
+Supabase Edge Function `haksup-tts` 배포 필요 (1회):
 
 ```bash
-supabase functions deploy loopin-tts
+supabase functions deploy haksup-tts
 ```
 
 - 영어: `en-US-AriaNeural` (여성)

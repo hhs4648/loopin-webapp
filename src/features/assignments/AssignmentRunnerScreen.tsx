@@ -539,10 +539,13 @@ export function AssignmentRunnerScreen({
     return countSectionQuestions(sections.slice(0, sectionIndex))
   }, [sections, sectionIndex])
 
-  /** 단어 파트 완료 화면의 「오늘 배운 단어」 — 실제 출제된 단어만 */
+  /**
+   * 단어 파트 완료 화면의 「오늘 배운 단어」.
+   * 이어풀기 `sections`는 아직 안 푼 문항만 남기므로, 출제분 전체(`allSections`)를 본다.
+   */
   const learnedWords = useMemo<LearnedWordPartItem[]>(() => {
     const wordIds = new Set<string>()
-    for (const section of sections) {
+    for (const section of allSections) {
       if (partOfSection(section.kind) !== 'word') continue
       if (section.kind === 'word-match' || section.kind === 'word-listen-match') {
         for (const pair of section.pairs) wordIds.add(baseWordId(pair.id))
@@ -559,7 +562,7 @@ export function AssignmentRunnerScreen({
         english: word.english.trim(),
         meaningKo: word.korean.trim(),
       }))
-  }, [sections, assignment.contentSnapshot])
+  }, [allSections, assignment.contentSnapshot])
 
   // 파트 첫 문항을 보여주는 시점에 시작 시각을 남긴다 (단어 파트 「공부 시간」)
   const currentPart = current ? partOfSection(current.kind) : null

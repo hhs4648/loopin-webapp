@@ -17,7 +17,7 @@ export function useShrinkToFit(
   deps: unknown[],
   options: { minScale?: number } = {},
 ): boolean {
-  const { minScale = 0.75 } = options
+  const { minScale = 0.55 } = options
   const [needsScroll, setNeedsScroll] = useState(false)
 
   useLayoutEffect(() => {

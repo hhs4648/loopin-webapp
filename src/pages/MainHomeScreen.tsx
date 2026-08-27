@@ -31,6 +31,7 @@ import { BodyTextBScreen } from '../components/body-text-b/BodyTextBScreen'
 import { BodyTextCScreen } from '../components/body-text-c/BodyTextCScreen'
 import { BodyTextCompleteScreen } from '../components/body-text-complete/BodyTextCompleteScreen'
 import { GrammarCompleteScreen } from '../components/grammar-complete/GrammarCompleteScreen'
+import { GymCompleteScreen } from '../components/gym/GymCompleteScreen'
 import { GrammarType1Screen } from '../components/grammar-type-1/GrammarType1Screen'
 import { GrammarType2Screen } from '../components/grammar-type-2/GrammarType2Screen'
 import {
@@ -43,6 +44,7 @@ import { CastleLearningScreen } from '../components/castle-learning/CastleLearni
 import { stopKoreanSpeech } from '../components/castle-learning/speech-ko'
 import { useBackNavigation } from '../components/navigation/BackNavigationProvider'
 import { PraiseCalendarScreen } from '../components/praise-calendar/PraiseCalendarScreen'
+import { StreakCalendarScreen } from '../components/streak-calendar/StreakCalendarScreen'
 import { NEXT_BTN } from '../components/onboarding/onboarding-ui'
 import { SESSION_SECTION_OFFSETS, resolveDemoSessionStartStep } from '../components/exercise/session-questions'
 import {
@@ -97,6 +99,7 @@ import {
   saveCastleRetrySession,
 } from '../lib/castle-retry-session'
 import { DEFAULT_PASS_SCORE_THRESHOLD, resolveCalendarStartMonth } from '../components/praise-calendar/praise-calendar'
+import { SplashBrandFrame } from '../components/SplashBrandFrame'
 
 const ASSETS = {
   /** 초대 UI 오버레이(딤·입력·CTA) — 맵 배경은 `MainHomeMapStartBackdrop` */
@@ -133,6 +136,7 @@ type MainStep =
   | 'learning-3'
   | 'learning-4'
   | 'praise-calendar'
+  | 'streak-calendar'
 
 type MainNavigationSnapshot = {
   step: MainStep
@@ -226,6 +230,20 @@ export function MainHomeScreen() {
   const forceInviteStepRef = useRef(
     Boolean((location.state as { forceInviteStep?: boolean } | null)?.forceInviteStep),
   )
+  /*
+    **이 신호는 한 번만 쓴다.**
+
+    `navigate(..., { state })`로 넘어온 값은 브라우저 히스토리 항목에 그대로 저장돼서
+    **새로고침해도 되살아난다.** 지우지 않으면 이미 반에 가입한 학생이 `/student/home`을
+    새로고침할 때마다 이 플래그가 다시 참이 되어 등록 조회를 통째로 건너뛰고
+    초대코드 화면부터 다시 뜬다 — 초대코드를 계속 입력하게 되는 증상의 직접 원인이다.
+    (라우터의 in-memory 상태는 그대로 두므로 이번 진입에서는 의도대로 초대코드부터 뜬다.)
+  */
+  useEffect(() => {
+    if (!forceInviteStepRef.current) return
+    const historyState = window.history.state as Record<string, unknown> | null
+    window.history.replaceState({ ...(historyState ?? {}), usr: null }, '')
+  }, [])
   const [step, setStep] = useState<MainStep>('invite')
   const [inviteCode, setInviteCode] = useState('')
   const [inviteError, setInviteError] = useState<string | null>(null)
@@ -308,6 +326,20 @@ export function MainHomeScreen() {
   /** 재도전 sessionStorage 복원이 끝나기 전엔 덮어쓰지 않음 */
   const [retrySessionReady, setRetrySessionReady] = useState(
     () => !isSyncEnabled(),
+  )
+  /**
+   * **가입 여부를 확인하는 동안은 아무 화면도 확정하지 않는다.**
+   *
+   * `step`의 초기값이 `'invite'`라서, 예전에는 이미 반에 가입한 학생도 열 때마다
+   * 초대코드 입력칸을 한 번 봤다가 서버 조회가 끝나면 맵으로 튕겨 갔다. 코드를 다시
+   * 넣어야 하는 줄 알게 만드는 화면이라, **모르는 동안에는 묻지 않는다** —
+   * 앱의 다른 로딩 구간과 같은 브랜드 화면을 보여 주고, 답이 온 뒤에 화면을 정한다.
+   *
+   * 동기화가 없거나(`isSyncEnabled()` false) 온보딩 직후처럼 초대코드부터 보여야 하는
+   * 경우에는 기다릴 것이 없으므로 처음부터 false다.
+   */
+  const [bootstrapping, setBootstrapping] = useState(
+    () => isSyncEnabled() && !forceInviteStepRef.current,
   )
   /** 서버 과제 목록을 한 번이라도 받은 뒤 — 삭제된 재도전/풀이 상태 정리용 */
   const [assignmentsHydrated, setAssignmentsHydrated] = useState(
@@ -619,6 +651,11 @@ export function MainHomeScreen() {
        * 「틀린문제만」이 낼 문항만 갱신하고 **점수는 건드리지 않는다.**
        */
       practiceResult?: boolean
+      /**
+       * 이번 세션에서 낸 문항 수. 헬스장 「틀린문제만」연습 완료 화면 요약용.
+       * 성 맵 종합 점수는 `practiceResult`가 막으므로 여기로만 쓴다.
+       */
+      sessionQuestionCount?: number
     } = {},
   ) => {
     setCompletedCastleSource(target)
@@ -654,7 +691,20 @@ export function MainHomeScreen() {
       const seeded = options.seedWrongQuestionIds ?? []
       setAssignmentWrongQuestionIds(seeded)
       if (options.practiceResult) {
-        // 연습 결과 — 다음에 낼 문항만 바꾸고 점수·정답 수는 그대로 둔다
+        // 연습 결과 — 다음에 낼 문항만 바꾸고 점수·정답 수는 그대로 둔다.
+        // 헬스장만 이번 연습 라운드 요약을 보여 준다(성 맵 점수는 건드리지 않음).
+        if (isWrongReissue(target.assignment)) {
+          const wrong = seeded.length
+          const total = Math.max(options.sessionQuestionCount ?? 0, wrong)
+          if (total > 0) {
+            setCompleteScoreStats({
+              correctCount: Math.max(0, total - wrong),
+              wrongCount: wrong,
+              totalCount: total,
+              score: Math.round(((total - wrong) / total) * 100),
+            })
+          }
+        }
         return
       }
       setGradedWrongCount(seeded.length > 0 ? seeded.length : null)
@@ -960,7 +1010,10 @@ export function MainHomeScreen() {
    * 누를 때(이어풀기) **같은 경로**를 쓴다 — 갈리면 한쪽이 전체 과제를 열게 된다.
    * 출제할 오답이 없으면 아무것도 하지 않고 `false`.
    */
-  const startWrongOnlyPractice = (assignment: StudentAssignment): boolean => {
+  const startWrongOnlyPractice = (
+    assignment: StudentAssignment,
+    options?: { immediate?: boolean },
+  ): boolean => {
     const sections = buildAssignmentSections(assignment.contentSnapshot)
     const wrongIds = resolvePresentQuestionIds(
       sections,
@@ -968,20 +1021,29 @@ export function MainHomeScreen() {
     )
     if (wrongIds.length <= 0) return false
     seedBackToAssignment()
-    setWrongOnlyAssignmentId(assignment.assignmentId)
     setRetryingAssignmentId(null)
     setForceNewAssignmentId(null)
     setRetryingDemoIndex(null)
     setAssignmentOnlyQuestionIds(wrongIds)
     setActiveAssignment(assignment)
     setSettingsOpen(false)
+    setRunnerStartPart(null)
     blockBackUntilRef.current = Date.now() + 600
+    if (options?.immediate) {
+      // 헬스장 완료 — 맵 「틀린문제 푸는중!」배지·지연 없이 바로 오답만 연다
+      setWrongOnlyAssignmentId(null)
+      setCompletedCastleSource(null)
+      setGymOpen(false)
+      stepRef.current = 'assignment-runner'
+      setStep('assignment-runner')
+      return true
+    }
+    setWrongOnlyAssignmentId(assignment.assignmentId)
     // 맵에 「틀린문제 푸는중!」이 먼저 보이도록 한 뒤 풀이 진입
     stepRef.current = 'assignment'
     setStep('assignment')
     window.setTimeout(() => {
       if (stepRef.current !== 'assignment') return
-      setRunnerStartPart(null)
       stepRef.current = 'assignment-runner'
       setStep('assignment-runner')
     }, 700)
@@ -1038,6 +1100,28 @@ export function MainHomeScreen() {
     goToStep('assignment')
   }
 
+  /** 헬스장 완료 CTA·내비 — 맵으로 나간 뒤 해당 탭을 연다 */
+  const leaveGymComplete = (next: MainHomeNavTabId | 'done' = 'done') => {
+    handleGoHome()
+    if (next === 'done' || next === 'gym') {
+      setReviewOpen(false)
+      setSettingsOpen(false)
+      setGymOpen(true)
+      return
+    }
+    setGymOpen(false)
+    if (next === 'home') return
+    if (next === 'review') {
+      setSettingsOpen(false)
+      setReviewOpen(true)
+      return
+    }
+    if (next === 'menu') {
+      setReviewOpen(false)
+      setSettingsOpen(true)
+    }
+  }
+
   const retryExerciseProps: RetryWrongExerciseProps = retryWrongOnly
     ? {
         hideProgressBar: true,
@@ -1073,21 +1157,33 @@ export function MainHomeScreen() {
     setEnrolledAtList(enrollments.map((e) => e.enrolledAt).filter(Boolean))
   }
 
+  /** 첫 조회가 끝났다 — 화면을 확정하고 재도전 세션 저장도 연다 */
+  const finishBootstrap = () => {
+    setRetrySessionReady(true)
+    setBootstrapping(false)
+  }
+
   useEffect(() => {
     if (!isSyncEnabled()) {
-      setRetrySessionReady(true)
+      finishBootstrap()
       return
     }
     if (forceInviteStepRef.current) {
-      setRetrySessionReady(true)
+      finishBootstrap()
       return
     }
     let cancelled = false
+    /*
+      **응답이 안 와도 화면은 준다.** 이 조회가 끝나야 화면이 정해지므로, 요청이
+      매달려 있으면 브랜드 화면에 갇힌다. 그 경우 초대코드 화면이라도 보여 주는 게
+      아무것도 없는 것보다 낫다. (정상 경로에서는 훨씬 먼저 finishBootstrap이 돈다)
+    */
+    const watchdog = window.setTimeout(finishBootstrap, 8000)
     void (async () => {
       const classId = await resolveActiveClassId()
       if (cancelled) return
       if (!classId) {
-        setRetrySessionReady(true)
+        finishBootstrap()
         return
       }
       const [list, threshold, enrollments] = await Promise.all([
@@ -1138,7 +1234,7 @@ export function MainHomeScreen() {
           setRunnerStartPart(null)
           stepRef.current = 'assignment-runner'
           setStep('assignment-runner')
-          setRetrySessionReady(true)
+          finishBootstrap()
           return
         }
         clearCastleRetrySession()
@@ -1148,10 +1244,15 @@ export function MainHomeScreen() {
       }
 
       setStep((current) => (current === 'invite' ? 'assignment' : current))
-      setRetrySessionReady(true)
-    })()
+      finishBootstrap()
+    })().catch((error) => {
+      // 조회가 던지고 끝나면 화면이 영영 안 정해진다 — 던져도 화면은 준다
+      console.warn('[sync] 첫 조회 실패', error)
+      finishBootstrap()
+    })
     return () => {
       cancelled = true
+      window.clearTimeout(watchdog)
     }
   }, [])
 
@@ -1183,30 +1284,53 @@ export function MainHomeScreen() {
     let cancelled = false
     let unsub: (() => void) | undefined
 
-    const pull = () => {
+    /*
+      **포커스가 돌아올 때마다 다 받지는 않는다.**
+
+      과제 목록은 `content_snapshot`(그 과제의 단어·문장·문법 원문, 건당 10KB 안팎)을
+      통째로 물고 온다. 학생이 앱을 잠깐 나갔다 오기만 해도 전부 다시 받는데, 30명이
+      수업 한 시간 동안 앱을 들락거리면 이것만으로 수백 MB가 나간다
+      (Supabase 무료 티어 egress는 월 5GB다).
+
+      **Realtime은 throttle하지 않는다** — 그건 「실제로 뭔가 바뀌었다」는 신호라
+      드물게 오고, 교사가 방금 낸 과제가 늦게 뜨면 그게 더 큰 문제다.
+      focus/visibility는 「혹시 놓쳤을까 봐」 하는 폴백이라 간격을 둔다.
+    */
+    const PULL_MIN_INTERVAL_MS = 60_000
+    let lastPullAt = Date.now()
+
+    const pull = (options?: { force?: boolean }) => {
       if (stepRef.current !== 'assignment') return
+      if (!options?.force && Date.now() - lastPullAt < PULL_MIN_INTERVAL_MS) {
+        return
+      }
+      lastPullAt = Date.now()
       void refreshAssignments()
     }
 
     void (async () => {
       const classId = await resolveActiveClassId()
       if (cancelled || !classId) return
-      unsub = subscribeStudentClassRealtime(classId, pull)
+      unsub = subscribeStudentClassRealtime(classId, () => pull({ force: true }))
     })()
 
+    const onFocus = () => pull()
     const onVisible = () => {
       if (document.visibilityState === 'visible') pull()
     }
+    // 이벤트 핸들러는 등록·해제에 **같은 참조**를 써야 한다.
+    // (pageshow는 이벤트 객체를 넘기므로 그대로 pull에 물리면 options로 새어 들어간다)
+    const onPageShow = () => pull()
     document.addEventListener('visibilitychange', onVisible)
-    window.addEventListener('focus', pull)
-    window.addEventListener('pageshow', pull)
+    window.addEventListener('focus', onFocus)
+    window.addEventListener('pageshow', onPageShow)
 
     return () => {
       cancelled = true
       unsub?.()
       document.removeEventListener('visibilitychange', onVisible)
-      window.removeEventListener('focus', pull)
-      window.removeEventListener('pageshow', pull)
+      window.removeEventListener('focus', onFocus)
+      window.removeEventListener('pageshow', onPageShow)
     }
   }, [])
 
@@ -1279,6 +1403,15 @@ export function MainHomeScreen() {
       setInviteLoading(false)
       setInviteError(result.message)
     })()
+  }
+
+  /*
+    **가입 여부를 모르는 동안에는 초대코드를 묻지 않는다.**
+    `step` 초기값이 'invite'라서, 이 게이트가 없으면 이미 가입한 학생도 열 때마다
+    입력칸을 봤다가 맵으로 튕겨 간다. 라우트 전환 때와 같은 화면이라 이어져 보인다.
+  */
+  if (bootstrapping) {
+    return <SplashBrandFrame />
   }
 
   /*
@@ -1374,6 +1507,7 @@ export function MainHomeScreen() {
                   maxCombo: info?.maxCombo ?? 0,
                   seedWrongQuestionIds: finishedWrongIds,
                   practiceResult: true,
+                  sessionQuestionCount: info?.answeredQuestionIds?.length,
                 },
               )
               return
@@ -1448,6 +1582,9 @@ export function MainHomeScreen() {
       completedCastleSource?.kind === 'demo' &&
       completedCastleSource.index === 1
     const isAssignmentCastle = completedCastleSource?.kind === 'assignment'
+    const isGymComplete =
+      completedCastleSource?.kind === 'assignment' &&
+      isWrongReissue(completedCastleSource.assignment)
     const allowWrongOnly = isDemoLearningCastle
       ? false
       : isAssignmentCastle
@@ -1465,6 +1602,34 @@ export function MainHomeScreen() {
       isAssignmentCastle && gradedWrongCount != null && stats.totalCount > 0
         ? Math.max(0, stats.totalCount - gradedWrongCount)
         : stats.correctCount
+
+    if (isGymComplete) {
+      const gymWrongCount = assignmentWrongQuestionIds.length
+      const gymTotalCount = stats.totalCount
+      const gymCorrectCount = Math.max(0, gymTotalCount - gymWrongCount)
+      return (
+        <GymCompleteScreen
+          perfect={gymWrongCount === 0}
+          snapshot={completedCastleSource.assignment.contentSnapshot}
+          correctCount={gymCorrectCount}
+          totalCount={gymTotalCount}
+          wrongCount={gymWrongCount}
+          onRetryWrongOnly={
+            gymWrongCount > 0
+              ? () => {
+                  startWrongOnlyPractice(completedCastleSource.assignment, {
+                    immediate: true,
+                  })
+                }
+              : undefined
+          }
+          onHome={() => leaveGymComplete('home')}
+          onDone={() => leaveGymComplete('done')}
+          onSelectNav={(id) => leaveGymComplete(id)}
+        />
+      )
+    }
+
     return (
       <GrammarCompleteScreen
         key={
@@ -1776,6 +1941,21 @@ export function MainHomeScreen() {
     )
   }
 
+  if (step === 'streak-calendar') {
+    return (
+      <StreakCalendarScreen
+        onSelectNav={(id) => {
+          /*
+            여기는 맵 위에 얹힌 창이 아니라 별도 step이다. 복습·전체는 맵에서 열리는
+            창이므로 **맵으로 돌아간 뒤** 그 창을 연다 — 안 그러면 캘린더 위에 겹친다.
+          */
+          goBack()
+          handleInviteNavSelect(id)
+        }}
+      />
+    )
+  }
+
   if (step === 'praise-calendar') {
     return (
       <PraiseCalendarScreen
@@ -1831,6 +2011,7 @@ export function MainHomeScreen() {
           goToStep('learning-1')
         }}
         onOpenPraiseCalendar={() => goToStep('praise-calendar')}
+        onOpenStreakCalendar={() => goToStep('streak-calendar')}
         settingsOpen={settingsOpen}
         onCloseSettings={() => setSettingsOpen(false)}
         gymOpen={gymOpen}

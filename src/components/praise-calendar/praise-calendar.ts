@@ -19,7 +19,7 @@ export const FRAME_H = 852
  *
  * 원본은 `_backup/praise-calendar.v2.svg`.
  */
-export const PRAISE_CALENDAR_ASSET = '/assets/praise-calendar.svg?v=3'
+export const PRAISE_CALENDAR_ASSET = '/assets/praise-calendar.svg?v=4'
 
 export const PRAISE_STATUS_FACE_ASSETS = {
   pass: '/assets/praise-status-pass.png',

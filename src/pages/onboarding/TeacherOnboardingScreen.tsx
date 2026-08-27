@@ -25,7 +25,7 @@ const TEACHER_ONBOARDING_ASSETS = [
   '/assets/onboarding-teacher-01-terms.svg?v=2',
   '/assets/onboarding-teacher-02-school.svg?v=2',
   '/assets/onboarding-teacher-03-name.svg?v=2',
-  '/assets/onboarding-teacher-04-complete.svg?v=2',
+  '/assets/onboarding-teacher-04-complete.svg?v=3',
 ] as const
 
 /**

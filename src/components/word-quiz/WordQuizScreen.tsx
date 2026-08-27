@@ -41,7 +41,7 @@ type WordQuizScreenProps = {
 type OptionVisualState = 'idle' | 'correct' | 'wrong'
 
 function optionFrameClass(state: OptionVisualState) {
-  const base = 'box-border border-[3px]'
+  const base = 'box-border border-[3px] shadow-[0_0_12px_#CFDCE9]'
 
   switch (state) {
     case 'correct':
@@ -220,7 +220,7 @@ export function WordQuizScreen({
               type="button"
               aria-label={option}
               disabled={locked}
-              className={`absolute flex items-center justify-center px-6 text-center ${optionFrameClass(state)} ${locked ? 'cursor-default' : 'cursor-pointer'}`}
+              className={`absolute z-[2] flex items-center justify-center px-6 text-center ${optionFrameClass(state)} ${locked ? 'cursor-default' : 'cursor-pointer'}`}
               style={figmaRectStyle(layout)}
               onClick={() => handleOptionClick(option)}
             >

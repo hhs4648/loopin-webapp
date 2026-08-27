@@ -3,7 +3,11 @@ import {
   BackButtonOverlay,
   type BackButtonOverlayVariant,
 } from './navigation/BackButtonOverlay'
-import type { BackButtonMask } from './navigation/figma-navigation'
+import { BACK_MASK_WHITE_HEADER, type BackButtonMask } from './navigation/figma-navigation'
+import {
+  BakedExerciseTitleMask,
+  BakedProgressBarMask,
+} from './exercise/ExerciseProgressBar'
 import { ComboOverlay } from './exercise/ComboOverlay'
 
 interface FigmaAssetFrameProps {
@@ -37,15 +41,23 @@ export function FigmaAssetFrame({
 }: FigmaAssetFrameProps) {
   return (
     <div className={`flex min-h-full w-full justify-center ${bgClassName}`}>
-      <div className="relative aspect-[393/852] w-full max-w-[540px] self-center">
+      <div className="@container relative aspect-[393/852] w-full max-w-[540px] self-center">
         <img
           src={src}
           alt={alt}
-          className="pointer-events-none absolute inset-0 h-full w-full select-none"
+          className="pointer-events-none absolute inset-0 z-0 h-full w-full select-none"
           draggable={false}
         />
         {backButton !== false ? (
           <BackButtonOverlay mask={backButtonMask ?? undefined} />
+        ) : null}
+        {backButtonMask === BACK_MASK_WHITE_HEADER ? (
+          <>
+            {/* 유형 제목만 가림. 높이를 키우면 헤더 아래 문제를 지운다. */}
+            <BakedExerciseTitleMask />
+            {/* 에셋 한가운데 옛 진행바 잔상. 문제보다 아래 레이어. */}
+            <BakedProgressBarMask />
+          </>
         ) : null}
         {children}
         {/*

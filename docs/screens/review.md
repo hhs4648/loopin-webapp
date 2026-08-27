@@ -10,7 +10,7 @@
 상단 `<` 뒤로가기(`BackButtonOverlay`)는 설정·학습 화면과 같은 Figma 좌표다.
 닫기는 호출 측 `useBackNavigation` / `reviewOpen` 해제가 담당한다.
 제목 「복습하기」는 뒤로가기 **바로 아래**(히트 y+h+2px, 너비 기준 %)에 두고,
-카드·목록은 그 아래에서 시작한다.
+카드·목록은 그 아래에서 시작한다. 목록은 스크롤되지만 막대는 숨긴다(맵과 동일).
 
 ## 구현 상태 (2026-08-09)
 
@@ -162,7 +162,7 @@
 
 | 표시 | 계산 |
 |------|------|
-| 예상 시간 | 분류 전체 문항의 형식별 초 합계(`SECONDS_BY_SUFFIX`), 최소 1분 |
+| 예상 시간 | 분류 전체 문항의 형식별 초 합계(`SECONDS_BY_SUFFIX`), 최소 1분. `estimateMinutesForQuestionIds`로 빼 두었고 **헬스장 시작 카드도 같이 쓴다**(그쪽은 분류 전체가 아니라 오답 재출제 스냅샷 문항) |
 | 목표 정확도 | 고정 80% (`TARGET_ACCURACY_PERCENT`) — 학생별로 정할 근거가 아직 없음 |
 
 `SECONDS_BY_SUFFIX`는 **측정값이 아니라 추정치다**(짝맞추기 8초 … 영작 40초). 응답 시간을
@@ -210,6 +210,10 @@
 밀린다. 세 화면 모두 absolute로 띄우고, 복습하기는 제목과 **같은 줄 오른쪽**에 두되 줄에
 `min-h`를 줘서 나타나도 아무것도 움직이지 않게 했다.
 
+**메인 맵 배지**(`StudyStreakBadge`)는 탭하면 `streak-calendar`(`StreakCalendarScreen`,
+`streak-calendar.svg`)를 연다. 1차는 시안 그대로 — 실데이터 오버레이는 후속. 복습 탭의
+알약(`StudyStreakPill`)은 이 화면에 연결하지 않는다.
+
 ## 연속 학습 축하 화면 (2026-08-09)
 
 `components/streak-celebration/` — `StreakCelebrationScreen.tsx` + `streak-celebration.ts`
@@ -236,7 +240,7 @@
 (`STREAK_BADGE_LAND_MS` → `STREAK_NUMBER_CHANGE_MS` → `STREAK_TAP_BLOCK_MS`).
 `index.css`의 `streak-badge-fly-in` 길이도 `STREAK_BADGE_LAND_MS`와 같아야 한다.
 
-**하루 한 번만 뜬다.** `localStorage`(`loopin-streak-celebrated-day`)에 마지막으로 띄운 KST
+**하루 한 번만 뜬다.** `localStorage`(`haksup-streak-celebrated-day`)에 마지막으로 띄운 KST
 날짜를 적어 둔다. 과제 3개 푼 날 세 번 뜨면 축하가 아니라 방해다. 메모리 플래그로 하면
 완료 화면에서 새로고침하고 다시 풀 때 또 뜬다. 서버에 둘 값은 아니다 — 기기마다 한 번이면 충분하고
 이것 때문에 컬럼을 늘릴 이유가 없다.
@@ -292,8 +296,8 @@
 
 | 결과 | 동작 |
 |------|------|
-| **만점** | `loopin-review-cleared-at`에 완료 시각 → 목록·추천에서 감춤. 과제에서 다시 틀리면(`lastWrongAt > reviewedAt`) 복귀 |
-| **오답 있음** | 출제 문항 전부의 정오를 `loopin-review-practice-answers`에 저장 → `summarizeReviewTypes`가 문항별 **최신** 답안만 쓰므로 오답률·추천 카드·문법 목록 순서가 갱신됨. 만점 감추기가 있으면 푼다 |
+| **만점** | `haksup-review-cleared-at`에 완료 시각 → 목록·추천에서 감춤. 과제에서 다시 틀리면(`lastWrongAt > reviewedAt`) 복귀 |
+| **오답 있음** | 출제 문항 전부의 정오를 `haksup-review-practice-answers`에 저장 → `summarizeReviewTypes`가 문항별 **최신** 답안만 쓰므로 오답률·추천 카드·문법 목록 순서가 갱신됨. 만점 감추기가 있으면 푼다 |
 
 - 중간에 나가기(`onExit`)는 저장하지 않는다.
 - `ReviewMainWindow`는 서버 답안 + 로컬 연습 답안을 합친 뒤 집계한다.

@@ -1,6 +1,6 @@
-# Loopin Web — 문서 인덱스
+# Haksup Web — 문서 인덱스
 
-> 루핀 **학생용** 웹앱(`loopin-webapp`)을 구축·수정할 때 사용하는 마스터 문서입니다.  
+> 학습 **학생용** 웹앱(`loopin-webapp`)을 구축·수정할 때 사용하는 마스터 문서입니다.  
 > 에이전트/개발자는 **이 파일을 먼저 읽고** 필요한 하위 문서를 참조하세요.
 
 ---
@@ -29,7 +29,7 @@
 
 ## 프로젝트 한 줄 요약
 
-**Loopin B2G** 학생용 모바일 웹앱. 피그마 시안을 React + Tailwind로 픽셀 단위 구현.  
+**Haksup B2G** 학생용 모바일 웹앱. 피그마 시안을 React + Tailwind로 픽셀 단위 구현.  
 교사용은 `loopin-project`/`loopin-web`이며, **Supabase**로 과제·진도를 동기화한다.
 
 | 구분 | 내용 |
@@ -93,6 +93,7 @@
 | 교사 온보딩 | ✅ 구현 (이 앱 내 UI) | [screens/teacher-onboarding.md](./screens/teacher-onboarding.md) |
 | **학원/학교 메인** (`/student/home` · 초대·성 맵) | ✅ 구현 | [screens/main-home.md](./screens/main-home.md) |
 | 칭찬 캘린더 | ✅ 구현 (lessonDate·점수 연동 · 70점 기준) | [screens/main-home.md](./screens/main-home.md) |
+| 연속 학습 캘린더 | ✅ 시안 표시 (맵 배지 탭 · 실데이터 오버레이는 후속) | [screens/main-home.md](./screens/main-home.md) |
 | 1회차 학습 세션 | ✅ 구현 (단어 A·B·C·D) | [screens/learning-session.md](./screens/learning-session.md) · [uiux.md](./uiux.md) §3.6 |
 | 완료·오답 재시도 | ✅ 구현 | [screens/completion-retry.md](./screens/completion-retry.md) |
 | 2회차 성 학습(학습1~4) | ✅ 구현 | [screens/castle-learning.md](./screens/castle-learning.md) |

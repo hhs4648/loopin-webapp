@@ -8,7 +8,7 @@ import {
 } from 'react-router-dom'
 import { AppFrame } from './components/AppFrame'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { LoopinLogo } from './components/LoopinLogo'
+import { SplashBrandFrame } from './components/SplashBrandFrame'
 import { BackNavigationProvider } from './components/navigation/BackNavigationProvider'
 import { SplashScreen } from './pages/SplashScreen'
 
@@ -59,13 +59,7 @@ const HomeScreen = lazy(() =>
  * 흰 화면 대신 스플래시와 같은 바탕이라, 전환이 끊겨 보이지 않는다.
  */
 function ScreenLoading() {
-  return (
-    <div className="flex min-h-full w-full items-center justify-center bg-[#2aa3ff]">
-      <div className="h-[67.427px] w-[176px] opacity-90">
-        <LoopinLogo variant="splash" />
-      </div>
-    </div>
-  )
+  return <SplashBrandFrame />
 }
 
 /**
@@ -96,7 +90,7 @@ export function App() {
       최상단에서 import하면 Supabase 라이브러리(213KB)가 첫 화면 묶음에 딸려온다.
       예열은 급할 게 없으니 첫 화면이 그려진 뒤에 시작해도 된다.
     */
-    void import('./lib/tts/loopin-tts').then((m) => m.preloadLoopinTts())
+    void import('./lib/tts/haksup-tts').then((m) => m.preloadHaksupTts())
   }, [])
 
   return (

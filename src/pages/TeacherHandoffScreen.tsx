@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LoopinLogo } from '../components/LoopinLogo'
+import { HaksupLogo } from '../components/HaksupLogo'
 import { getPostAuthPath, getStoredAuth } from '../lib/auth'
 
 /**
@@ -58,7 +58,7 @@ export function TeacherHandoffScreen() {
     <div className="flex min-h-full w-full justify-center bg-[#2AA3FF]">
       <div className="relative flex w-full max-w-[540px] flex-col px-7 pb-10 pt-16">
         <div className="h-[52px] w-[136px] shrink-0">
-          <LoopinLogo variant="splash" />
+          <HaksupLogo variant="splash" />
         </div>
 
         <div className="mt-9 flex flex-col gap-2">

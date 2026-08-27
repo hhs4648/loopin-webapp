@@ -26,9 +26,10 @@
 | 미부여 성 | `회색 성.svg` | `castle-gray.svg` |
 | 맵 성 (슬롯) | *(제공 PNG)* | `map-castle-red-flag.png` — **현재 미사용**(배경 LONG에 성 포함). React 성 오버레이 취소 |
 | 완료 뱃지 | `미션 체크.svg` | `mission-check.svg` |
-| 루핀 캐릭터 (대기) | *(제공 PNG)* | `mascot-wave.png` |
-| 루핀 캐릭터 (만세) | `만세 캐릭터.svg` | `mascot-banzai.svg` — 현재 위치 성 (`CastleCompleteMascot`) |
+| 마스코트 캐릭터 (대기) | *(제공 PNG)* | `mascot-wave.png` |
+| 마스코트 캐릭터 (만세) | `만세 캐릭터.svg` | `mascot-banzai.svg` — 현재 위치 성 (`CastleCompleteMascot`) |
 | 칭찬 캘린더 | `칭찬캘린더.png` *(SVG)* | `praise-calendar.svg` |
+| 연속 학습 캘린더 | `연속학습_캘린더_화면.svg` | `streak-calendar.svg` |
 | 완료 성 탭 | (동일) GrammarCompleteScreen | 완료된 성 클릭 → 점수·재도전/틀린문제만 (completion-retry.md) |
 
 ## Step 플로우 (MainHomeScreen)
@@ -42,7 +43,12 @@
    - 날짜 키: 과제 `lessonDate`
    - 이모티콘: 완료·점수 ≥70 통과 / 완료·&lt;70 아쉬움 / **마감 후** 미제출 → 미제출 / **마감 전** 미풀이 → 이모티콘 없음
    - 같은 날 복수 과제: 하나라도(마감 후) 미제출이면 미제출, 모두 완료면 평균 점수. 마감 전 미풀이는 집계에서 제외
-5. 이후 학습 step → [learning-session.md](./learning-session.md), [castle-learning.md](./castle-learning.md)
+5. `streak-calendar` — 연속 학습 캘린더 (맵 연속 학습 배지 → `StreakCalendarScreen`)
+   - 에셋: `streak-calendar.svg` (`연속학습_캘린더_화면.svg`)
+   - **1차는 시안 그대로** — 날짜·일수를 React로 다시 그리지 않음
+   - 가짜 홈 인디케이터(y839)만 흰 덮개로 가림
+   - 뒤로가기 `<` → 맵
+6. 이후 학습 step → [learning-session.md](./learning-session.md), [castle-learning.md](./castle-learning.md)
 
 ## 초대코드 (현재 구현)
 
@@ -70,8 +76,9 @@
 | 오늘의 미션 카드 | SVG에 flatten된 자리 위에 `TodayMissionCard`(React)로 덮어 렌더 (고정 헤더 안) — 아래 "오늘의 미션 카드" 절 참고 |
 | 「N일 연속 학습 중」 알약 | 고정 헤더 안, 미션 카드 위 밴드(x20 y24)에 absolute. `StudyStreakPill` + `useStudyStreak` — [screens/review.md](./review.md)의 「스트릭」 절. **SVG에 구워진 반·과제 알약과 겹치지 않는지 393px에서 확인 필요** |
 | 칭찬 캘린더 | **뷰포트 고정** (`PraiseCalendarButton` + `PRAISE_CALENDAR_FIXED_RECT`). 맵 드래그/스크롤에 움직이지 않음 |
+| 연속 학습 배지 | 고정 헤더 안 (12, 65). `StudyStreakBadge` — **탭 → `streak-calendar`**. `streak.days < 1`이면 미표시. 부모 `pointer-events-none`이라 버튼에 `pointer-events-auto` |
 | 시작 위치 캐릭터 | LONG 원본에 포함된 경우 에셋 그대로. React `MapCharacter` 오버레이는 미사용 |
-| 성 위 환호 루핀 | **제거함.** `CastleCompleteMascot` 미렌더 |
+| 성 위 환호 마스코트 | **제거함.** `CastleCompleteMascot` 미렌더 |
 | 하단 네비게이션 | **뷰포트 고정** `MainHomeBottomNav` + `main-home-bottom-nav.svg`. **홈** → `/student/home` 맵 · **복습노트** → 복습하기 오버레이([screens/review.md](./review.md)) · **단어장·메뉴** → 설정 창 |
 | 스크롤바 | 숨김, 터치·휠 스크롤 지원 |
 
@@ -79,12 +86,12 @@
 
 | 위치 | 무엇 | 현재 |
 |------|------|------|
-| **위** — 시작 깃발 옆 | 파란 루핀(대기) + 「현재 위치」 필 | LONG 원본에 포함된 경우 에셋 그대로 |
-| **아래** — 성/브릿지 위 환호·잔상 | 환호 루핀 · 성 「현재 위치」 React 필 · 브릿지 구운 루핀 | **삭제** — React 오버레이 없음 · 브릿지 에셋도 클린 |
+| **위** — 시작 깃발 옆 | 파란 마스코트(대기) + 「현재 위치」 필 | LONG 원본에 포함된 경우 에셋 그대로 |
+| **아래** — 성/브릿지 위 환호·잔상 | 환호 마스코트 · 성 「현재 위치」 React 필 · 브릿지 구운 학습 | **삭제** — React 오버레이 없음 · 브릿지 에셋도 클린 |
 
-#### 시작 루핀은 에셋 여백을 빼고 배치한다 (2026-08-09)
+#### 시작 마스코트은 에셋 여백을 빼고 배치한다 (2026-08-09)
 
-`loopin-character-start.svg`는 **586×586 정사각 안에 캐릭터가 여백을 두고** 들어 있다
+`mascot-character-start.svg`는 **586×586 정사각 안에 캐릭터가 여백을 두고** 들어 있다
 (가로 53% · 세로 63%만 차지). 같은 맵에 쓰는 `mascot-banzai.svg`는 내용이 박스를 꽉 채우므로
 **두 에셋을 같은 방식으로 다루면 안 된다.**
 
@@ -95,7 +102,7 @@
 
 이제 `START_MASCOT_VISIBLE`(**보이는 캐릭터** 기준 — 가로중심 **102** · 발끝 **370** · 높이 53)에서
 `startMascotBox()`가 여백 비율을 역산해 `<img>` 박스를 만든다. 깃발 바로 오른쪽에 붙인다.
-필은 성 도착 루핀과 같은 `CURRENT_LOCATION_PILL` · `PILL_GAP_BELOW_FEET`를 쓴다.
+필은 성 도착 마스코트과 같은 `CURRENT_LOCATION_PILL` · `PILL_GAP_BELOW_FEET`를 쓴다.
 위치를 옮길 땐 **박스가 아니라 `START_MASCOT_VISIBLE`을 고칠 것.** 에셋을 다시 export하면
 `START_MASCOT_ART` 비율도 다시 재야 한다.
 
@@ -443,11 +450,15 @@ for i in 0 .. assignmentCount-1:
 | 성 맵 | `castleAssignments()` — 개인 과제 제외(다시 적용 · 성은 `MIN_DRAWN_CASTLES`로 항상 그려져 맵이 비지 않음) |
 | 오늘의 미션 | `pickPrimaryAssignment` — 오답 재출제 제외 |
 | 헬스장 대기열 | `pendingWrongReissues()` — **미완료만, `assignedAt` 오래된 순** |
-| 진입 | 하단 내비 「헬스장」 → 운동하는 캐릭터(283.6² @ 39,257) 탭 · 「오답 다시 풀기 · 탭」칩 |
+| 진입 | 하단 내비 「헬스장」 → 캐릭터 탭 → `gym-start.svg` 「지금 시작하기」→ 오답 재출제 러너 |
 | 알림 | 내비 「헬스장」 칸 **위**에 빨간 `New`(`GymNewBadge`) · 2개 이상이면 `New 2` |
 
-- **여러 개 쌓이면 먼저 낸 것부터** 푼다(사용자 지정). 캐릭터를 누르면 대기열의 첫 번째가 열린다.
-- **대기열이 비면 캐릭터에 히트영역을 두지 않는다** — 안내 문구만 보여 준다.
+- **여러 개 쌓이면 먼저 낸 것부터** 푼다(사용자 지정). 캐릭터 → 시작 화면 → 「지금 시작하기」로 대기열의 첫 번째 오답을 연다.
+- **대기열이 있으면** 캐릭터(283.6² @ 39,257) 탭 → `gym-start.svg`. 파란 카드 「지금 시작하기」(353×294 @ 20,138)에서 오답 풀이 시작. `<`는 캐릭터 화면으로 돌아간다.
+- **시작 카드 제목:** 단원 출제면 스냅샷 `textbook · unit`. 직접 출제(단원 없음)면 선생님이 붙인 과제 이름, 그것도 없으면 「선생님이 만든 문제」. 복습 탭 「기타」는 쓰지 않음.
+- **시작 카드 지표:** 「틀린 문항」은 오답 재출제 스냅샷에서 실제로 만들어지는 문항 수(`listSectionQuestionIds`). 「예상 시간」은 복습 탭과 같은 형식별 초 합계(`estimateMinutesForQuestionIds` · `SECONDS_BY_SUFFIX`), 문항이 있으면 최소 1분. 오늘의 미션 10초/문항과는 다르다.
+- **대기열이 비면** `헬스장_빈상태.svg` → `gym-empty.svg`. 가짜 시계는 흰 덮개로 가리고, 「홈으로 가기」(329×56 @ 32,672)는 학원/학교 메인으로 보낸다. 캐릭터 히트는 두지 않는다.
+- 이 화면은 **선생님이 오답만 다시 출제했을 때** 풀러 들어오는 자리. 다 풀면 성 맵 종합 완료가 아니라 **헬스장 완료**(`GymCompleteScreen`). 이번 풀이에 오답이 하나라도 있으면 `gym-complete.svg`, 백점이면 `gym-complete-perfect.svg`. 제목은 `{단원} 연습 완료!`(단원 없으면 시작 카드 제목), 요약은 `{N}문제 중 {M}개 정답`. 오답이 있으면 파란 CTA는 **이번 헬스장에서 틀린 문항만** 다시 푼다(연습·점수 미반영). 「다음에 풀게요, 홈으로 가기」와 백점 CTA·내비 홈은 메인, 내비 헬스장은 헬스장으로.
 - 시안 `gym-main.svg`에는 **하단 내비가 구워져 있다**(y770, 5칸). React 내비를 위에 겹치지 않고
   투명 히트영역만 얹는다 — 겹치면 내비가 두 겹이 되고 구워진 「헬스장」 활성 표시도 가려진다.
 - 혼자 공부 메인에도 탭은 있지만 반 과제가 없어 보통 비어 있다.

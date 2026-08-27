@@ -1,5 +1,5 @@
 export type MemberType = 'student' | 'teacher'
-/** 소셜 로그인 — 구글은 UI·타입 준비, 로그인 버튼은 추후 연결 */
+/** 소셜 로그인 — Apple / 카카오 / 구글 */
 export type SocialProvider = 'apple' | 'kakao' | 'google'
 
 export interface AuthUser {
@@ -13,7 +13,7 @@ export interface AuthUser {
   onboardingCompleted: boolean
 }
 
-const AUTH_KEY = 'loopin_auth'
+const AUTH_KEY = 'haksup_auth'
 
 export function getStoredAuth(): AuthUser | null {
   try {

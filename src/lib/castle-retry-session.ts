@@ -1,4 +1,4 @@
-const RETRY_SESSION_KEY = 'loopin-castle-retry-session'
+const RETRY_SESSION_KEY = 'haksup-castle-retry-session'
 
 export type CastleRetrySession = {
   retryingAssignmentId: string | null

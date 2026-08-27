@@ -13,6 +13,7 @@ import {
   WORD_LISTEN_MATCH_ASSETS,
   WORD_LISTEN_MATCH_PROMPT,
   WORD_LISTEN_MATCH_PROMPT_COPY,
+  MATCH_TILE_SHADOW,
   WORD_MATCH_TILE_COVERS,
   type WordMatchPair,
   type WordPairId,
@@ -42,7 +43,7 @@ type WordListenMatchScreenProps = {
 type TileVisualState = 'idle' | 'selected' | 'correct' | 'wrong' | 'disabled'
 
 function tileFrameClass(state: TileVisualState) {
-  const base = 'box-border border-[3px]'
+  const base = `box-border border-[3px] ${MATCH_TILE_SHADOW}`
 
   switch (state) {
     case 'selected':
@@ -354,7 +355,7 @@ export function WordListenMatchScreen({
 
         <div
           aria-hidden
-          className="pointer-events-none absolute flex items-center justify-center bg-white px-4"
+          className="pointer-events-none absolute z-[2] flex items-center justify-center px-4"
           style={figmaRectStyle(WORD_LISTEN_MATCH_PROMPT)}
         >
           <p className="font-sans text-center text-[16px] font-semibold leading-none tracking-[-0.01em] text-[#1E1E1E]">
@@ -381,7 +382,7 @@ export function WordListenMatchScreen({
               type="button"
               aria-label={isAudio ? '영어 발음 듣기' : tile.label}
               disabled={completed}
-              className={`absolute flex items-center justify-center px-3 text-center ${tileFrameClass(state)} ${completed ? 'cursor-default' : 'cursor-pointer'}`}
+              className={`absolute z-[2] flex items-center justify-center px-3 text-center ${tileFrameClass(state)} ${completed ? 'cursor-default' : 'cursor-pointer'}`}
               style={figmaRectStyle(tile)}
               onClick={() => handleTileClick(tile)}
             >

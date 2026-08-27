@@ -81,16 +81,16 @@ slotX(i) = pattern[i % 2]   // leftX | rightX
 
 | 토큰 | HEX | 용도 |
 |------|-----|------|
-| `--color-loopin-blue` | `#2AA3FF` | Primary / CTA / 스플래시·로그인 배경 |
-| `--color-loopin-green` | `#B2F165` | 로고 ∞ 강조 |
-| `--color-loopin-white` | `#FFFFFF` | 배경 |
-| `--color-loopin-black` / text | `#111111` | 본문 |
-| `--color-loopin-text-muted` | `#666666` | 보조 텍스트 |
-| `--color-loopin-gray-100` | `#F5F5F5` | 표면 |
-| `--color-loopin-gray-300` | `#D9D9D9` | 보더 |
-| `--color-loopin-gray-400` | `#C4C4C4` | Disabled |
-| `--color-loopin-kakao` | `#FFE812` | 카카오 버튼 |
-| `--color-loopin-kakao-border` | `#FDE33E` | 카카오 보더 |
+| `--color-haksup-blue` | `#2AA3FF` | Primary / CTA / 스플래시·로그인 배경 |
+| `--color-haksup-green` | `#B2F165` | 로고 ∞ 강조 |
+| `--color-haksup-white` | `#FFFFFF` | 배경 |
+| `--color-haksup-black` / text | `#111111` | 본문 |
+| `--color-haksup-text-muted` | `#666666` | 보조 텍스트 |
+| `--color-haksup-gray-100` | `#F5F5F5` | 표면 |
+| `--color-haksup-gray-300` | `#D9D9D9` | 보더 |
+| `--color-haksup-gray-400` | `#C4C4C4` | Disabled |
+| `--color-haksup-kakao` | `#FFE812` | 카카오 버튼 |
+| `--color-haksup-kakao-border` | `#FDE33E` | 카카오 보더 |
 
 ### 학습/퀴즈에서 자주 쓰는 추가 색
 
@@ -113,7 +113,7 @@ slotX(i) = pattern[i % 2]   // leftX | rightX
 ### 레거시 주의
 
 일부 레거시 클래스(`.screen--blue`, `.primary-button`)는 **`#5CB5E8`** 을 사용한다.  
-**신규 UI는 `#2AA3FF` (`loopin-blue`)를 기준**으로 한다. 점진적 통일 필요 (TBD).
+**신규 UI는 `#2AA3FF` (`haksup-blue`)를 기준**으로 한다. 점진적 통일 필요 (TBD).
 
 ---
 
@@ -128,7 +128,7 @@ slotX(i) = pattern[i % 2]   // leftX | rightX
 
 ### 문제(학습) 화면 공통 스케일 — `exercise-typography.ts`
 
-전 유형(단어 A/B/C · 본문 A/B/C · 문법 1/2)에서 **동일 토큰**을 쓴다. 본문·선택지·안내·코치·짝맞추기 **20px**, 기본 **가운데 정렬**.
+전 유형(단어 A/B/C · 본문 A/B/C · 문법 1/2)에서 **동일 토큰**을 쓴다. 본문·선택지·안내·코치·짝맞추기 **20px**, 기본 **가운데 정렬**. 문제/지문 박스 안 문구는 시안 박스보다 짧으면 **위아래 가운데**.
 
 | 용도 | 토큰 | 스펙 |
 |------|------|------|
@@ -137,7 +137,7 @@ slotX(i) = pattern[i % 2]   // leftX | rightX
 | 한국어 보조 설명 | `EXERCISE_PASSAGE_KO_MUTED` | Pretendard **20px** / medium / muted |
 | 단어 퀴즈 헤드워드 | `EXERCISE_HEADWORD` | Pretendard **30px** / bold |
 | 짝맞추기 타일(한/영) | `MATCH_TILE_*` | **20px** / semibold (한·영 동일) |
-| 루핀 코치 말풍선 | `EXERCISE_COACH_LINE` | Pretendard **20px** / semibold / `#3D7EF0` |
+| 마스코트 코치 말풍선 | `EXERCISE_COACH_LINE` | Pretendard **20px** / semibold / `#3D7EF0` |
 | 피드백 제목 | `exerciseFeedbackTitleClass` | **20px** / bold |
 | 피드백 해설 | `EXERCISE_FEEDBACK_HINT` | Pretendard **20px** / semibold |
 | CTA(제출·계속하기) | `EXERCISE_CTA` | **22px** / bold — 전 유형 동일 (`ExerciseContinueButton`은 제출 슬롯, 팝업 시트 아님) |
@@ -205,13 +205,13 @@ Figma 에셋이 없는 화면(회원 유형)은 `CircleCheckbox hasBakedRing={fa
 | wrong | `#EF4444` |
 | disabled | `#C4C4C4` 배경 또는 비활성 커서 |
 | assigned castle (현재) | 컬러 성 + 자물쇠(미완료) / **성 색 별표**(완료, `MissionCheckBadge`). **현재 위치 성**만 `CastleCompleteMascot`(`만세 캐릭터` → `mascot-banzai.svg`) + 「현재 위치」 필. **재도전 중**이면 별표 대신 같은 중심의 코랄 「재도전 중!」 필(`CastleRetryingPill` · `#FF8A65` · **13px Bold** · 92×28, 약한 bounce) — 끝나면 별표 복귀 · 현재 위치는 유지 |
-| assigned castle (목표) | 동일 — 완료=별표, 현재 위치 성만 만세 루핀 — **둘 다 클릭 가능** · 재도전 중 필 규칙 동일 |
+| assigned castle (목표) | 동일 — 완료=별표, 현재 위치 성만 만세 마스코트 — **둘 다 클릭 가능** · 재도전 중 필 규칙 동일 |
 | unassigned castle (현재) | 맵에 미리 그려진 성 + 자물쇠 |
 | unassigned castle (목표) | 렌더하지 않음 (`castle-gray` 더미 불필요) |
 | 현재 위치 필 | React 필 **72×28**, `#4F91EB`, 글자 **13px Bold** white (`CURRENT_LOCATION_PILL`). 시작 지점 「현재 위치」는 맵에 구워져 있어 완료 시 `StartPointMask`로만 가림 — **길을 다시 그리거나 맵 에셋을 교체하지 않음**(부자연스러운 이음매 방지). 성 완료 시 성 바닥 아래 React 필만 표시 |
 | 재도전 중 필 | React 필 **92×28**, `#FF8A65` + 하단 그림자 `#E56A45`, 글자 **13px Bold** white (`CASTLE_RETRYING_PILL`, 「현재 위치」와 동일 글씨 크기). **별표(자물쇠)와 동일 중심**. 재도전 세션 종료(완료) 시 제거하고 별표 재표시 |
 | 재도전 확인 | Figma `재도전 화면`(`castle-retry-screen.svg`) 풀프레임 오버레이 — React 팝업 아님. 카피·버튼 베이크 · 투명 히트만. **하늘 색은 무시** |
-| 시작 루핀 | 맵에 구워진 대기 루핀 — **완료 성이 없을 때만** 보임. 완료 성이 생기면 `StartPointMask`로 루핀·필만 가리고 깃발·길은 원본 유지. 성 바닥 중앙에 `mascot-cheer.svg`(React) 표시 |
+| 시작 마스코트 | 맵에 구워진 대기 마스코트 — **완료 성이 없을 때만** 보임. 완료 성이 생기면 `StartPointMask`로 학습·필만 가리고 깃발·길은 원본 유지. 성 바닥 중앙에 `mascot-cheer.svg`(React) 표시 |
 | praise calendar CTA | 글자 크기 **20px**, 아이콘 20px. rect는 **121×40** (맵 x=255, y=312 / 프레임 x=255, y=246). 배경 SVG의 `이번 할 일` 레이어는 `display="none"` 처리 |
 | praise calendar CTA (dimmed) | 초대코드·대기 미리보기: 45% 검정 오버레이 아래에 있는 것처럼 모든 색상을 ×0.55 딤 처리한 비인터랙티브 복제 (`PraiseCalendarButton surface="dimmed"`) |
 | 오늘의 미션 카드 (`TodayMissionCard`) | Figma `현재학습_CTA카드` 기준에서 가독성을 위해 확대: 배지 14px SemiBold(Figma 11px+3, 너비는 텍스트에 맞춰 자동), 제목 23px Bold(`#1F242E`, Figma 18px+5), 부제 16px Regular(`#6B7382`, Figma 13px+3), 버튼 23px SemiBold(Figma 13px+10, `leading-none`). 버튼 텍스트가 2~3줄로 줄바꿈될 수 있어 버튼 rect를 108×76(기존 96×60)으로 확대. 글씨체는 전역 Pretendard |
@@ -227,8 +227,8 @@ Figma 에셋이 없는 화면(회원 유형)은 `CircleCheckbox hasBakedRing={fa
 | 단어 유형 B · TTS 뜻 짝맞추기 | `WordListenMatchScreen` + `word-a-start.svg` 재사용 — A와 동일 레이아웃·상태색, 왼쪽은 스피커+파형 오디오 타일(탭 시 TTS). 전용 Export는 추후 |
 | 단어 유형 C · 3지선다 | `WordQuizScreen` + `word-c-*.svg` (구 B / 구 `word-b` 에셋 → C로 재매핑 예정) |
 | 단어 유형 D · 예문 빈칸 | `WordSpellScreen` + `word-d-*.svg` — 정답 띄어쓰기 유지, 첫 글자 슬롯 고정(힌트). 본문 카드(`WORD_SPELL_CARD`)는 진행바·트레이 사이 **한 덩어리 클립**. 긴 정답은 카드 안 스크롤. 카드 밖 **튀어나옴 금지**. *(구 C / 구 `word-c`)* |
-| 본문 A · 번역 배열 | `BodyTextAScreen` + `body-text-a.svg` — 루핀 코치 안내, 피드백은 **계속하기만** |
-| 본문 B · 청크배열 | `BodyTextBScreen` + `body-text-a.svg` 재사용 — 한글 제시라 **스피커 숨김**, 제출 시(오답 포함) 영어 예문 TTS. 루핀 코치 안내, 피드백은 **계속하기만** |
+| 본문 A · 번역 배열 | `BodyTextAScreen` + `body-text-a.svg` — 마스코트 코치 안내, 피드백은 **계속하기만** |
+| 본문 B · 청크배열 | `BodyTextBScreen` + `body-text-a.svg` 재사용 — 한글 제시라 **스피커 숨김**, 제출 시(오답 포함) 영어 예문 TTS. 마스코트 코치 안내, 피드백은 **계속하기만** |
 | 본문 C · 영작 | `BodyTextCScreen` + `body-text-c.svg` |
 | 문법 유형 1 · 빈칸 선택 | `GrammarType1Screen` + `grammar-type-1.svg` |
 | 문법 유형 2 · O/X·교정 | `GrammarType2Screen` + `grammar-type-2.svg` / `grammar-type-2-x.svg` — OX 정답이 X이면 틀린 부분 `#EF4444` + underline, 이어서 3지선다 |

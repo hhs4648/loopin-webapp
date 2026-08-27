@@ -10,7 +10,7 @@ import type { ContentSnapshot } from '../../lib/sync/types'
 import type { ReviewAnswerInput } from './review-stats'
 import { resolveReviewCategory } from './review-types'
 
-const STORAGE_KEY = 'loopin-review-practice-answers'
+const STORAGE_KEY = 'haksup-review-practice-answers'
 
 type PracticeEntry = {
   isCorrect: boolean

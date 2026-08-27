@@ -13,11 +13,11 @@ export const FRAME_H = 852
  */
 export const PART_COMPLETE_ASSETS = {
   /** 80점 이상 — 색종이 배경 + 엄지척 */
-  high: '/assets/sentence-grammar-complete-high.svg?v=1',
+  high: '/assets/sentence-grammar-complete-high.svg?v=2',
   /** 50점 이상 80점 미만 — 구름 배경 + 시무룩 */
-  mid: '/assets/sentence-grammar-complete-mid.svg?v=1',
+  mid: '/assets/sentence-grammar-complete-mid.svg?v=2',
   /** 50점 미만 — 빗방울 배경 + 우는 표정 */
-  low: '/assets/sentence-grammar-complete-low.svg?v=1',
+  low: '/assets/sentence-grammar-complete-low.svg?v=2',
 } as const
 
 export type PartCompleteTone = keyof typeof PART_COMPLETE_ASSETS

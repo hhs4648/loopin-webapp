@@ -1,4 +1,4 @@
-# 루핀 학생 앱 — 에이전트 공용 규칙
+# 학습 학생 앱 — 에이전트 공용 규칙
 
 > **이 파일이 단일 소스입니다.** Cursor와 Claude Code가 **둘 다** 이 파일을 읽습니다.
 > - Cursor: `AGENTS.md`를 네이티브로 읽음 + `.cursor/rules/shared-agents.mdc`가 한 번 더 지시
@@ -40,7 +40,7 @@ No lint script and no test suite exist. `npm run build` (type-check + build) is 
 
 ## Product context
 
-This is the **student-facing** half of Loopin, a Korean B2G middle-school English 내신(exam) prep product. Supabase sync (Anonymous Auth, invite-code enrollment via `enroll_with_invite_code` RPC, attempt/answer recording, content snapshots) is genuinely implemented in `src/lib/sync/` — the docs have been corrected (2026-07-21) to stop saying "no backend"; verify against actual code (`src/lib/sync/`) if a doc ever drifts again rather than trusting it blindly. Never write documentation that presents mock/TBD behavior as confirmed live backend behavior, or vice versa (this is an explicit, repeated rule in the docs).
+This is the **student-facing** half of Haksup, a Korean B2G middle-school English 내신(exam) prep product. Supabase sync (Anonymous Auth, invite-code enrollment via `enroll_with_invite_code` RPC, attempt/answer recording, content snapshots) is genuinely implemented in `src/lib/sync/` — the docs have been corrected (2026-07-21) to stop saying "no backend"; verify against actual code (`src/lib/sync/`) if a doc ever drifts again rather than trusting it blindly. Never write documentation that presents mock/TBD behavior as confirmed live backend behavior, or vice versa (this is an explicit, repeated rule in the docs).
 
 The teacher-facing counterpart is a separate repo, `loopin-project` (`loopin-web/`), with its own `AGENTS.md`.
 
@@ -69,14 +69,14 @@ There is **no** `/student/main` route. If the user says “메인” / “학원
 
 **There is no demo bypass anymore.** `MainHomeScreen.tsx`'s `tryEnter()` checks `isSyncEnabled()` first and blocks entry with an error ("서버 연결이 없어요...") if Supabase env vars are absent — the old hardcoded `"TEST"` invite code and the `'waiting'` step are dead/unreachable code as of the current codebase (docs previously described `"TEST"` as live; that was stale and has been corrected 2026-07-21 — re-verify against `tryEnter()` before trusting any doc's demo-path description again). A real invite code, issued by a teacher via `loopin-project`, is required to enter.
 
-**TTS:** `src/lib/tts/loopin-tts.ts` calls a Supabase Edge Function (`loopin-tts`, Azure Neural voices) — not the browser's default `speechSynthesis`, which is only the fallback. Requires `supabase functions deploy loopin-tts` in the target project; see `.env.example`. Any screen using audio must stop playback on navigation away (existing PR checklist item — see below).
+**TTS:** `src/lib/tts/haksup-tts.ts` calls a Supabase Edge Function (`haksup-tts`, Azure Neural voices) — not the browser's default `speechSynthesis`, which is only the fallback. Requires `supabase functions deploy haksup-tts` in the target project; see `.env.example`. Any screen using audio must stop playback on navigation away (existing PR checklist item — see below).
 
 ## Design constraints (from docs/uiux.md, docs/design.md, docs/figma.md)
 
 - Pixel-accurate to Figma: no arbitrary color/copy/spacing changes without design sign-off.
 - Never render duplicate text over the Figma image; no "preview" highlighting of correct answers before a question is answered.
 - All interactive overlays need `aria-label` (they're visually transparent over the image).
-- Tailwind utilities preferred over legacy CSS classes. Watch for two coexisting blue tokens — legacy `#5CB5E8` vs current `--color-loopin-blue` `#2AA3FF`; using the wrong one is a known recurring regression.
+- Tailwind utilities preferred over legacy CSS classes. Watch for two coexisting blue tokens — legacy `#5CB5E8` vs current `--color-haksup-blue` `#2AA3FF`; using the wrong one is a known recurring regression.
 
 ## Adding a new screen — checklist (from docs/development.md)
 

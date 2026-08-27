@@ -41,9 +41,9 @@ export const GRAMMAR_TYPE_1_FEEDBACK_SHEET = { x: 0, y: 648, w: 393, h: 204 }
 export const GRAMMAR_TYPE_1_QUESTIONS: GrammarType1Question[] = [
   {
     id: 'smiles-choice',
-    maskPassage: false,
-    passageBefore: '',
-    passageAfter: '',
+    maskPassage: true,
+    passageBefore: 'She always',
+    passageAfter: 'when she sees her friends.',
     options: [
       { id: 'smile', label: 'smile' },
       { id: 'smiles', label: 'smiles' },

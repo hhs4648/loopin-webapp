@@ -10,11 +10,11 @@ export const FRAME_H = 852
  */
 export const ASSIGNMENT_COMPLETE_ASSETS = {
   /** 80점 이상 — `완료 1.svg` */
-  high: '/assets/assignment-complete-high.svg?v=5',
+  high: '/assets/assignment-complete-high.svg?v=6',
   /** 50점 이상 80점 미만 — `완료 2.svg` */
-  mid: '/assets/assignment-complete-mid.svg?v=5',
+  mid: '/assets/assignment-complete-mid.svg?v=6',
   /** 50점 미만 — `완료 3.svg` */
-  low: '/assets/assignment-complete-low.svg?v=5',
+  low: '/assets/assignment-complete-low.svg?v=6',
 } as const
 
 export type AssignmentCompleteTone = keyof typeof ASSIGNMENT_COMPLETE_ASSETS
@@ -77,7 +77,7 @@ export const COMPLETE_FIELD_COVER = '#8FDFBE'
 export const COMPLETE_CTA_IMAGE = '/assets/assignment-complete-ctas.png'
 
 /** @deprecated */
-export const LOOPIN_COMPLETE_MASCOT = '/assets/loopin-wave.png'
+export const COMPLETE_MASCOT_ASSET = '/assets/mascot-wave.png'
 
 /** @deprecated */
 export const GRAMMAR_COMPLETE_ASSET = ASSIGNMENT_COMPLETE_ASSET

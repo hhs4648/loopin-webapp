@@ -1,17 +1,17 @@
 export const MAIN_HOME_ASSETS = {
-  /**
-   * @deprecated 2026-08-08 벡터 맵으로 대체 — 이제 렌더에 쓰지 않는다.
-   *
-   * 6.2MB짜리 이 파일은 SVG 껍데기 안에 **가로 360px PNG**가 통째로 박혀 있었다.
-   * 최대 540px 폭 · DPR 2~3에서 3~4배로 확대돼 흐릿하고 채도가 죽어 보이는 원인이었다.
-   * 지금은 `mapPathTile` + `mapCastle` + 장식 에셋 조합(전부 벡터/고해상도)이 대신한다.
-   *
-   * 파일은 대조용으로 남겨 둔다. 되살리지 말 것 — 되살리면 화질 회귀다.
-   */
-  map: '/assets/main-home-academy-map.svg?v=23',
-  /** @deprecated 동일 원본 — `map` 사용 */
-  mapLong: '/assets/main-home-map-long.svg?v=7',
-  mapScroll: '/assets/main-home-map-scroll.svg?v=3',
+  /*
+    **구 맵 이미지 3종은 여기 없다.** 2026-08-08에 벡터 맵으로 대체됐고,
+    2026-08-22에 `public/assets`에서 `_design-source/`로 옮겼다.
+
+    6.2MB짜리 `main-home-academy-map.svg`는 SVG 껍데기 안에 가로 360px PNG가 통째로
+    박혀 있었다. 최대 540px 폭 · DPR 2~3에서 3~4배로 확대돼 흐릿하고 채도가 죽었다.
+    지금은 `mapPathTile` + `mapCastle` + 장식 에셋 조합(전부 벡터)이 대신한다.
+
+    렌더에 안 쓰는데 `public/assets`에 있으면 **학생 기기로 배포되는 용량만 7.5MB**
+    늘어난다(받지는 않지만 배포본에 실린다). 대조용 원본은 `_design-source/`에 있다:
+      main-home-academy-map.svg · main-home-map-long.svg · main-home-map-scroll.svg
+    되살리지 말 것 — 되살리면 화질 회귀다.
+  */
   mapFrame: '/assets/main-home-assignment-received.svg?v=3',
   castleGray: '/assets/castle-gray.svg',
   /**
@@ -44,7 +44,7 @@ export const MAIN_HOME_ASSETS = {
    * 맵 장식 — 커리큘럼 맵과 같은 에셋을 공유한다(`MainHomeMapDecor`).
    * 예전에는 맵 이미지에 구워져 있어서 배경과 같이 뭉개졌다.
    */
-  decorDinosaur: '/assets/curriculum-dinosaur.svg',
+  decorDinosaur: '/assets/curriculum-dinosaur.svg?v=2',
   decorTreeRound: '/assets/curriculum-tree-round.png',
   decorTreeTall: '/assets/curriculum-tree-tall.png',
   /** @deprecated 저해상도(100×114) — `mapCastle` 사용 */
@@ -63,9 +63,9 @@ export const MAIN_HOME_ASSETS = {
   missionStar: '/assets/mission-star.svg',
   /** @deprecated 체크 시안 — 완료는 `missionStar` / `MissionCheckBadge` */
   missionCheck: '/assets/mission-check.svg',
-  /** 루핀 — 시작 지점 대기. 원본: `루핀 캐릭터 시작.svg` */
-  mascotWave: '/assets/loopin-character-start.svg?v=1',
-  /** 루핀 — 성 도착·현재 위치 만세. 원본: `만세 캐릭터.svg` → `mascot-banzai.svg` */
+  /** 마스코트 — 시작 지점 대기. 원본: `마스코트 캐릭터 시작.svg` */
+  mascotWave: '/assets/mascot-character-start.svg?v=2',
+  /** 마스코트 — 성 도착·현재 위치 만세. 원본: `만세 캐릭터.svg` → `mascot-banzai.svg` */
   mascotCheer: '/assets/mascot-banzai.svg?v=1',
   /**
    * @deprecated 배치 참고용만 — 렌더에 쓰지 않음.
@@ -73,7 +73,7 @@ export const MAIN_HOME_ASSETS = {
    */
   castleArrive: '/assets/character-castle-arrive.svg?v=1',
   /** 완료 성 재도전 확인 — Figma `재도전 화면.svg` (하늘 색은 무시) */
-  castleRetryScreen: '/assets/castle-retry-screen.svg?v=3',
+  castleRetryScreen: '/assets/castle-retry-screen.svg?v=4',
 } as const
 
 /** 재도전 화면 — 취소 버튼 (Figma path ≈ x30–155 y690–750) */
@@ -109,7 +109,7 @@ export function getCastleAccentColor(index: number): string {
 /**
  * 393 기준 크기를 **프레임 폭에 맞춰** 스케일한 CSS 길이.
  *
- * 프레임은 `min(100vw, 540px, 100dvh × 393/852)`다(`index.css`). `vw`만 쓰면 화면이
+ * 프레임은 `min(100vw, 540px, var(--app-vh) × 393/852)`다(`index.css`). `vw`만 쓰면 화면이
  * 넓고 낮을 때(노트북 창 등) 프레임은 높이에 걸려 좁아지는데 글씨는 안 줄어든다.
  * 그래서 **프레임과 같은 세 항목**을 그대로 쓴다.
  *
@@ -119,8 +119,7 @@ export function getCastleAccentColor(index: number): string {
 export function framePx(pxAt393: number): string {
   const vw = (pxAt393 / 393) * 100
   const max = (pxAt393 * 540) / 393
-  const dvh = (pxAt393 / 393) * (393 / 852) * 100
-  return `min(${vw.toFixed(2)}vw, ${max.toFixed(1)}px, ${dvh.toFixed(3)}dvh)`
+  return `min(${vw.toFixed(2)}vw, ${max.toFixed(1)}px, calc(var(--app-vh) * ${pxAt393} / 852))`
 }
 
 export const FRAME_W = 393
@@ -475,7 +474,7 @@ export const START_FLAG_RECT = {
 } as const
 
 /**
- * `loopin-character-start.svg`는 586×586 **정사각** 안에 캐릭터가 여백을 두고 들어 있다.
+ * `mascot-character-start.svg`는 586×586 **정사각** 안에 캐릭터가 여백을 두고 들어 있다.
  * (`mascot-banzai.svg`는 내용이 박스를 꽉 채우는데 이 에셋만 다르다 — 파일만 보고 같다고 치면 안 된다.)
  * 아래는 내장 PNG 알파 실측 비율이다.
  *
@@ -492,11 +491,11 @@ const START_MASCOT_ART = {
 } as const
 
 /**
- * 시작 루핀 — **보이는 캐릭터** 기준값(박스가 아니라 그림 자체).
+ * 시작 마스코트 — **보이는 캐릭터** 기준값(박스가 아니라 그림 자체).
  *
  * 깃발(x≈33–86, 밑동 y≈371) 바로 오른쪽에 선다. 깃발과만 안 겹치면 된다.
  * 예전 `cx:150 / feetY:395`는 1성과 겹쳐 이상해 보였다.
- * 높이 53은 성 도착 루핀(`castleMascotClipRect` ≈ 50)과 맞춤.
+ * 높이 53은 성 도착 마스코트(`castleMascotClipRect` ≈ 50)과 맞춤.
  */
 const START_MASCOT_VISIBLE = { cx: 102, feetY: 370, h: 53 } as const
 
@@ -534,7 +533,7 @@ export function resolveMapScrollContentHeight(_assignedCount: number): number {
  */
 export function resolveMapScrollLimitY(assignedCount: number): number {
   if (assignedCount <= 0) {
-    // 깃발·시작 루핀·「현재 위치」 필이 잘리지 않게
+    // 깃발·시작 마스코트·「현재 위치」 필이 잘리지 않게
     const startBottom =
       START_LOCATION_PILL_RECT.y +
       START_LOCATION_PILL_RECT.h -
@@ -587,8 +586,8 @@ export function resolveMapCenterScrollTop(
  * `캐릭터 성도착.svg` 참고 실측 (렌더 에셋 아님, 배치 비율만 사용).
  * viewBox 90×94
  * - 성 바닥 y ≈ 87.78 · 성 폭 ≈ 77 · 성 높이 ≈ 61
- * - 루핀 발끝 y ≈ 89 · 루핀 박스 ≈ 40×46 (기존 mascot-cheer)
- * → 발끝 ≈ 성바닥, 루핀 높이 ≈ 성 높이 × (46/61)
+ * - 마스코트 발끝 y ≈ 89 · 마스코트 박스 ≈ 40×46 (기존 mascot-cheer)
+ * → 발끝 ≈ 성바닥, 마스코트 높이 ≈ 성 높이 × (46/61)
  */
 export const CASTLE_ARRIVE_REF = {
   castleW: 77,
@@ -621,10 +620,10 @@ export function castleBodyRect(castle: {
 }
 
 /**
- * 맵 성 위 환호 루핀 박스.
+ * 맵 성 위 환호 마스코트 박스.
  * 가로 중앙 · 박스 밑변(발끝) = 성 밑변 `castle.y + castle.h`.
  *
- * 크기는 **몸통** 높이 기준이다 — 전체 높이로 재면 루핀이 성만큼 커진다.
+ * 크기는 **몸통** 높이 기준이다 — 전체 높이로 재면 마스코트가 성만큼 커진다.
  */
 export function castleMascotClipRect(castle: {
   id?: string
@@ -671,7 +670,7 @@ export function castleMascotRect(castle: { x: number; y: number; w: number; h: n
   return castleMascotClipRect(castle)
 }
 
-/** 완료 성 양옆 반짝이 — 입구에 앉은 루핀 좌·우 */
+/** 완료 성 양옆 반짝이 — 입구에 앉은 마스코트 좌·우 */
 export function castleSparkleRects(castle: { x: number; y: number; w: number; h: number }) {
   const mascot = castleMascotClipRect(castle)
   const size = Math.max(8, mascot.w * 0.28)
@@ -700,8 +699,8 @@ export const CURRENT_LOCATION_PILL = { w: 72, h: 28 } as const
 const PILL_GAP_BELOW_FEET = 8
 
 /**
- * 시작 지점 「현재 위치」 필 — 루핀 **발끝** 아래.
- * 성 도착 루핀(`currentLocationPillRect`)과 같은 크기·같은 간격을 쓴다.
+ * 시작 지점 「현재 위치」 필 — 마스코트 **발끝** 아래.
+ * 성 도착 마스코트(`currentLocationPillRect`)과 같은 크기·같은 간격을 쓴다.
  * (`CURRENT_LOCATION_PILL` 선언 뒤여야 해서 여기 있다 — 위치가 아니라 초기화 순서 문제)
  */
 export const START_LOCATION_PILL_RECT = {

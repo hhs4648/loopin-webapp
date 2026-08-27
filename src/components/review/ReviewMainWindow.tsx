@@ -223,7 +223,7 @@ export function ReviewMainContent({
 
   return (
     <div
-      className="h-full overflow-y-auto px-5 pb-8"
+      className="h-full overflow-y-auto overscroll-y-contain px-5 pb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       style={{ paddingTop: `${REVIEW_CONTENT_PAD_TOP_PCT}%` }}
     >
       {/*

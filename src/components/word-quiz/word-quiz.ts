@@ -1,9 +1,9 @@
 import {
-  preloadLoopinTts,
-  preloadLoopinEnglishTexts,
-  speakLoopinEnglish,
-  stopLoopinTts,
-} from '../../lib/tts/loopin-tts'
+  preloadHaksupTts,
+  preloadHaksupEnglishTexts,
+  speakHaksupEnglish,
+  stopHaksupTts,
+} from '../../lib/tts/haksup-tts'
 
 export const FRAME_W = 393
 export const FRAME_H = 852
@@ -50,11 +50,11 @@ export const WORD_QUIZ_QUESTIONS: WordQuizQuestion[] = [
   },
 ]
 
-/** 예문 듣기 스피커 — 앱 왼쪽 정렬 */
+/** 예문 듣기 스피커 — 시안 자리 (단어 박스와 같은 줄) */
 export const WORD_QUIZ_SPEAKER_HIT = { x: 24, y: 230, w: 48, h: 48 }
 
 /**
- * 영어 단어 — 앱 프레임 기준 가운데(스피커와 묶여 가운데 맞추지 않음).
+ * 영어 단어 — 스피커와 같은 줄.
  */
 export const WORD_QUIZ_PROMPT_WORD = { x: 24, y: 230, w: 345, h: 48 }
 
@@ -109,21 +109,21 @@ export function figmaRectStyle(rect: { x: number; y: number; w: number; h: numbe
   }
 }
 
-/** Loopin 제공 TTS — 번들 wav + Edge Aria/SunHi (Supabase Function) */
+/** Haksup 제공 TTS — 번들 wav + Edge Aria/SunHi (Supabase Function) */
 export function stopEnglishWordAudio() {
-  stopLoopinTts()
+  stopHaksupTts()
 }
 
 export function preloadEnglishWordAudio(): Promise<void> {
-  return preloadLoopinTts()
+  return preloadHaksupTts()
 }
 
 export function preloadEnglishWords(texts: readonly string[]): Promise<void> {
-  return preloadLoopinEnglishTexts(texts)
+  return preloadHaksupEnglishTexts(texts)
 }
 
 export function speakEnglishWord(word: string, options?: { force?: boolean }) {
-  speakLoopinEnglish(word, options)
+  speakHaksupEnglish(word, options)
 }
 
 export function speakEnglishText(
@@ -131,5 +131,5 @@ export function speakEnglishText(
   options?: { force?: boolean; audioKey?: string },
 ) {
   void options?.audioKey
-  speakLoopinEnglish(text, options)
+  speakHaksupEnglish(text, options)
 }

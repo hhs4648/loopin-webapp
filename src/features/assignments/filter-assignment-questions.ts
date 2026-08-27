@@ -13,6 +13,7 @@ import {
 } from '../../components/grammar-type-2/grammar-type-2'
 import { isFillPairId } from '../../components/word-match/word-match'
 import type { WordMatchPair } from '../../components/word-match/word-match'
+import type { WordQuizQuestion } from '../../components/word-quiz/word-quiz'
 import {
   listSectionQuestionIds,
   type AssignmentSection,
@@ -27,7 +28,7 @@ export function normalizePracticeQuestionId(id: string): string {
 function collectMatchPairs(
   sections: AssignmentSection[],
   kind: 'word-match' | 'word-listen-match',
-  keep: Set<string>,
+  keep?: Set<string>,
 ): WordMatchPair[] {
   const byId = new Map<string, WordMatchPair>()
   for (const section of sections) {
@@ -35,7 +36,8 @@ function collectMatchPairs(
     for (const pair of [...section.pairs, ...section.fillPool]) {
       if (isFillPairId(pair.id)) continue
       const id = normalizePracticeQuestionId(pair.id)
-      if (!keep.has(id) || byId.has(id)) continue
+      if (keep && !keep.has(id)) continue
+      if (byId.has(id)) continue
       byId.set(id, { ...pair, id })
     }
   }
@@ -85,6 +87,37 @@ function keepGrammarType2Questions(
   return kept
 }
 
+function shuffleInPlace<T>(items: T[]): T[] {
+  for (let i = items.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[items[i], items[j]] = [items[j]!, items[i]!]
+  }
+  return items
+}
+
+/** 틀린문제만에서도 오답지는 원본 과제 단어 뜻에서 다시 뽑는다 */
+function restockQuizOptions(
+  kept: WordQuizQuestion[],
+  all: WordQuizQuestion[],
+): WordQuizQuestion[] {
+  const distractorPool = all.map((question) => question.correctAnswer)
+  return kept.map((question) => {
+    const others = [
+      ...new Set(
+        distractorPool.filter(
+          (item) => item && item !== question.correctAnswer,
+        ),
+      ),
+    ]
+    if (others.length < 2) return question
+    const distractors = shuffleInPlace([...others]).slice(0, 2)
+    const slot = Math.floor(Math.random() * 3)
+    const options = [...distractors]
+    options.splice(slot, 0, question.correctAnswer)
+    return { ...question, options }
+  })
+}
+
 function keepOnlyInSection(
   section: AssignmentSection,
   keep: Set<string>,
@@ -97,7 +130,11 @@ function keepOnlyInSection(
       const questions = section.questions.filter((question) =>
         keep.has(normalizePracticeQuestionId(question.id)),
       )
-      return questions.length ? { ...section, questions } : null
+      if (!questions.length) return null
+      return {
+        ...section,
+        questions: restockQuizOptions(questions, section.questions),
+      }
     }
     case 'word-spell': {
       const questions = section.questions.filter((question) =>
@@ -152,7 +189,8 @@ export function filterAssignmentSectionsByQuestionIds(
       kind: 'word-match',
       id: 'word-match-retry',
       pairs: matchPairs,
-      fillPool: matchPairs,
+      // 채움은 원본 과제 단어로 — 오답 1개일 때 같은 짝을 4번 복제하지 않는다
+      fillPool: collectMatchPairs(sections, 'word-match'),
     })
   }
 
@@ -162,7 +200,7 @@ export function filterAssignmentSectionsByQuestionIds(
       kind: 'word-listen-match',
       id: 'word-listen-match-retry',
       pairs: listenPairs,
-      fillPool: listenPairs,
+      fillPool: collectMatchPairs(sections, 'word-listen-match'),
     })
   }
 

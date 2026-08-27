@@ -240,7 +240,7 @@ export function ChunkOrderRow({
 
   const defaultChipClass = (item: ChunkOrderItem, dragging: boolean) => {
     const border = item.markedWrong ? 'border-[#FF8AC8]' : 'border-[#3C86FF]'
-    return `touch-none select-none whitespace-nowrap rounded-lg border bg-white px-2 py-1 shadow-[0_1px_4px_rgba(60,134,255,0.1)] ${
+    return `touch-none select-none max-w-full whitespace-normal break-keep rounded-lg border bg-white px-1.5 py-0.5 shadow-[0_1px_4px_rgba(60,134,255,0.1)] ${
       dragging ? `cursor-grabbing ${border}` : `cursor-grab ${border}`
     }`
   }

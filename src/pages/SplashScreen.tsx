@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LoopinLogo } from '../components/LoopinLogo'
+import { SplashBrandFrame } from '../components/SplashBrandFrame'
 import {
   createUserFromSession,
   getPostAuthPath,
@@ -73,21 +73,5 @@ export function SplashScreen() {
     }
   }, [navigate])
 
-  return (
-    <div
-      className="relative flex min-h-full w-full flex-col bg-[#2aa3ff]"
-      data-node-id="2917:5988"
-      data-name="플래시화면"
-    >
-
-      <div className="flex flex-1 items-center justify-center">
-        <div
-          className="relative h-[67.427px] w-[176px] shrink-0"
-          data-node-id="4501:2481"
-        >
-          <LoopinLogo variant="splash" />
-        </div>
-      </div>
-    </div>
-  )
+  return <SplashBrandFrame />
 }

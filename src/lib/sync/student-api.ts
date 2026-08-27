@@ -1,4 +1,4 @@
-import { getSupabase, isSyncEnabled } from './supabase-client'
+import { getSupabase, hasStoredAuthToken, isSyncEnabled } from './supabase-client'
 import { DEFAULT_PASS_SCORE_THRESHOLD } from '../../components/praise-calendar/praise-calendar'
 import { displayAssignmentTitle } from './assignment-title'
 import type {
@@ -15,8 +15,8 @@ import {
   countSectionQuestions,
 } from '../../features/assignments/build-session-sections'
 
-const ACTIVE_CLASS_KEY = 'loopin_active_class_id'
-const PROFILE_CACHE_KEY = 'loopin_student_profile'
+const ACTIVE_CLASS_KEY = 'haksup_active_class_id'
+const PROFILE_CACHE_KEY = 'haksup_student_profile'
 
 function mapEnrollment(row: Record<string, unknown>): Enrollment {
   return {
@@ -68,8 +68,27 @@ export async function ensureStudentSession(): Promise<string | null> {
   if (sessionInFlight) return sessionInFlight
 
   sessionInFlight = (async () => {
-    const { data: existing } = await supabase.auth.getSession()
+    const { data: existing, error: sessionError } =
+      await supabase.auth.getSession()
     if (existing.session?.user?.id) return existing.session.user.id
+
+    /*
+      **세션을 못 살렸다고 새 사람을 만들면 안 된다.**
+
+      토큰이 localStorage에 남아 있는데 `getSession()`이 빈손으로 돌아오는 건 대개
+      일시적인 실패다(오프라인, 토큰 갱신 요청 실패 등). 여기서 곧바로
+      `signInAnonymously()`를 부르면 uid가 바뀌어 그 학생의 `enrollments`가 통째로
+      남의 것이 된다 → 초대코드 화면이 다시 뜨고, 코드를 넣으면 **새 계정으로 다시 가입**
+      되어 같은 일이 반복된다(= 초대코드를 계속 입력하게 되는 증상).
+      토큰이 아예 없을 때(첫 방문)만 새로 만든다.
+    */
+    if (hasStoredAuthToken()) {
+      console.warn(
+        '[sync] session restore failed but a token exists — keeping identity',
+        sessionError?.message,
+      )
+      return null
+    }
 
     const { data, error } = await supabase.auth.signInAnonymously()
     if (error || !data.user) {
@@ -160,6 +179,23 @@ export function setActiveClassId(classId: string): void {
   localStorage.setItem(ACTIVE_CLASS_KEY, classId)
 }
 
+/** 마지막으로 확인된 활성 반 — 조회가 실패했을 때의 폴백 */
+export function getCachedActiveClassId(): string | null {
+  try {
+    return localStorage.getItem(ACTIVE_CLASS_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function clearActiveClassId(): void {
+  try {
+    localStorage.removeItem(ACTIVE_CLASS_KEY)
+  } catch {
+    /* 저장소를 못 쓰는 환경 — 무시 */
+  }
+}
+
 export async function enrollWithInviteCode(code: string): Promise<EnrollResult> {
   const cleaned = code.toUpperCase().replace(/[^A-Z0-9]/g, '')
   if (!isSyncEnabled()) {
@@ -176,7 +212,10 @@ export async function enrollWithInviteCode(code: string): Promise<EnrollResult> 
     return {
       ok: false,
       code: 'UNAUTHENTICATED',
-      message: '로그인이 필요해요.',
+      // 토큰은 있는데 세션을 못 살린 경우 — 다시 로그인하라고 하면 안 된다
+      message: hasStoredAuthToken()
+        ? '연결이 불안정해요. 잠시 후 다시 시도해 주세요.'
+        : '로그인이 필요해요.',
     }
   }
 
@@ -250,11 +289,21 @@ export async function enrollWithInviteCode(code: string): Promise<EnrollResult> 
   }
 }
 
-export async function fetchMyEnrollments(): Promise<Enrollment[]> {
-  if (!isSyncEnabled()) return []
+/**
+ * 내 반 등록 목록. **「조회 실패」와 「가입한 반이 없음」을 구분해서** 돌려준다.
+ *
+ * 예전에는 둘 다 빈 배열이었다. 그래서 네트워크가 한 번 흔들리거나 세션이 잠깐
+ * 안 잡히면 「가입한 반이 없다」로 읽혀 초대코드 화면이 다시 떴다.
+ */
+export async function fetchMyEnrollmentsResult(): Promise<{
+  ok: boolean
+  enrollments: Enrollment[]
+}> {
+  if (!isSyncEnabled()) return { ok: true, enrollments: [] }
   const supabase = getSupabase()
   const userId = await ensureStudentSession()
-  if (!supabase || !userId) return []
+  // 세션을 못 잡은 건 「반이 없음」이 아니라 「지금은 알 수 없음」이다
+  if (!supabase || !userId) return { ok: false, enrollments: [] }
 
   const { data, error } = await supabase
     .from('enrollments')
@@ -262,9 +311,12 @@ export async function fetchMyEnrollments(): Promise<Enrollment[]> {
     .eq('student_id', userId)
     .order('enrolled_at', { ascending: false })
 
-  if (error || !data) return []
+  if (error || !data) {
+    console.warn('[sync] enrollment lookup failed', error?.message)
+    return { ok: false, enrollments: [] }
+  }
 
-  return data.map((row) => {
+  const enrollments = data.map((row) => {
     const cls = row.classes as
       | { name?: string; grade?: string; invite_code?: string }
       | { name?: string; grade?: string; invite_code?: string }[]
@@ -280,6 +332,12 @@ export async function fetchMyEnrollments(): Promise<Enrollment[]> {
       inviteCode: c?.invite_code,
     }
   })
+
+  return { ok: true, enrollments }
+}
+
+export async function fetchMyEnrollments(): Promise<Enrollment[]> {
+  return (await fetchMyEnrollmentsResult()).enrollments
 }
 
 /**
@@ -289,8 +347,20 @@ export async function fetchMyEnrollments(): Promise<Enrollment[]> {
  * 버그가 있었다 — 매번 최신 가입 기록을 다시 조회해 갱신한다.
  */
 export async function resolveActiveClassId(): Promise<string | null> {
-  const enrollments = await fetchMyEnrollments()
-  if (enrollments.length === 0) return null
+  const { ok, enrollments } = await fetchMyEnrollmentsResult()
+
+  /*
+    조회 자체가 실패했으면 **마지막으로 알던 반을 그대로 쓴다.**
+    여기서 null을 돌려주면 화면이 「가입한 반이 없다」로 보고 초대코드부터 다시
+    받는다 — 이미 가입한 학생에게는 고칠 것이 없는데 코드만 또 넣게 되는 셈이다.
+  */
+  if (!ok) return getCachedActiveClassId()
+
+  if (enrollments.length === 0) {
+    // 진짜로 가입한 반이 없다 — 남아 있던 캐시는 지운다
+    clearActiveClassId()
+    return null
+  }
   const latest = enrollments[0]!
   setActiveClassId(latest.classId)
   return latest.classId

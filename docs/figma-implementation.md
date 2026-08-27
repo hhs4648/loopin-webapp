@@ -1,4 +1,4 @@
-# Loopin 피그마 → 코드 구현 가이드
+# Haksup 피그마 → 코드 구현 가이드
 
 > **레거시 문서.** 신규 작업은 [`figma.md`](./figma.md)를 우선한다.  
 > 피그마 시안을 코드로 옮길 때 따르던 초기 규칙·템플릿이다.  
@@ -46,8 +46,8 @@
 
 | 토큰 | HEX | Tailwind 예시 |
 |------|-----|---------------|
-| Loopin Blue | `#5CB5E8` | `bg-[#5CB5E8]` 또는 `theme` 확장 |
-| Loopin Green | `#B8E847` | 로고 ∞ 색상 |
+| Haksup Blue | `#5CB5E8` | `bg-[#5CB5E8]` 또는 `theme` 확장 |
+| Haksup Green | `#B8E847` | 로고 ∞ 색상 |
 | Kakao Yellow | `#FEE500` | 소셜 버튼 |
 | Gray 400 (비활성) | `#C4C4C4` | disabled 버튼 |
 | 본문 텍스트 | `#111111` | `text-[#111111]` |
@@ -122,11 +122,11 @@
 |------|------|
 | 프레임명 | *(피그마 프레임명 입력)* |
 | Figma 링크 | *(URL 입력)* |
-| Export 에셋 | `logo-loopin.svg`, Hero 일러스트 *(필요 시 추가)* |
+| Export 에셋 | `logo-haksup.svg`, Hero 일러스트 *(필요 시 추가)* |
 
 ## 목적
 
-첫 화면에서 Loopin의 핵심 가치를 전달한다.
+첫 화면에서 Haksup의 핵심 가치를 전달한다.
 
 ## 구현 방식
 
@@ -135,14 +135,14 @@
 - 새로운 프로젝트를 만들지 않는다.
 - 파일 위치: `src/pages/landing/LandingPage.tsx`, `src/components/landing/HeroSection.tsx`
 - 라우트: `/landing` *(또는 서비스 진입 정책에 맞는 경로)*
-- 재사용 컴포넌트: `LoopinLogo`, `AppFrame` *(필요 시 `primary-button` 패턴)*
+- 재사용 컴포넌트: `HaksupLogo`, `AppFrame` *(필요 시 `primary-button` 패턴)*
 
 ## 레이아웃 / 스펙
 
 | 요소 | 스펙 |
 |------|------|
 | 배경 | 피그마 프레임 배경색 그대로 |
-| 로고 | `LoopinLogo` — `public/assets/logo-loopin.svg` |
+| 로고 | `HaksupLogo` — `public/assets/logo-haksup.svg` |
 | 헤드라인 | 피그마 카피 그대로 |
 | 서브카피 | 피그마 카피 그대로 |
 | CTA 버튼 | 피그마 색상·radius·높이 그대로 |
@@ -178,7 +178,7 @@
 | 컴포넌트 | 경로 | 용도 |
 |----------|------|------|
 | `AppFrame` | `src/components/AppFrame.tsx` | 모바일 앱 프레임 래퍼 |
-| `LoopinLogo` | `src/components/LoopinLogo.tsx` | Loopin 로고 |
+| `HaksupLogo` | `src/components/HaksupLogo.tsx` | Haksup 로고 |
 | `MascotCharacter` | `src/components/MascotCharacter.tsx` | 로그인 마스코트 |
 | `SplashScreen` | `src/pages/SplashScreen.tsx` | 플래시 화면 |
 | `LoginScreen` | `src/pages/LoginScreen.tsx` | 소셜 로그인 |
@@ -202,7 +202,7 @@
 
 ```
 public/assets/
-├── logo-loopin.svg      # Loopin 로고 (피그마 Export)
+├── logo-haksup.svg      # Haksup 로고 (피그마 Export)
 ├── mascot-login.svg     # 로그인 마스코트 (피그마 Export)
 └── landing/             # 랜딩 전용 에셋 (추가 시)
 ```
@@ -229,4 +229,4 @@ public/assets/
 
 ---
 
-*문서 버전: v1.0 — Loopin `loopin-webapp` 피그마 구현 가이드*
+*문서 버전: v1.0 — Haksup `loopin-webapp` 피그마 구현 가이드*

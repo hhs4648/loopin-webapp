@@ -26,13 +26,13 @@ export const COLOR_WRONG_BG = 'bg-[#FF4B4B]'
 export const EXERCISE_EN_BASE_UNSIZED =
   `${FONT_EN} text-center font-semibold leading-snug tracking-[-0.01em] text-[#1E1E1E] antialiased`
 
-/** 위 클래스의 기준 크기 (px) */
-export const EXERCISE_EN_PX = 20
+/** 위 클래스의 기준 크기 (px) — 시안 393 폭에서 16px */
+export const EXERCISE_EN_PX = 16
 
-const EXERCISE_EN_BASE = `${EXERCISE_EN_BASE_UNSIZED} text-[20px]`
+const EXERCISE_EN_BASE = `${EXERCISE_EN_BASE_UNSIZED} text-[length:clamp(12px,4.07cqw,16px)]`
 
 const EXERCISE_KO_BASE =
-  `${FONT_KO} text-center text-[20px] font-medium leading-snug tracking-[-0.01em] text-[#1E293B]`
+  `${FONT_KO} text-center text-[length:clamp(12px,4.07cqw,16px)] font-medium leading-snug tracking-[-0.01em] text-[#1E293B]`
 
 /** 진행률 (%) */
 export const EXERCISE_PROGRESS_CLASS = 'text-[12px] font-semibold text-[#9E9FA7]'
@@ -70,6 +70,10 @@ export const EXERCISE_PASSAGE_EN_CLASS = EXERCISE_EN_BASE
 /** 영어 선택지·타일·입력 */
 export const EXERCISE_OPTION_EN_CLASS = EXERCISE_EN_BASE
 
+/** 본문 A/B 청크 버튼·문장 박스 조각 — 한 줄에 여러 개 들어가게 작게 */
+export const EXERCISE_CHUNK_CLASS =
+  `${FONT_EN} text-center text-[length:clamp(11px,3.56cqw,14px)] font-semibold leading-snug tracking-[-0.01em] text-[#1E1E1E] antialiased`
+
 /** 영어 퀴즈 제시 단어 */
 export const EXERCISE_HEADWORD_CLASS =
   `${FONT_EN} text-center text-[30px] font-bold leading-none tracking-[-0.02em] text-[#1E1E1E] antialiased`
@@ -83,11 +87,11 @@ export const EXERCISE_PLACED_TILE_CLASS = EXERCISE_EN_BASE
 
 /** 빈 칸·조작 안내 (한국어) */
 export const EXERCISE_EMPTY_HINT_CLASS =
-  `${FONT_KO} text-center text-[20px] font-medium leading-snug text-[#9AA4B4]`
+  `${FONT_KO} text-center text-[length:clamp(11px,3.56cqw,14px)] font-medium leading-snug text-[#9AA4B4]`
 
-/** 루핀 미니 코치 말풍선 */
+/** 마스코트 미니 코치 말풍선 */
 export const EXERCISE_COACH_LINE_CLASS =
-  `${FONT_KO} text-center text-[20px] font-semibold leading-[1.45] text-[#3D7EF0]`
+  `${FONT_KO} text-center text-[length:clamp(12px,4.07cqw,16px)] font-semibold leading-[1.45] text-[#3D7EF0]`
 
 /** 문법 빈칸 */
 export const EXERCISE_GRAMMAR_BLANK_CLASS =
@@ -107,11 +111,11 @@ export const EXERCISE_MATCH_TILE_EN_CLASS = EXERCISE_EN_BASE
 
 /** 단어 매칭 타일 — 한국어 (영어 타일과 동일 크기) */
 export const EXERCISE_MATCH_TILE_KO_CLASS =
-  `${FONT_KO} text-center text-[20px] font-semibold leading-snug tracking-[-0.01em] text-[#1E1E1E]`
+  `${FONT_KO} text-center text-[length:clamp(12px,4.07cqw,16px)] font-semibold leading-snug tracking-[-0.01em] text-[#1E1E1E]`
 
 /** 한국어 보조 설명 */
 export const EXERCISE_PASSAGE_KO_MUTED_CLASS =
-  `${FONT_KO} text-center text-[20px] font-medium leading-snug text-[#6B7280]`
+  `${FONT_KO} text-center text-[length:clamp(12px,4.07cqw,16px)] font-medium leading-snug text-[#6B7280]`
 
 /** 학습 완료 — 영어 단어 */
 export const EXERCISE_REVIEW_WORD_CLASS =

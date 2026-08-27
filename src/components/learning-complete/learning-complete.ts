@@ -6,7 +6,7 @@ export const FRAME_H = 852
  * 523:1134 = 393:852 이므로 viewBox만 콘텐츠 프레임에 맞추면 좌표가 1:1로 대응한다.
  * (이전 export는 393×829로 세로가 눌려 있어 scaleRect 보정이 필요했다 — 이제 불필요.)
  */
-export const LEARNING_COMPLETE_ASSET = '/assets/word-part-complete.svg?v=5'
+export const LEARNING_COMPLETE_ASSET = '/assets/word-part-complete.svg?v=6'
 
 /**
  * 「1파트 완료」베이크 배지 — React로 교사 부여명 배지를 덮어쓴다.

@@ -11,7 +11,7 @@
  * 섞여 들어갈 위험이 생긴다. 탭을 닫으면 사라지는 `sessionStorage`가 딱 맞는 수명이다.
  */
 
-const KEY = 'loopin-practice-progress'
+const KEY = 'haksup-practice-progress'
 
 export type PracticeProgress = {
   /** 어떤 연습인지 — 과제 + 출제 범위가 같아야 이어 푼다 */

@@ -88,7 +88,7 @@ export const REVIEW_CARD_FONT = {
 export const REVIEW_COLORS = {
   /**
    * 「오늘의 맞춤 복습」 파란 카드.
-   * 토큰 `--color-loopin-blue`(#2AA3FF)가 아니라 **시안 값 그대로**다 (사용자 확인 2026-08-06).
+   * 토큰 `--color-haksup-blue`(#2AA3FF)가 아니라 **시안 값 그대로**다 (사용자 확인 2026-08-06).
    * 세 번째 파랑이므로 다른 화면에 퍼뜨리지 말 것 — 이 카드 전용.
    */
   card: '#24A0FF',

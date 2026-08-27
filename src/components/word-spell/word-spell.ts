@@ -68,34 +68,27 @@ export type WordSpellTile = {
  * 진행바 아래 ~ 알파벳 트레이 직전까지만 (트레이·제출 버튼은 남김).
  */
 /**
- * 구워진 본문 가림 — **진행바(138~162) 아래부터** 시작한다.
- * y 140이면 진행바 구간까지 덮어서, 그 위에 얹히는 카드와 진행바가 붙어 보였다.
+ * 구워진 본문 가림 — 시안 카드 자리만. 헤더까지 덮으면 문제 박스가 위로 붙는다.
  */
-export const WORD_SPELL_CONTENT_BAKE_MASK = { x: 0, y: 166, w: 393, h: 374 }
+export const WORD_SPELL_CONTENT_BAKE_MASK = { x: 16, y: 186, w: 361, h: 210 }
 
 /**
- * 본문 카드 — 진행바·트레이 사이 가운데.
- * 너무 길면 하단이 트레이와 겹치고, 예전 SLOTS 흰 마스크에 잘려
- * 「회색 박스 밖으로 글자가 나온」것처럼 보였다.
+ * 문제 카드 — Figma `word-c.svg` (x 20, y 192, 353×193).
+ * 긴 문장은 트레이 직전까지 아래로 자람.
  */
-/**
- * 문제 카드 — 윗변이 진행바 아래(162)에서 14px 떨어지도록 176부터.
- * 예전 156은 진행바에 6px 물려서 카드가 바에 붙어 보였다.
- * 아래는 글자 트레이(456)에 닿지 않게 448에서 끝낸다.
- */
-export const WORD_SPELL_CARD = { x: 20, y: 176, w: 353, h: 272 }
+export const WORD_SPELL_CARD = { x: 20, y: 192, w: 353, h: 193 }
 
 /** @deprecated CONTENT_BAKE_MASK로 통합 */
 export const WORD_SPELL_ABOVE_BAKE_MASK = WORD_SPELL_CONTENT_BAKE_MASK
 
 /** 카드 안 텍스트 (카드와 동일 클립 영역, 좌우·상하 패딩) */
-export const WORD_SPELL_CARD_TEXT = { x: 36, y: 192, w: 321, h: 240 }
+export const WORD_SPELL_CARD_TEXT = { x: 36, y: 208, w: 321, h: 161 }
 
 /**
- * 하단 별도 빈칸 줄은 쓰지 않음(문장 안 인라인 빈칸만).
- * 카드와 겹치지 않게 트레이 위 잔상만 가림.
+ * SVG `word-c`에 구운 8칸 잔상 가림.
+ * React 슬롯을 그 위에 올린다(글자 수에 따라 1~2줄).
  */
-export const WORD_SPELL_SLOTS_MASK = { x: 8, y: 456, w: 377, h: 88 }
+export const WORD_SPELL_SLOTS_MASK = { x: 8, y: 400, w: 377, h: 148 }
 
 /** Figma `word-c.svg` — 하단 알파벳 타일 가림 */
 export const WORD_SPELL_TRAY_MASK = { x: 12, y: 548, w: 369, h: 160 }
@@ -106,12 +99,14 @@ export const WORD_SPELL_SUBMIT_BTN = { x: 30, y: 751, w: 333, h: 60 }
 /** Figma `word-c-wrong.svg` — 하단 피드백 시트 (y=648 h=204) */
 export const WORD_SPELL_FEEDBACK_SHEET = { x: 0, y: 648, w: 393, h: 204 }
 
-const SLOT_AREA = { x: 20, y: 440, w: 353, h: 44 }
+/** Figma `word-c.svg` 슬롯 — y 431, 37×48, 간격 7 */
+export const WORD_SPELL_SLOT_AREA = { x: 23.5, y: 431, w: 346, h: 48 }
+const SLOT_AREA = WORD_SPELL_SLOT_AREA
 const SLOT_ROW_GAP = 8
 const SLOT_TWO_ROW_THRESHOLD = 9
 const TRAY_AREA = { x: 20, w: 353 }
 const TRAY_TILE = { w: 44, h: 52, row1Y: 568, row2Y: 630, row1Max: 6 }
-const SLOT_GAP = 6
+const SLOT_GAP = 7
 /** 단어 사이 띄어쓰기 간격 (글자 칸 간격 SLOT_GAP의 확연한 배수) */
 const WORD_GAP = 36
 

@@ -10,9 +10,9 @@ import {
 } from '../lib/auth'
 import { startSocialLogin } from '../lib/sync/social-auth'
 
-const LOGIN_ASSET = '/assets/login-screen.svg?v=2'
+const LOGIN_ASSET = '/assets/login-screen.svg?v=4'
 
-/** Figma Export: Haksup / 로그인화면 — node 2917:6018 */
+/** Figma Export: 학습 로그인 (`플래시화면.svg` 1.16MB) — Apple / 카카오 / 구글 */
 export function LoginScreen() {
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
@@ -50,39 +50,47 @@ export function LoginScreen() {
 
   return (
     <div
-      className="flex min-h-full w-full justify-center bg-[#2aa3ff]"
+      className="flex min-h-full w-full justify-center bg-white"
       data-node-id="2917:6018"
       data-name="로그인화면"
     >
       <div className="relative aspect-[393/852] w-full max-w-[540px] self-center">
         <img
           src={LOGIN_ASSET}
-          alt="Loopin 로그인"
+          alt="학습 로그인"
           className="absolute inset-0 h-full w-full"
           draggable={false}
         />
 
-        {/* Apple — Figma rect x=20.58 y=679.58 w=351.84 h=58.84 @ 393×852 */}
+        {/* Apple — x=20.58 y=605.58 w=351.84 h=58.84 @ 393×852 */}
         <button
           type="button"
           aria-label="Apple로 시작하기"
-          className="absolute left-[5.24%] top-[79.76%] h-[6.9%] w-[89.55%] cursor-pointer bg-transparent"
+          className="absolute left-[5.24%] top-[71.08%] h-[6.91%] w-[89.53%] cursor-pointer bg-transparent"
           onClick={() => void handleSocialLogin('apple')}
         />
 
-        {/* Kakao — Figma rect x=20.58 y=755.58 w=351.84 h=58.84 @ 393×852 */}
+        {/* Kakao — x=20.58 y=681.58 w=351.84 h=58.84 */}
         <button
           type="button"
           aria-label="카카오로 시작하기"
-          className="absolute left-[5.24%] top-[88.68%] h-[6.9%] w-[89.55%] cursor-pointer bg-transparent"
+          className="absolute left-[5.24%] top-[80%] h-[6.91%] w-[89.53%] cursor-pointer bg-transparent"
           onClick={() => void handleSocialLogin('kakao')}
+        />
+
+        {/* Google — x=20 y=757 w=353 h=58 */}
+        <button
+          type="button"
+          aria-label="구글로 시작하기"
+          className="absolute left-[5.09%] top-[88.85%] h-[6.81%] w-[89.82%] cursor-pointer bg-transparent"
+          onClick={() => void handleSocialLogin('google')}
         />
 
         {isDevLoginAllowed() ? (
           <button
             type="button"
             onClick={handleDevLogin}
-            className="absolute left-1/2 top-[3%] z-30 -translate-x-1/2 cursor-pointer rounded-full border border-white/50 bg-black/25 px-4 py-2 font-sans text-[13px] font-bold text-white backdrop-blur-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className="absolute left-1/2 top-[3%] z-30 -translate-x-1/2 cursor-pointer rounded-full border border-black/20 bg-white/80 px-4 py-2 font-sans text-[13px] font-bold text-[#1E242F] backdrop-blur-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2AA3FF]"
           >
             임시 로그인 (개발용)
           </button>
@@ -91,7 +99,7 @@ export function LoginScreen() {
         {error ? (
           <p
             role="alert"
-            className="absolute left-[5.24%] top-[74.5%] w-[89.55%] text-center font-sans text-[14px] font-bold leading-snug text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]"
+            className="absolute left-[5.24%] top-[64.5%] w-[89.55%] text-center font-sans text-[14px] font-bold leading-snug text-[#C52B2B]"
           >
             {error}
           </p>

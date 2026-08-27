@@ -2,6 +2,22 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 let client: SupabaseClient | null = null
 
+/**
+ * 인증 토큰이 저장되는 localStorage 키. `createClient`의 `storageKey`와 **같아야** 한다.
+ * 세션 복원이 실패했을 때 「원래 로그인한 적이 없다」와 「토큰은 있는데 지금 못 살렸다」를
+ * 가르는 데 쓴다 — 후자에서 새 익명 사용자를 만들면 그 학생의 반 등록이 통째로 날아간다.
+ */
+export const AUTH_STORAGE_KEY = 'haksup-student-supabase-auth'
+
+/** 이 기기에 이미 로그인 흔적(토큰)이 남아 있는지 */
+export function hasStoredAuthToken(): boolean {
+  try {
+    return localStorage.getItem(AUTH_STORAGE_KEY) != null
+  } catch {
+    return false
+  }
+}
+
 export function getSupabaseEnv(): {
   url: string
   anonKey: string
@@ -30,7 +46,7 @@ export function getSupabase(): SupabaseClient | null {
         */
         detectSessionInUrl: true,
         flowType: 'pkce',
-        storageKey: 'loopin-student-supabase-auth',
+        storageKey: AUTH_STORAGE_KEY,
       },
     })
   }

@@ -78,7 +78,7 @@ export const SETTINGS_CONTACT_EMAIL = 'contact@haksup.com'
 
 /** 설정 「문의 사항」— 기기 메일 앱으로 새 메일 작성 화면을 연다 */
 export function openSettingsContactMail(): void {
-  const href = `mailto:${SETTINGS_CONTACT_EMAIL}?subject=${encodeURIComponent('루핀 문의')}`
+  const href = `mailto:${SETTINGS_CONTACT_EMAIL}?subject=${encodeURIComponent('학습 문의')}`
   // `location.href`보다 `<a>` 클릭이 모바일·인앱 브라우저에서 mailto 처리가 안정적이다
   const anchor = document.createElement('a')
   anchor.href = href

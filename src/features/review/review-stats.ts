@@ -121,6 +121,18 @@ function questionSeconds(questionId: string): number {
 }
 
 /**
+ * 문항 id 목록의 예상 소요 시간(분).
+ *
+ * 형식별 초(`SECONDS_BY_SUFFIX`)를 합친 뒤 반올림한다. 문항이 없으면 0,
+ * 있으면 최소 1분 — 복습 카드·헬스장 시작 카드가 같이 쓴다.
+ */
+export function estimateMinutesForQuestionIds(questionIds: string[]): number {
+  if (questionIds.length <= 0) return 0
+  const seconds = questionIds.reduce((sum, id) => sum + questionSeconds(id), 0)
+  return Math.max(1, Math.round(seconds / 60))
+}
+
+/**
  * 분류별 **전체 문항 수와 예상 시간**을 낸다.
  *
  * 답안이 아니라 스냅샷에서 센다 — 복습은 틀린 문항만이 아니라 분류 전체를 풀기 때문에,

@@ -4,7 +4,7 @@ import { figmaRectStyle } from './grammar-complete'
  * 「연속 정답」 배지 — 불꽃 + 최고 콤보 수.
  *
  * 종합 완료 화면 **흰 카드 오른쪽 위 꼭짓점**에 붙인다(사용자 지정 2026-08-09).
- * 카드 실측: x35 y253 w327 (`assignment-complete-*.svg`). 루핀은 왼쪽, 콤보는 오른쪽.
+ * 카드 실측: x35 y253 w327 (`assignment-complete-*.svg`). 마스코트는 왼쪽, 콤보는 오른쪽.
  *
  * **숫자는 에셋에서 떼어내고 여기서 그린다** — 콤보 수가 매번 다르기 때문.
  * 원본 `연속 정답.svg`(134×179)에서 흰 숫자 path만 제거한 것이 `combo-streak-badge.svg`다.

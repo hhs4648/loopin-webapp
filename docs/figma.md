@@ -72,9 +72,15 @@ Figma 파일: `https://www.figma.com/design/NFmd87QHBjrA3r9zV9s8Q7/Haksup`
 
 ### 표준 rename 표 (온보딩·메인)
 
+> **왼쪽 열은 Figma에 있는 원본 이름이다.** 브랜드 변경(2026-08-21)으로 이 표의
+> `루핀 …` 항목을 `마스코트 …`로 고쳐 적었다. **Figma 쪽 레이어 이름도 같이 바꿔야**
+> 표와 실물이 맞는다 — 아직 안 바꿨다면 Figma에서는 옛 이름으로 찾아야 한다.
+
 | Figma Export (원본) | 코드 파일명 |
 |---------------------|-------------|
-| `로그인화면.svg` | `login-screen.svg` *(문서/코드 참조 — 파일 존재 여부 확인)* |
+| `플래시화면.svg` (워드마크만, ~17KB) | `splash-screen.svg` | 스플래시·온보딩 로딩 |
+| `플래시화면.svg` (로그인 풀프레임, ~1.2MB) | `login-screen.svg` | 학습 로그인. 원본 `_design-source/로그인화면.svg` |
+| `로그인화면.svg` | `login-screen.svg` *(구 시안 — 위 학습 에셋으로 교체됨)* |
 | `온보딩_회원가입 1(교사 선택).svg` | `onboarding-teacher-01-terms.svg` |
 | `온보딩_회원가입 2(교사 선택).svg` | `onboarding-teacher-02-school.svg` |
 | `온보딩_회원가입 3(교사 선택).svg` | `onboarding-teacher-03-name.svg` |
@@ -97,10 +103,11 @@ Figma 파일: `https://www.figma.com/design/NFmd87QHBjrA3r9zV9s8Q7/Haksup`
 | `미션 체크.svg` | `mission-check.svg` |
 | `별표.svg` | `mission-star.svg` — 과제 완료 성 마커(원+별). 렌더는 `MissionCheckBadge`가 성 색으로 채움 |
 | `Dialog.svg` | `session-dropdown-dialog.svg` |
-| `루핀 환호 캐릭터.svg` | `mascot-cheer.svg` | *(구 환호 — 보관)* |
-| `만세 캐릭터.svg` | `mascot-banzai.svg` | 학원/학교 메인 · 현재 위치 성 만세 루핀 (`CastleCompleteMascot`) |
-| `루핀 캐릭터 시작.svg` | `loopin-character-start.svg` — 시작 지점 대기 포즈(`MapCharacter`) |
+| `마스코트 환호 캐릭터.svg` | `mascot-cheer.svg` | *(구 환호 — 보관)* |
+| `만세 캐릭터.svg` | `mascot-banzai.svg` | 학원/학교 메인 · 현재 위치 성 만세 마스코트 (`CastleCompleteMascot`) |
+| `마스코트 캐릭터 시작.svg` | `mascot-character-start.svg` — 시작 지점 대기 포즈(`MapCharacter`) |
 | `praise-calendar-source.png` *(내용 SVG)* | `praise-calendar.svg` — 칭찬 캘린더 풀스크린 · 상태 얼굴 PNG 추출(`praise-status-*.png`) |
+| `연속학습_캘린더_화면.svg` | `streak-calendar.svg` — 연속 학습 캘린더 풀스크린 (`StreakCalendarScreen`). 원본은 `_design-source/연속학습_캘린더_화면.svg`. **1차는 시안 그대로** (날짜·일수 구워짐 · React 재렌더 금지) |
 | `dinosaur.svg` / `trees.svg` *(제공)* | `curriculum-dinosaur.svg` · `curriculum-tree-round.png` / `curriculum-tree-tall.png` — **학원/학교 맵** 장식 (`MainHomeMapDecor`). 파일명에 curriculum이 남아 있으나 커리큘럼 기능은 삭제됨 |
 | *(학원 메인 하단 · 복습 활성)* | `main-home-bottom-nav-review.svg` |
 
@@ -138,6 +145,11 @@ Figma 파일: `https://www.figma.com/design/NFmd87QHBjrA3r9zV9s8Q7/Haksup`
 | `학습완료화면.svg` / `문법종료시.svg` | `learning-complete.svg`(레거시) / `grammar-complete.svg` | 구 학습완료 · 문법 완료 |
 | `점수 완료화면.svg` / `완료 1·2·3.svg` | `assignment-complete-high/mid/low.svg` | 성/과제 **종합** 완료 (`GrammarCompleteScreen`). **80↑ / 50~79 / 50↓** 캐릭터·격려. 상단 「1반 3회차」필은 에셋에서 제거(`?v=3`) |
 | `네비게이션바.svg` | `nav-bar.svg` | **하단 내비 5칸 공통**(홈·단어장·복습하기·헬스장·전체 · 394×82). 학원/학교 메인과 혼자 공부 메인이 **같은 파일**을 쓴다. 393을 5등분(78.62)한 슬롯이라 코드의 `(i+0.5)/5` 히트 계산과 0.2px 이내로 맞는다. **활성 칸 시안은 1번(홈)뿐** — 다른 탭에 있어도 홈이 진하게 보인다(칸별 시안 필요) |
+| `헬스장.svg` | `gym-main.svg` | 오답 재출제 **대기 있음** |
+| `헬스장_빈상태.svg` | `gym-empty.svg` | 오답 재출제 **대기 없음** |
+| `헬스장_문제풀기시작.svg` | `gym-start.svg` | 캐릭터 탭 후 **시작하기** |
+| `헬스장_완료화면.svg` | `gym-complete.svg` | 헬스장 오답 재출제 완료 · **오답 1개 이상** |
+| `헬스장_완료화면_전체정답.svg` | `gym-complete-perfect.svg` | 헬스장 오답 재출제 완료 · **백점** |
 | `복습 화면 추가.svg` | `review-empty-card.svg` | 복습하기 「오늘의 맞춤 복습」 카드 **아래 배너**(377×120 · 카드 353×96). 예전 `review-card-banner.svg`는 내용 없는 흰 카드라 빈 상자만 떠 있었다. **원본 3.54MB → 42KB** — 2048×2048 PNG가 69×71 자리에 박혀 있어 보이는 영역만 잘라 3배로 재삽입 |
 | `연속 정답.svg` | `combo-streak-badge.svg` | 종합 완료 화면 「연속 정답」 배지(134×179). **원본의 흰 숫자 path를 제거한 것** — 콤보 수는 `ComboStreakBadge`가 뷰박스 안에 그린다 |
 | `과제 완료시.svg` | `assignment-complete-v4.svg` 등 | (레거시) 세션 완료 구 에셋 |
@@ -146,7 +158,7 @@ Figma 파일: `https://www.figma.com/design/NFmd87QHBjrA3r9zV9s8Q7/Haksup`
 | (파생·삭제) | `main-home-full-map*.svg` / `map-bridge` / `map-segment` | 잘못 베이크한 슬라이스 — 제거됨 |
 | (제공 PNG) | `map-castle-red-flag.png` | 맵 성 슬롯용 React 오버레이 |
 | (제공 SVG) | `flag.svg` | 학원/학교 메인 시작 깃발 React 오버레이 (하늘 크롭 아래 배치) |
-| `캐릭터 성도착.svg` | `character-castle-arrive.svg` | 학원/학교 메인 · 현재 위치 루핀 배치 **참고용**(렌더 안 함). 기존 맵 성 + `mascot-banzai` |
+| `캐릭터 성도착.svg` | `character-castle-arrive.svg` | 학원/학교 메인 · 현재 위치 마스코트 배치 **참고용**(렌더 안 함). 기존 맵 성 + `mascot-banzai` |
 | `현재학습_CTA카드.svg` | `current-learning-cta-card.svg` | 오늘의 미션 카드 좌표 원본 (미사용 · 보관) |
 | `웹페이지 과제화면.svg` | `web-assignment-screen.svg` | 과제 화면 (미사용 · 보관) |
 | `audio/sentence-*.wav` | (동일) | 영어 예문 오디오 |

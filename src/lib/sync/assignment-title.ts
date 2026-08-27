@@ -48,3 +48,42 @@ export function displayAssignmentTitle(snapshot: {
   }
   return stripGradeClassFromTitle(snapshot.title || '과제')
 }
+
+/**
+ * 헬스장 시작 카드 큰 제목.
+ *
+ * - 단원 출제: 교재 · 단원 (`YBM(송) · 5단원`)
+ * - 직접 출제(단원 없음): 선생님이 붙인 과제 이름
+ * - 이름도 없으면 「선생님이 만든 문제」
+ *
+ * 복습 탭의 「기타」는 쓰지 않는다. 그쪽은 분류가 안 묶일 때 모아 두는
+ * 쓰레기통 라벨이라, 시작 화면에 그대로 올리면 「무슨 오답인지」가 안 보인다.
+ */
+export function gymStartHeading(snapshot: {
+  title?: string
+  textbook?: string
+  unit?: string
+}): string {
+  const textbook = snapshot.textbook?.trim() ?? ''
+  const unit = snapshot.unit?.trim() ?? ''
+  if (textbook || unit) {
+    return [textbook, unit].filter(Boolean).join(' · ')
+  }
+  const title = stripGradeClassFromTitle(snapshot.title || '')
+  if (title && title !== '과제') return title
+  return '선생님이 만든 문제'
+}
+
+/**
+ * 헬스장 완료 화면 큰 제목. 시안 「1단원 연습 완료!」자리에 올린다.
+ * 단원이 있으면 그 이름만, 없으면 시작 카드와 같은 제목에 「연습 완료!」를 붙인다.
+ */
+export function gymCompleteHeading(snapshot: {
+  title?: string
+  textbook?: string
+  unit?: string
+}): string {
+  const unit = snapshot.unit?.trim() ?? ''
+  if (unit) return `${unit} 연습 완료!`
+  return `${gymStartHeading(snapshot)} 연습 완료!`
+}
