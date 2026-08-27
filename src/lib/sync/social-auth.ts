@@ -1,4 +1,4 @@
-import { getSupabase, isSyncEnabled } from './supabase-client'
+import { getSupabase, getSupabaseEnv, isSyncEnabled } from './supabase-client'
 import type { SocialProvider } from '../auth'
 
 /**
@@ -20,9 +20,65 @@ export function socialRedirectUrl(): string {
   return `${window.location.origin}/auth/callback`
 }
 
+/*
+  **카카오 이메일 동의항목 — 여기서 고치려 하지 말 것.**
+
+  Supabase는 카카오에 `account_email profile_image profile_nickname`을 항상 요청한다.
+  `account_email`은 비즈 앱에서만 쓸 수 있어서, 그냥 두면 카카오가
+  `KOE205 잘못된 요청`으로 로그인 화면조차 안 띄운다.
+
+  `signInWithOAuth({ options: { scopes } })`로 좁혀 보려 했지만 **소용없다** —
+  Supabase는 넘긴 scope를 기본값에 **덧붙이기만 한다.** 실제로 시도했더니
+  `scope=account_email profile_image profile_nickname profile_nickname`이 됐다
+  (2026-08-27 실측). 즉 클라이언트에서는 뺄 방법이 없다.
+
+  해결은 카카오 쪽에서 한다: 카카오 개발자 콘솔 `비즈니스 인증`에서
+  **개인 개발자 자격으로 비즈 앱 전환**(사업자등록번호 없이 본인인증으로 가능)한 뒤,
+  `동의항목`에서 카카오계정(이메일)을 켠다.
+  참고: https://github.com/supabase/supabase/issues/36878
+*/
+
 export type SocialLoginResult =
   | { ok: true }
   | { ok: false; message: string }
+
+/**
+ * **대시보드에 켜져 있는 provider만 시도한다.**
+ *
+ * `signInWithOAuth()`는 provider가 꺼져 있어도 **에러를 돌려주지 않는다** — 그냥
+ * 브라우저를 Supabase authorize URL로 보내 버리고, 학생은 거기서
+ * `{"code":400,...,"msg":"Unsupported provider: provider is not enabled"}` 라는
+ * 날것의 JSON을 마주한다. 돌아올 버튼도 없다.
+ * (2026-08-27 프로덕션에서 구글 버튼을 눌러 실제로 확인했다.)
+ *
+ * 그래서 나가기 전에 공개 설정 엔드포인트로 한 번 확인한다. 확인 자체가 실패하면
+ * `null`을 주고 **그냥 진행한다** — 점검 실패로 로그인을 막는 게 더 나쁘다.
+ */
+let enabledProviders: Set<string> | null = null
+
+async function isProviderEnabled(
+  provider: SocialProvider,
+): Promise<boolean | null> {
+  if (enabledProviders) return enabledProviders.has(provider)
+  const env = getSupabaseEnv()
+  if (!env) return null
+  try {
+    const res = await fetch(`${env.url}/auth/v1/settings`, {
+      headers: { apikey: env.anonKey },
+    })
+    if (!res.ok) return null
+    const json = (await res.json()) as { external?: Record<string, boolean> }
+    if (!json.external) return null
+    enabledProviders = new Set(
+      Object.entries(json.external)
+        .filter(([, on]) => on === true)
+        .map(([name]) => name),
+    )
+    return enabledProviders.has(provider)
+  } catch {
+    return null
+  }
+}
 
 /** Supabase 대시보드에 provider가 안 켜져 있을 때 나오는 응답들 */
 function isProviderNotConfigured(message: string): boolean {
@@ -47,6 +103,11 @@ export async function startSocialLogin(
   const supabase = getSupabase()
   if (!supabase) {
     return { ok: false, message: '서버 연결이 없어요. 잠시 후 다시 시도해 주세요.' }
+  }
+
+  // 꺼져 있는 게 확실할 때만 막는다 (확인 실패는 통과)
+  if ((await isProviderEnabled(provider)) === false) {
+    return { ok: false, message: notConfiguredMessage(provider) }
   }
 
   const { data: sessionData } = await supabase.auth.getSession()

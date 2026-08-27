@@ -14,3 +14,7 @@ build-output.txt
 flag-start-raster.png
 tmp-*
 tmp-*/
+
+# 애플 로그인 비밀키 — 절대 커밋 금지
+*.p8
+apple-client-secret.txt

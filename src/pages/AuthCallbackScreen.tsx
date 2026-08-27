@@ -20,6 +20,9 @@ import { fetchOwnProfile, getSignedInUser } from '../lib/sync/social-auth'
 export function AuthCallbackScreen() {
   const navigate = useNavigate()
   const [failed, setFailed] = useState(false)
+  const [errorDetail, setErrorDetail] = useState<string | null>(null)
+  // 어디서 멈췄는지 화면에 남긴다 — 「로그인 중이에요」만 떠 있으면 원인을 알 길이 없다
+  const [stage, setStage] = useState('시작')
   // StrictMode에서 두 번 도는 것을 막는다 — 로그인 처리는 한 번이면 된다
   const startedRef = useRef(false)
 
@@ -36,11 +39,32 @@ export function AuthCallbackScreen() {
       const isLinked = (user: Awaited<ReturnType<typeof getSignedInUser>>) =>
         user != null && user.provider != null
 
-      let signedIn = await getSignedInUser()
+      /*
+        **`getSession()`은 멈출 수 있다.** supabase-js는 `navigator.locks`로 토큰
+        접근을 직렬화하는데, 다른 탭이 락을 쥔 채로 있으면 이 await가 영영 안 끝난다.
+        그러면 catch도 안 걸리고 화면은 「로그인 중이에요」에 갇힌다.
+        그래서 매 호출에 시간 제한을 둔다 — 늦으면 없는 셈 치고 다시 물어본다.
+      */
+      const signedInOrNull = async () => {
+        try {
+          return await Promise.race([
+            getSignedInUser(),
+            new Promise<null>((resolve) =>
+              window.setTimeout(() => resolve(null), 800),
+            ),
+          ])
+        } catch {
+          return null
+        }
+      }
+
+      setStage('세션 확인 중')
+      let signedIn = await signedInOrNull()
       for (let tries = 0; !isLinked(signedIn) && tries < 20; tries += 1) {
         await new Promise((resolve) => window.setTimeout(resolve, 150))
         if (cancelled) return
-        signedIn = await getSignedInUser()
+        setStage(`세션 확인 중 (${tries + 1}/20)`)
+        signedIn = await signedInOrNull()
       }
 
       if (cancelled) return
@@ -49,6 +73,12 @@ export function AuthCallbackScreen() {
         그걸 로그인으로 치면 실패했을 때도 통과해 버린다.
       */
       if (!isLinked(signedIn) || !signedIn) {
+        // 익명 세션만 있는지, 아예 세션이 없는지 구분해 둔다 — 원인이 완전히 다르다
+        setErrorDetail(
+          signedIn
+            ? '소셜 계정이 연결되지 않았어요 (익명 세션만 있음)'
+            : '세션을 만들지 못했어요',
+        )
         setFailed(true)
         return
       }
@@ -64,7 +94,17 @@ export function AuthCallbackScreen() {
       }
       saveAuth(withId)
 
-      const profile = await fetchOwnProfile(signedIn.id)
+      /*
+        프로필 조회가 늦어도 로그인은 이미 끝난 상태다. 여기서 무한정 기다리면
+        「로그인 중이에요」에 갇힌다 — 못 읽으면 없는 셈 치고 온보딩으로 보낸다.
+      */
+      setStage('프로필 확인 중')
+      const profile = await Promise.race([
+        fetchOwnProfile(signedIn.id),
+        new Promise<null>((resolve) =>
+          window.setTimeout(() => resolve(null), 4000),
+        ),
+      ])
       if (cancelled) return
       const merged = mergeServerProfile(
         withId,
@@ -73,7 +113,18 @@ export function AuthCallbackScreen() {
           : null,
       )
       navigate(getPostAuthPath(merged), { replace: true })
-    })()
+    })().catch((error) => {
+      /*
+        **여기가 없으면 화면이 영원히 「로그인 중이에요」에 머문다.**
+        중간에 던지면 unhandled rejection으로 끝나고 아무 UI도 안 바뀐다 —
+        실제로 구글 로그인 첫 시도에서 그렇게 갇혔다 (2026-08-27).
+      */
+      console.error('[auth/callback] 로그인 처리 실패', error)
+      if (!cancelled) {
+        setErrorDetail(error instanceof Error ? error.message : String(error))
+        setFailed(true)
+      }
+    })
 
     return () => {
       cancelled = true
@@ -89,6 +140,9 @@ export function AuthCallbackScreen() {
             <br />
             다시 시도해 주세요.
           </p>
+          <p className="font-sans text-[12px] leading-relaxed text-[#8A94A6]">
+            {errorDetail ?? '알 수 없는 오류'} · 단계: {stage}
+          </p>
           <button
             type="button"
             className="rounded-xl bg-[#2AA3FF] px-6 py-3 font-sans text-[15px] font-bold text-white"
@@ -100,6 +154,8 @@ export function AuthCallbackScreen() {
       ) : (
         <p className="absolute inset-x-8 bottom-[12%] z-10 text-center font-sans text-[15px] font-semibold text-[#5A6472]">
           로그인 중이에요…
+          <br />
+          <span className="text-[12px] font-medium text-[#8A94A6]">{stage}</span>
         </p>
       )}
     </SplashBrandFrame>
