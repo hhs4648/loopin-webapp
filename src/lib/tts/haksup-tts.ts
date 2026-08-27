@@ -46,6 +46,63 @@ function staticAudioUrl(text: string, lang: HaksupTtsLang): string | null {
 }
 
 /**
+ * **공유 음성 캐시.**
+ *
+ * 문장 하나당 평생 한 번만 만든다. 파일 이름이 텍스트의 해시라 어느 선생님이
+ * 입력했든 같은 문장이면 같은 이름이 나오고, 두 번째부터는 Edge Function까지
+ * 가지 않고 CDN에서 바로 받는다. 학생 750명 기준으로 월 호출이 138,000 → 1,800회
+ * 수준으로 줄어든다(2026-08-27 산정).
+ *
+ * 규칙은 `scripts/build-tts-audio.mjs`·Edge Function과 **셋 다 같아야 한다** —
+ * 하나라도 어긋나면 캐시를 못 찾고 매번 새로 만든다.
+ */
+const SHARED_BUCKET = 'tts-audio'
+
+/** 없다고 확인된 것은 다시 찔러보지 않는다 (같은 세션 안에서) */
+const sharedMisses = new Set<string>()
+
+async function sha1Hex(input: string): Promise<string | null> {
+  // 보안 컨텍스트가 아니면 subtle이 없다(구형 http 환경) — 그럼 공유 캐시를 건너뛴다
+  if (typeof crypto === 'undefined' || !crypto.subtle) return null
+  try {
+    const digest = await crypto.subtle.digest(
+      'SHA-1',
+      new TextEncoder().encode(input),
+    )
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+  } catch {
+    return null
+  }
+}
+
+/** 이미 만들어 둔 음성이 CDN에 있으면 그 주소를 준다. 없으면 null. */
+async function sharedCacheUrl(
+  text: string,
+  lang: HaksupTtsLang,
+): Promise<string | null> {
+  const env = getSupabaseEnv()
+  if (!env) return null
+  const hex = await sha1Hex(`${lang}:${normalizeText(text)}`)
+  if (!hex) return null
+
+  const name = `${lang}-${hex.slice(0, 16)}.mp3`
+  if (sharedMisses.has(name)) return null
+
+  const url = `${env.url}/storage/v1/object/public/${SHARED_BUCKET}/${name}`
+  try {
+    // HEAD면 본문을 안 받아 온다 — 있는지만 보면 된다.
+    const res = await fetch(url, { method: 'HEAD' })
+    if (res.ok) return url
+  } catch {
+    /* 네트워크 문제면 그냥 함수로 간다 */
+  }
+  sharedMisses.add(name)
+  return null
+}
+
+/**
  * Edge Function 이름. 브랜드 변경으로 `haksup-tts`가 되었고, **재배포도 끝났다**
  * (2026-08-27 실측: 두 이름 모두 200 + audio/mpeg를 돌려준다).
  *
@@ -161,6 +218,16 @@ async function getAudioUrl(text: string, lang: HaksupTtsLang): Promise<string> {
   if (prebuilt) {
     blobUrlCache.set(key, prebuilt)
     return prebuilt
+  }
+
+  /*
+    앱에 없는 문장(교사가 직접 만든 과제·복습 합성본)은 공유 캐시를 먼저 본다.
+    누군가 이미 들었던 문장이면 여기서 끝나고 Edge Function은 호출되지 않는다.
+  */
+  const shared = await sharedCacheUrl(text, lang)
+  if (shared) {
+    blobUrlCache.set(key, shared)
+    return shared
   }
 
   const blob = await fetchCloudTtsBlob(text, lang)
