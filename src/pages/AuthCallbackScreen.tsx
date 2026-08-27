@@ -27,9 +27,18 @@ export function AuthCallbackScreen() {
   const startedRef = useRef(false)
 
   useEffect(() => {
+    /*
+      **취소 플래그를 쓰면 안 된다.** StrictMode(개발)는 마운트를 두 번 도는데,
+      1번 마운트가 일을 시작하자마자 정리 함수가 그 작업을 죽이고, 2번 마운트는
+      `startedRef`가 이미 true라 아무것도 시작하지 않는다. 결과적으로 **누구도
+      로그인을 끝내지 않고** 화면이 「로그인 중이에요」에 영원히 갇힌다.
+      (2026-08-27 재현: 단계 표시가 첫 값에서 아예 안 넘어갔다.)
+
+      이 흐름은 한 번만 돌면 되고 중간에 멈출 이유가 없다 — `startedRef`로 중복만
+      막고 언마운트로 취소하지 않는다.
+    */
     if (startedRef.current) return
     startedRef.current = true
-    let cancelled = false
 
     void (async () => {
       /*
@@ -62,12 +71,10 @@ export function AuthCallbackScreen() {
       let signedIn = await signedInOrNull()
       for (let tries = 0; !isLinked(signedIn) && tries < 20; tries += 1) {
         await new Promise((resolve) => window.setTimeout(resolve, 150))
-        if (cancelled) return
         setStage(`세션 확인 중 (${tries + 1}/20)`)
         signedIn = await signedInOrNull()
       }
 
-      if (cancelled) return
       /*
         **소셜 신원이 붙어야 로그인이다.** 익명 세션은 이 앱을 열기만 해도 생기므로,
         그걸 로그인으로 치면 실패했을 때도 통과해 버린다.
@@ -105,7 +112,6 @@ export function AuthCallbackScreen() {
           window.setTimeout(() => resolve(null), 4000),
         ),
       ])
-      if (cancelled) return
       const merged = mergeServerProfile(
         withId,
         profile
@@ -120,15 +126,9 @@ export function AuthCallbackScreen() {
         실제로 구글 로그인 첫 시도에서 그렇게 갇혔다 (2026-08-27).
       */
       console.error('[auth/callback] 로그인 처리 실패', error)
-      if (!cancelled) {
-        setErrorDetail(error instanceof Error ? error.message : String(error))
-        setFailed(true)
-      }
+      setErrorDetail(error instanceof Error ? error.message : String(error))
+      setFailed(true)
     })
-
-    return () => {
-      cancelled = true
-    }
   }, [navigate])
 
   return (
