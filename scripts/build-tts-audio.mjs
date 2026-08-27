@@ -23,7 +23,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const APP = path.join(__dirname, '..')
@@ -32,9 +32,24 @@ const MANIFEST = path.join(APP, 'src/lib/tts/audio-manifest.json')
 
 const args = process.argv.slice(2)
 const CHECK_ONLY = args.includes('--check')
+
+/*
+  교사 리포 위치는 사람마다 다르다. 형제 폴더로 둔 사람도 있고
+  (`.cursor/projects/`) 한 단계 위에 둔 사람도 있다 (`.cursor/`).
+  하나만 박아 두면 **조용히 건너뛰고** 음성이 낡은 채로 남는다 —
+  실제로 그렇게 지나간 적이 있어서 후보를 훑는다.
+  경로를 인자로 주거나 `HAKSUP_PROBLEM_BANK`로 못박아도 된다.
+*/
+const BANK_REL = 'loopin-web/src/data/problem-bank.json'
+const BANK_CANDIDATES = [
+  path.join(APP, '../loopin-project', BANK_REL),
+  path.join(APP, '../../loopin-project', BANK_REL),
+]
 const bankPath =
   args.find((a) => !a.startsWith('--')) ??
-  path.join(APP, '../loopin-project/loopin-web/src/data/problem-bank.json')
+  process.env.HAKSUP_PROBLEM_BANK ??
+  BANK_CANDIDATES.find((p) => fs.existsSync(p)) ??
+  BANK_CANDIDATES[0]
 
 /** 앱의 `normalizeText`와 **같아야 한다** — 다르면 매니페스트를 못 찾는다 */
 function normalizeText(text) {
@@ -85,6 +100,16 @@ const add = (raw, lang) => {
 
 for (const w of bank.words ?? []) add(w.english, 'en')
 for (const s of bank.sentences ?? []) add(s.english, 'en')
+
+/*
+  앱이 시작할 때 미리 받는 문구도 정적으로 뽑아 둔다. 이게 빠져 있으면
+  **앱을 열 때마다** 그만큼 Edge Function을 친다 (2026-08-27 실측 8건/1회).
+  목록은 앱과 같은 파일을 읽는다 — 두 군데 적어 두면 반드시 어긋난다.
+*/
+const { PRELOAD_ENGLISH } = await import(
+  pathToFileURL(path.join(APP, 'src/lib/tts/preload-texts.ts')).href
+)
+for (const text of PRELOAD_ENGLISH) add(text, 'en')
 
 console.log(`문제은행: ${path.relative(APP, bankPath).replace(/\\/g, '/')}`)
 console.log(`읽을 대상 ${targets.size}개 (단어 ${bank.words?.length ?? 0} · 문장 ${bank.sentences?.length ?? 0} 기준, 중복 제거)`)

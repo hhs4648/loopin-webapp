@@ -1,5 +1,6 @@
 import { getSupabaseEnv } from '../sync/supabase-client'
 import audioManifest from './audio-manifest.json'
+import { PRELOAD_ENGLISH } from './preload-texts'
 
 export type HaksupTtsLang = 'en' | 'ko'
 
@@ -8,18 +9,6 @@ const KO_VOICE = 'ko-KR-SunHiNeural'
 
 /** 캐시 무효화 — rate/음성 변경 시 올림 */
 const TTS_CACHE_VERSION = 'v3'
-
-/** 데모 단어도 클라우드 TTS 미리 받아 두기 */
-const PRELOAD_ENGLISH = [
-  'various',
-  'wave',
-  'run errands',
-  'latest',
-  'We tried various foods at the festival.',
-  'I wave to my friend every morning.',
-  'I run errands for my mom on weekends.',
-  'I bought the latest version of the game.',
-]
 
 const blobUrlCache = new Map<string, string>()
 const audioCache = new Map<string, HTMLAudioElement>()
@@ -57,17 +46,20 @@ function staticAudioUrl(text: string, lang: HaksupTtsLang): string | null {
 }
 
 /**
- * Edge Function 이름. 브랜드 변경으로 `haksup-tts`가 되었지만, **배포는 코드와
- * 따로 나간다.** 원격에는 아직 `loopin-tts`만 있는 경우가 많아서, 살아있는
- * 쪽을 먼저 치고 성공한 이름을 기억한다.
+ * Edge Function 이름. 브랜드 변경으로 `haksup-tts`가 되었고, **재배포도 끝났다**
+ * (2026-08-27 실측: 두 이름 모두 200 + audio/mpeg를 돌려준다).
  *
- * **재배포가 끝나면** `LEGACY_TTS_FUNCTION`과 아래 폴백 분기를 지울 것.
+ * 그전까지는 구 이름을 **먼저** 쳤는데, 새 이름이 이미 살아 있는데도 매번
+ * `loopin-tts`로 재생하면서 콘솔에 「haksup-tts 미배포」라는 사실과 다른 경고를
+ * 남겼다. 이제 새 이름을 먼저 치고, 구 이름은 순수 폴백으로만 둔다.
+ *
+ * 구 함수를 Supabase에서 내리고 나면 `LEGACY_TTS_FUNCTION`과 폴백 분기를 지울 것.
  */
 const TTS_FUNCTION = 'haksup-tts'
 const LEGACY_TTS_FUNCTION = 'loopin-tts'
 
-/** 원격에는 아직 `loopin-tts`만 있는 경우가 많다 — 살아있는 쪽을 먼저 친다 */
-const TTS_FUNCTION_CANDIDATES = [LEGACY_TTS_FUNCTION, TTS_FUNCTION] as const
+/** 새 이름이 먼저 — 구 이름은 새 이름이 죽었을 때만 */
+const TTS_FUNCTION_CANDIDATES = [TTS_FUNCTION, LEGACY_TTS_FUNCTION] as const
 
 /** 새 이름이 없다고 확인된 뒤에는 매번 헛걸음하지 않는다 */
 let ttsFunctionName: string | null = null
@@ -108,19 +100,25 @@ async function fetchCloudTtsBlob(text: string, lang: HaksupTtsLang): Promise<Blo
     : [...TTS_FUNCTION_CANDIDATES]
 
   let lastStatus = 0
+  // 폴백 경고에 쓸 값 — **정식 이름이 왜 안 됐는지**를 적어야 쓸모가 있다
+  let primaryFailure: string | null = null
   for (const name of names) {
     try {
       const res = await requestTts(env, name, text, lang)
       lastStatus = res.status
-      if (!res.ok) continue
+      if (!res.ok) {
+        if (name === TTS_FUNCTION) primaryFailure = String(res.status)
+        continue
+      }
       if (name !== TTS_FUNCTION && ttsFunctionName !== name) {
         console.warn(
-          `[haksup-tts] ${TTS_FUNCTION} 미배포 — ${name}로 재생합니다`,
+          `[haksup-tts] ${TTS_FUNCTION} 실패(${primaryFailure ?? 'network'}) — ${name}로 재생합니다`,
         )
       }
       ttsFunctionName = name
       return res.blob()
     } catch {
+      if (name === TTS_FUNCTION) primaryFailure = 'network'
       // 다음 이름 시도
     }
   }
