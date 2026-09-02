@@ -15,11 +15,11 @@ workflows:
       vars:
         APP_VERSION: "1.1"
         APP_STORE_APPLE_ID: "6754501427"
-        XCODE_WORKSPACE: "App.xcworkspace"
+        XCODE_PROJECT: "App.xcodeproj"
         XCODE_SCHEME: "App"
 
       node: 22
-      cocoapods: default
+      xcode: latest
 
     scripts:
       - name: Install dependencies
@@ -40,14 +40,9 @@ workflows:
 
           npx cap sync ios
 
-      - name: Install CocoaPods
-        script: |
-          cd ios/App
-          pod install
-
       - name: Set up iOS code signing
         script: |
-          xcode-project use-profiles
+          xcode-project use-profiles --project "$CM_BUILD_DIR/ios/App/App.xcodeproj"
 
       - name: Set app version and build number
         script: |
@@ -69,7 +64,7 @@ workflows:
           cd "$CM_BUILD_DIR/ios/App"
 
           xcode-project build-ipa \
-            --workspace "$XCODE_WORKSPACE" \
+            --project "$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME"
 
     artifacts:
