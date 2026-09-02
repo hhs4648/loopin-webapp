@@ -1,8 +1,25 @@
 workflows:
-  ios-setup-check:
-    name: Haksup iOS Setup Check
+  ios-app-store:
+    name: Haksup iOS App Store Upload
     instance_type: mac_mini_m2
     max_build_duration: 30
+
+    integrations:
+      app_store_connect: codemagic
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.haksup.haksupApp
+
+      vars:
+        APP_VERSION: "1.1"
+        APP_STORE_APPLE_ID: "6754501427"
+        XCODE_WORKSPACE: "App.xcworkspace"
+        XCODE_SCHEME: "App"
+
+      node: 22
+      cocoapods: default
 
     scripts:
       - name: Install dependencies
@@ -13,14 +30,55 @@ workflows:
         script: |
           npm run build
 
-      - name: Create iOS project
+      - name: Create and sync iOS project
         script: |
           sed -i '' 's/com.haksup.haksup_app/com.haksup.haksupApp/g' capacitor.config.ts
-          npx cap add ios
+
+          if [ ! -d "ios" ]; then
+            npx cap add ios
+          fi
+
           npx cap sync ios
 
-      - name: Check iOS project
+      - name: Install CocoaPods
         script: |
-          ls -la ios/App
-          xcodebuild -project ios/App/App.xcodeproj -scheme App -showBuildSettings >/dev/null
-          
+          cd ios/App
+          pod install
+
+      - name: Set up iOS code signing
+        script: |
+          xcode-project use-profiles
+
+      - name: Set app version and build number
+        script: |
+          cd "$CM_BUILD_DIR/ios/App"
+
+          agvtool new-marketing-version "$APP_VERSION"
+
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo "0")
+          LATEST_BUILD_NUMBER=${LATEST_BUILD_NUMBER:-0}
+          NEW_BUILD_NUMBER=$((LATEST_BUILD_NUMBER + 1))
+
+          echo "Latest App Store build: $LATEST_BUILD_NUMBER"
+          echo "New build number: $NEW_BUILD_NUMBER"
+
+          agvtool new-version -all "$NEW_BUILD_NUMBER"
+
+      - name: Build signed IPA
+        script: |
+          cd "$CM_BUILD_DIR/ios/App"
+
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - ios/App/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
+        submit_to_app_store: false
