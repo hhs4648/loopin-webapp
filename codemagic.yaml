@@ -40,6 +40,18 @@ workflows:
 
           npx cap sync ios
 
+          - name: Generate iOS app icon
+          script: |
+            echo "Using new app icon:"
+            ls -lh assets/icon.png
+  
+            npx @capacitor/assets generate \
+              --ios \
+              --assetPath assets
+  
+            echo "Generated iOS icons:"
+            ls -lh ios/App/App/Assets.xcassets/AppIcon.appiconset/
+
       - name: Set up iOS code signing
         script: |
           xcode-project use-profiles --project "$CM_BUILD_DIR/ios/App/App.xcodeproj"
@@ -50,14 +62,23 @@ workflows:
 
           agvtool new-marketing-version "$APP_VERSION"
 
-          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo "0")
+          - name: Set app version and build number
+        script: |
+          cd "$CM_BUILD_DIR/ios/App"
+
+          agvtool new-marketing-version "$APP_VERSION"
+
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-build-number \
+            "$APP_STORE_APPLE_ID" \
+            --version-string "$APP_VERSION" 2>/dev/null || echo "0")
+
           LATEST_BUILD_NUMBER=${LATEST_BUILD_NUMBER:-0}
           NEW_BUILD_NUMBER=$((LATEST_BUILD_NUMBER + 1))
 
-          echo "Latest App Store build: $LATEST_BUILD_NUMBER"
+          echo "Latest uploaded build: $LATEST_BUILD_NUMBER"
           echo "New build number: $NEW_BUILD_NUMBER"
 
-          agvtool new-version -all "$NEW_BUILD_NUMBER"
+          agvtool new-version -all "$NEW_BUILD_NUMBER""
 
       - name: Build signed IPA
         script: |
