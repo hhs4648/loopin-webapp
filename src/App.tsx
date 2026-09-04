@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom'
 import { AppFrame } from './components/AppFrame'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { NativeAuthDeepLink } from './components/NativeAuthDeepLink'
 import { SplashBrandFrame } from './components/SplashBrandFrame'
 import { BackNavigationProvider } from './components/navigation/BackNavigationProvider'
 import { SplashScreen } from './pages/SplashScreen'
@@ -95,6 +96,8 @@ export function App() {
 
   return (
     <BrowserRouter>
+      {/* 앱에서 소셜 로그인을 마치고 돌아오는 딥링크를 받는다 (웹에서는 아무것도 안 한다) */}
+      <NativeAuthDeepLink />
       <BackNavigationProvider>
         <AppFrame>
           <RoutedErrorBoundary>

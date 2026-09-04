@@ -101,7 +101,7 @@
 | **복습하기** (하단 탭 `복습노트`) | 🟡 분류별 정답률·목록 + 「지금 시작하기」연습 풀이. 만점 시 분류 감추기·오답 시 오답률/카드 재배치(localStorage). 복습 답안 서버 저장은 미구현 | [screens/review.md](./screens/review.md) |
 | 백엔드 / `loopin-project` 연동 | ✅ 구현 (env 필요 · 미설정 시 비활성) | [student-teacher-sync.md](./student-teacher-sync.md) |
 
-> 참고: `/teacher/home`은 현재 학생 홈과 **동일 UI**를 렌더합니다. 교사용 본 기능은 `loopin-project`로 이전·연동하는 것이 목표입니다.
+> 참고: `/teacher/home`은 **선생님 안내 화면**(`TeacherHandoffScreen`)입니다 — 앱에는 선생님 기능이 없고 선생님 웹 주소를 안내합니다. 예전에 학생 홈과 같은 UI를 렌더하던 것은 바뀌었습니다. 화면 아래 「학생으로 임시 참여하기」는 **별개 임시 학생 신원**으로 들어갑니다(선생님 계정 역할은 안 건드림).
 
 ---
 

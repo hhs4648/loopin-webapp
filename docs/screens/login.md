@@ -17,15 +17,26 @@
 - 미로그인 사용자
 - 스플래시에서 auth 없음
 
-## 현재 구현 (목업)
+## 현재 구현 (실제 OAuth · 2026-08-11 도입)
+
+목업이 아니다. `src/lib/sync/social-auth.ts`가 Supabase OAuth(PKCE)를 실제로 태운다.
 
 | 동작 | 설명 |
 |------|------|
-| Apple / 카카오 탭 | `createMockUser` 후 **기존 `haksup_auth` 클리어·재저장** |
-| 성공 후 | `/onboarding/member-type` (또는 `getPostAuthPath`) |
-| 실제 OAuth | **없음** — 서버 토큰 없음 |
+| Apple / 카카오 / 구글 탭 | `startSocialLogin(provider)` — 켜져 있는 provider인지 확인 후 OAuth 시작 |
+| 익명 기록이 있으면 | `linkIdentity`로 **그 계정에 붙인다** (uid 유지 → 풀이 기록 보존) |
+| 돌아오는 자리 | `/auth/callback` (`AuthCallbackScreen`) → 프로필 조회 → `getPostAuthPath` |
 
-> “재방문 로그인 유지”는 현재 불완전하다. 로그인 화면 진입 시 세션이 초기화될 수 있다.
+### 웹과 앱이 다르다 (2026-09-04)
+
+| | 돌아올 주소 | 로그인 창 |
+|---|---|---|
+| 웹 | `${window.location.origin}/auth/callback` | 같은 탭이 provider로 이동 |
+| 앱(iOS·Android) | `haksup://auth/callback` | 시스템 브라우저(SFSafariViewController / Custom Tabs) |
+
+앱에서 `window.location.origin`을 쓰면 `capacitor://localhost`가 되는데, Supabase
+허용 목록에 없는 주소라 **Site URL(`https://loopin-webapp.vercel.app`)로 보내 버린다** —
+앱에서 로그인을 눌렀는데 웹앱이 열리던 원인. 자세한 건 `HANDOFF.md` §15.
 
 ## 레이아웃 / 스펙
 

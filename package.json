@@ -10,10 +10,13 @@
     "tts:build": "node scripts/build-tts-audio.mjs",
     "tts:check": "node scripts/build-tts-audio.mjs --check",
     "cap:sync": "npm run build && npx cap sync android",
-    "cap:open": "npx cap open android"
+    "cap:open": "npx cap open android",
+    "cap:icons": "npx @capacitor/assets generate --android --assetPath assets"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/browser": "^8.0.4",
     "@capacitor/cli": "^8.5.1",
     "@capacitor/core": "^8.5.1",
     "@capacitor/ios": "^8.5.1",
@@ -27,10 +30,13 @@
     "tailwindcss": "^4.3.2"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@resvg/resvg-js": "^2.6.2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.5.2",
+    "playwright": "^1.62.1",
+    "sharp": "^0.35.4",
     "typescript": "~5.8.3",
     "vite": "^6.3.5"
   }

@@ -17,6 +17,14 @@
  *
  *   node scripts/build-tts-audio.mjs [problem-bank.json 경로]
  *   node scripts/build-tts-audio.mjs --check     # 빠진 것만 확인하고 끝 (생성 안 함)
+ *   node scripts/build-tts-audio.mjs --extra=<json>   # 문제은행 밖 문장도 같이 뽑기
+ *
+ * **`--extra`는 교과서 본문처럼 「음성만 갖고 있고 싶은」 문장을 받는다.** 저작권 때문에
+ * 본문 원문은 problem-bank.json에 안 싣고 교사가 직접 입력하게 하는데, 교사가 치는 문장은
+ * 결국 원문 그대로라 미리 뽑아 두면 Edge Function을 한 번도 안 친다. 파일 이름이 텍스트
+ * 해시라 **원문을 어디에도 저장하지 않고** 맞출 수 있다 — 목록은 엑셀에만 있고, 이 스크립트는
+ * 임시 파일로 받아서 mp3만 남긴다. 그래서 이 문장들은 `audio-manifest.json`(키가 평문)에
+ * 넣지 않고 `audio-hashes.json`(파일명만)으로 뺀다.
  *
  * 기본 경로는 교사 리포다 — 두 리포가 나란히 있다고 본다.
  */
@@ -29,9 +37,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const APP = path.join(__dirname, '..')
 const OUT_DIR = path.join(APP, 'public/assets/audio')
 const MANIFEST = path.join(APP, 'src/lib/tts/audio-manifest.json')
+/* 평문을 남기면 안 되는 것들 — 파일명(=해시)만 적는다. 앱이 해시를 계산해 대조한다. */
+const HASHES = path.join(APP, 'src/lib/tts/audio-hashes.json')
 
 const args = process.argv.slice(2)
 const CHECK_ONLY = args.includes('--check')
+const EXTRA_PATH = args.find((a) => a.startsWith('--extra='))?.slice('--extra='.length)
 
 /*
   교사 리포 위치는 사람마다 다르다. 형제 폴더로 둔 사람도 있고
@@ -90,12 +101,14 @@ const bank = JSON.parse(fs.readFileSync(bankPath, 'utf8'))
   - 본문 화면(번역 배열·청크 배열): `sentence.english` (대괄호를 벗긴 형태)
   한국어 내레이션은 문제은행이 아니라 코드에 박힌 고정 문구라 여기 없다.
 */
-const targets = new Map() // norm -> { text, lang, file }
-const add = (raw, lang) => {
+const targets = new Map() // norm -> { text, lang, file, extra }
+const add = (raw, lang, extra = false) => {
   const text = stripBrackets(String(raw ?? ''))
   if (!text) return
   const { norm, file } = keyOf(text, lang)
-  if (!targets.has(norm)) targets.set(norm, { text, lang, file })
+  // 먼저 들어온 쪽이 이긴다 — 문제은행에도 있는 문장이면 `extra`가 아니라
+  // 평문 매니페스트에 남아야 한다(보안 컨텍스트가 아닌 브라우저에서도 잡히도록).
+  if (!targets.has(norm)) targets.set(norm, { text, lang, file, extra })
 }
 
 for (const w of bank.words ?? []) add(w.english, 'en')
@@ -111,8 +124,29 @@ const { PRELOAD_ENGLISH } = await import(
 )
 for (const text of PRELOAD_ENGLISH) add(text, 'en')
 
+/*
+  `--extra`로 받은 문장 — 교과서 본문처럼 **텍스트는 안 남기고 음성만** 갖고 싶은 것들.
+  임시 파일로 받는다: 이 리포에도 교사 리포에도 원문을 적어 두지 않기 위해서다.
+  (원본 목록은 엑셀에만 있고, 교사 리포의 import-problem-bank.mjs가 넘겨준다)
+*/
+let extraCount = 0
+if (EXTRA_PATH) {
+  if (!fs.existsSync(EXTRA_PATH)) {
+    console.warn(`--extra 파일이 없습니다: ${EXTRA_PATH}`)
+  } else {
+    const raw = JSON.parse(fs.readFileSync(EXTRA_PATH, 'utf8'))
+    const list = Array.isArray(raw) ? raw : (raw.en ?? [])
+    for (const text of list) add(text, 'en', true)
+    extraCount = list.length
+  }
+}
+
 console.log(`문제은행: ${path.relative(APP, bankPath).replace(/\\/g, '/')}`)
-console.log(`읽을 대상 ${targets.size}개 (단어 ${bank.words?.length ?? 0} · 문장 ${bank.sentences?.length ?? 0} 기준, 중복 제거)`)
+console.log(
+  `읽을 대상 ${targets.size}개 (단어 ${bank.words?.length ?? 0} · 문장 ${bank.sentences?.length ?? 0}` +
+    (extraCount ? ` · 본문(음성만) ${extraCount}` : '') +
+    ' 기준, 중복 제거)',
+)
 
 if (!fs.existsSync(OUT_DIR)) fs.mkdirSync(OUT_DIR, { recursive: true })
 
@@ -178,14 +212,29 @@ for (const [i, t] of missing.entries()) {
 // ── 매니페스트 ──────────────────────────────────────────────────────────────
 // 앱이 해시를 계산하지 않아도 되도록 「정규화한 텍스트 → 파일명」 표를 남긴다.
 // (브라우저 해시는 비동기라 재생 직전에 쓰기 불편하다)
-const have = new Set(fs.readdirSync(OUT_DIR))
+const have = new Set(fs.readdirSync(OUT_DIR).filter((f) => f.endsWith('.mp3')))
 const manifest = {}
 for (const [norm, t] of targets) {
+  // `extra`는 평문을 남기면 안 된다 — 아래 해시 목록으로만 나간다
+  if (t.extra) continue
   if (have.has(t.file)) manifest[`${t.lang}:${norm}`] = t.file
 }
 fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n')
 
+/*
+  **해시 목록은 디스크에서 그대로 뽑는다.** 「이번에 뭘 넘겨받았는지」로 만들면
+  --extra 없이 한 번만 돌려도 목록이 통째로 비어 버린다 — 교사 리포나 엑셀이 없는
+  자리에서 `npm run tts:build`를 돌리는 일이 실제로 있다. 「파일이 있으면 목록에 있다」로
+  두면 잃어버릴 상태가 없다.
+
+  지운 콘텐츠의 옛 음성이 목록에 남을 수는 있는데, **정확히 그 텍스트를 다시 쳐야만**
+  잡히므로 틀린 소리가 날 일은 없다 (파일명이 텍스트 해시라서).
+*/
+fs.writeFileSync(HASHES, JSON.stringify([...have].sort(), null, 2) + '\n')
+
 const bytes = [...have].reduce((n, f) => n + fs.statSync(path.join(OUT_DIR, f)).size, 0)
 console.log(`\n생성 ${ok} · 실패 ${failed}`)
-console.log(`매니페스트 ${Object.keys(manifest).length}개 · 오디오 총 ${(bytes / 1048576).toFixed(2)}MB`)
+console.log(
+  `매니페스트 ${Object.keys(manifest).length}개 · 해시 목록 ${have.size}개 · 오디오 총 ${(bytes / 1048576).toFixed(2)}MB`,
+)
 if (failed) console.log('실패한 것은 앱에서 예전처럼 Edge Function으로 재생됩니다.')

@@ -304,7 +304,7 @@ await ctx.route('**://*.supabase.co/**', r => r.abort())
 
 | 무엇 | 상태 |
 |---|---|
-| **로고 그림** | `public/assets/logo-haksup.png` · `login-logo.svg` · `_design-source/logo-haksup.svg`는 **파일명만 바꿨고 그림은 옛 Loopin 워드마크**입니다. `HaksupLogo`(선생님 안내 화면)에 그대로 보입니다 — 새 로고 파일이 필요합니다 |
+| ~~**로고 그림**~~ | **2026-09-04 해결.** `HaksupLogo`가 앱 아이콘과 같은 정사각 마크(`public/assets/logo-mark.png`, `assets/icon.png`를 192px로 줄인 것)를 씁니다. 옛 Loopin 워드마크 `logo-haksup.png`는 `_design-source/logo-haksup-old-wordmark.png`로 옮겼습니다(안 쓰는 파일을 학생 기기로 내려보내지 않으려고). `login-logo.svg`·`_design-source/logo-haksup.svg`는 **아직 옛 워드마크**이지만 화면에 쓰이지 않습니다 |
 | Figma 레이어 이름 | `docs/figma.md` 표 왼쪽 열 참고 |
 | 폴더·리포 이름 | `loopin-webapp` · `loopin-project` · `loopin-web`는 그대로입니다(사용자 결정). 문서의 경로 표기도 그대로 둔 이유입니다 |
 | `supabase/config.toml`의 `project_id` | 로컬 CLI 라벨이라 폴더명을 따릅니다 |
@@ -413,3 +413,175 @@ npm run tts:check    # 빠진 게 있으면 종료 코드 1 — 빌드 게이트
 읽을 텍스트가 URL에 드러나고 캐시 무효화(`cacheVersion`)를 사람이 챙겨야 합니다.
 얻는 건 「같은 학생의 반복 재생」뿐이라(세션 내 메모리 캐시가 이미 있습니다) 지금은
 비용 대비 이득이 안 맞아 보류했습니다.
+
+---
+
+## 15. 앱에서 로그인을 누르면 웹앱이 열리던 문제 (2026-09-04)
+
+스토어에 올린 앱에서 소셜 로그인을 누르면 **`loopin-webapp.vercel.app`으로 넘어가**
+앱으로 돌아오지 못했습니다. 학생 눈에는 "앱인데 갑자기 웹사이트"입니다.
+
+### 원인 — 돌아올 주소가 앱 주소가 아니었습니다
+
+`socialRedirectUrl()`이 `${window.location.origin}/auth/callback`을 썼습니다. 브라우저에서는
+맞지만 앱 WebView의 주소는 `capacitor://localhost`(iOS)·`http://localhost`(Android)입니다.
+이 주소는 Supabase `Redirect URLs`에 없으므로 **조용히 Site URL로 대체**됩니다.
+
+직접 확인한 방법 (대시보드 없이):
+
+```bash
+curl -sI "https://mqnzowyqlxhsllqeeyuo.supabase.co/auth/v1/callback?error=access_denied&state=bogus"
+# → Location: https://loopin-webapp.vercel.app?error=...  ← 이게 Site URL, 즉 폴백 도착지
+```
+
+덧붙여, 설령 주소가 맞았어도 앱에서는 **WebView가 통째로 provider 페이지로 바뀌어**
+돌아올 길이 없었습니다. 구글은 임베디드 WebView 로그인을 `disallowed_useragent`로 막습니다.
+
+### 고친 방법 — 시스템 브라우저 + 커스텀 스킴 딥링크
+
+1. `skipBrowserRedirect: true`로 **주소만 받아** 시스템 브라우저로 엽니다
+   (`@capacitor/browser` → iOS SFSafariViewController, Android Chrome Custom Tabs).
+2. 로그인이 끝나면 Supabase가 `haksup://auth/callback?code=…`로 보내고 **앱이 다시 열립니다**.
+3. `NativeAuthDeepLink`(`@capacitor/app`의 `appUrlOpen`)가 그 코드를
+   `exchangeCodeForSession`으로 세션에 바꾼 뒤 **웹과 같은 `/auth/callback` 화면**으로 보냅니다.
+
+PKCE의 code verifier는 로그인을 시작한 WebView의 localStorage에 있습니다. 그래서 코드 교환은
+브라우저가 아니라 **앱으로 돌아와서** 해야 합니다 — 딥링크로 받는 구조인 이유입니다.
+
+### 스킴을 바꾸려면 네 곳을 같이 고칩니다
+
+| 곳 | 값 |
+|---|---|
+| `src/lib/native.ts` | `NATIVE_AUTH_SCHEME = 'haksup'` |
+| `android/app/src/main/res/values/strings.xml` | `auth_url_scheme` + Manifest의 intent-filter |
+| `codemagic.yaml` | `Register login deep link scheme` 단계가 Info.plist에 심음 |
+| Supabase 대시보드 | Authentication → URL Configuration → Redirect URLs |
+
+**iOS의 `ios/`는 빌드마다 새로 만들어집니다**(`npx cap add ios`). 그래서 Info.plist 수정은
+파일이 아니라 `codemagic.yaml`의 단계로 넣었습니다 — Xcode에서 손으로 넣으면 다음 빌드에 사라집니다.
+
+### 대시보드 설정이 없으면 코드만으로는 안 고쳐집니다
+
+Supabase **Redirect URLs에 `haksup://auth/callback`을 넣어야** 합니다. 안 넣으면 예전과
+똑같이 Site URL로 폴백해 웹앱이 열립니다. 이 한 줄이 iOS·Android 공용입니다
+(번들 ID가 `com.haksup.haksupApp` / `com.haksup.haksup_app`로 달라서 스킴을 따로 뒀습니다).
+
+---
+
+## 16. 설정 — 이름 변경과 회원탈퇴 (2026-09-04)
+
+계정 카드의 세 행 중 **학년 변경만** 눌렸습니다. 닉네임·연동 계정에는 시안에 `>` 쉐브론이
+그려져 있는데 히트영역이 없어서, 눌러도 아무 일이 없었습니다. 둘 다 채웠습니다.
+
+| 행 | 누르면 | 저장 경로 |
+|---|---|---|
+| 닉네임 | `SettingsNameSheet` — 이름 변경 | `upsertStudentProfile` → **성공하면** 로컬 `haksup_auth`도 같이 갱신 |
+| 연동 계정 | `SettingsAccountSheet` — 연동 확인 + **회원탈퇴** | `delete_own_account()` RPC |
+
+**이름은 서버가 먼저입니다.** `resolveDisplayName`은 로컬 auth를 먼저 보기 때문에 로컬만
+고치면 앱에는 새 이름, 선생님 명단에는 옛 이름이 남습니다. 저장이 실패하면 시트를 닫지
+않습니다 — 닫으면 바뀐 줄 알고 넘어갑니다.
+
+### 회원탈퇴 — 지우는 주체는 DB입니다
+
+앱은 anon 키뿐이라 `auth.users`를 못 지웁니다. 서비스 롤 키를 앱에 넣는 건 논외라
+(그 키 하나면 남의 기록까지 지워집니다) **자기 자신만 지우는 `security definer` 함수**를
+뒀습니다 — 교사 리포의 `supabase/migrations/014_delete_own_account.sql`.
+
+```
+auth.users 1행 삭제
+  → profiles → enrollments · attempts → answers   (001의 on delete cascade)
+```
+
+`error_reports`만 `on delete set null`이라(011) 계정을 지워도 행이 남습니다. 「완전히
+지운다」가 목적이므로 함수가 **명시적으로 먼저** 지웁니다.
+
+**014를 올려야 동작합니다.** 안 올라가 있으면 PostgREST가 `PGRST202`를 주고, 앱은
+「탈퇴 기능이 아직 서버에 준비되지 않았어요」를 보여 줍니다(2026-09-04 실제 응답 확인).
+
+주의한 것 두 가지:
+
+- **서버 → 로컬 순서.** 로컬을 먼저 비우면 서버 삭제가 실패했을 때 계정은 살아 있는데
+  기기에서는 로그아웃돼, 학생이 되돌릴 방법이 없습니다.
+- **0행 삭제를 성공으로 보지 않습니다.** 함수가 `row_count`를 보고 0이면 예외를 던집니다.
+  (§3의 교훈과 같은 함정입니다 — PostgREST는 0행 삭제에 에러를 주지 않습니다.)
+
+- **탈퇴 뒤에는 라우터로 넘기지 않고 앱을 다시 띄웁니다**(`window.location.replace('/')`).
+  설정 화면 뒤에서 과제 목록이 주기적으로 다시 조회되는데, 그 경로는 세션이 없으면
+  `signInAnonymously()`로 익명 사용자를 새로 만듭니다. 탈퇴 직후에 그게 돌면 빈 계정이
+  하나 생기고 토큰이 다시 저장됩니다. 새로고침이 그 타이머들을 끊습니다.
+
+로컬은 `clearAllLocalData()`가 `haksup`/`loopin` 접두사 키를 통째로 지웁니다. 키를 하나씩
+나열하면 새 기능이 키를 늘릴 때마다 빠집니다. 안 지우면 탈퇴한 사람의 이름·반·복습 진행이
+다음에 앱을 연 사람에게 그대로 보입니다.
+
+> 참고: 앱스토어 심사 지침 5.1.1(v)는 계정을 만들 수 있는 앱에 **앱 안에서의 계정 삭제**를
+> 요구합니다. 이 화면이 그 요건을 채웁니다.
+
+---
+
+## 17. 선생님 안내 화면 — 「학생으로 임시 참여」 (2026-09-04)
+
+화면 맨 아래 버튼이 `/onboarding/member-type`으로 되돌려 보내기만 했습니다. 거기서 학생을
+고르면 **선생님 계정 그대로 학생 온보딩을 태워서**, `upsertStudentProfile`이 같은 uid의
+`profiles.role`을 `student`로 덮어씁니다. 두 앱이 프로필 한 행을 공유하므로 **그 순간
+선생님 웹에서 반이 사라집니다.** 그래서 별개 신원으로 들어가게 고쳤습니다.
+
+```
+[임시 참여하기] → signOutSocial() → 로컬 전체 비움 → 임시 학생 auth 저장
+               → /onboarding/student → (익명 세션 생성) → 초대코드 → 학생 화면
+```
+
+- **왜 로그아웃까지 하나.** `enroll_with_invite_code`가 `profiles.role = 'student'`만
+  받습니다(001). 선생님 uid로는 `NOT_STUDENT`가 나고, 역할을 바꾸면 위의 사고가 납니다.
+  다른 uid가 필요하고, 그게 새 익명 세션입니다.
+- **선생님 계정은 서버에 그대로 있습니다.** 다시 소셜 로그인하면 스플래시가
+  `profiles.role=teacher`를 읽어 이 화면으로 돌려보냅니다(`mergeServerProfile`).
+- **임시 학생은 익명 세션**이라 `provider`가 없습니다. `AuthUser.temporary`로 표시하고,
+  설정에서는 연동 계정 자리에 「임시 참여」를 보여 줍니다 — 로그인한 적 없는 provider
+  이름을 띄우지 않으려고요.
+
+### 선생님 웹 주소는 코드에 기본값을 둡니다
+
+`VITE_TEACHER_WEB_URL`만 보던 것을 `DEFAULT_TEACHER_WEB_URL` 상수 + 환경변수 우선으로
+바꿨습니다. 이 값은 **빌드 시점**에 있어야 하는데 앱은 Codemagic이 빌드합니다 — 거기
+환경변수가 비어 있으면 배포본에 「아직 연결되지 않았어요」가 그대로 나갑니다. 공개 주소라
+숨길 이유도 없습니다.
+
+현재 값은 **`https://loopin-web-zeta.vercel.app`** 입니다(2026-09-04에 열어 `학습 로그인`
+페이지가 뜨는 것을 확인했습니다). 주소가 바뀌면 `src/pages/TeacherHandoffScreen.tsx`의
+`DEFAULT_TEACHER_WEB_URL`을 고치면 됩니다.
+
+> **`loopin-web.vercel.app`은 우리 것이 아닙니다.** 이름이 비슷해 헷갈리기 쉬운데,
+> 열어 보면 스페인어 자동화 서비스 사이트입니다(2026-09-04 확인). 여기로 바꾸지 마세요.
+
+---
+
+## 18. 아이콘·앱 이름 — 코드에 있는 것과 콘솔에만 있는 것 (2026-09-04)
+
+Play 스토어 화면에 아직 **`Loopin`** 과 옛 `Loop` 아이콘이 보입니다. 셋이 서로 다른 곳에
+있어서, 코드만 고쳐서는 안 바뀌는 것이 섞여 있습니다.
+
+| 무엇 | 어디 | 지금 |
+|---|---|---|
+| 스토어 제목 (`Loopin`) | **Play 콘솔** 기본 스토어 등록정보 → 앱 이름 | 콘솔에서만 바꿀 수 있음 |
+| 스토어 아이콘 (`Loop` 그림) | **Play 콘솔** 앱 아이콘 512×512 | 콘솔에서 업로드 (`assets/play-store-icon-512.png` 준비해 둠) |
+| 홈 화면 이름 | `android/.../values/strings.xml` `app_name` | 이미 `학습` |
+| 홈 화면 아이콘 | `android/.../mipmap-*/ic_launcher*.png` | **2026-09-04에 마스코트로 교체** |
+
+### 안드로이드 런처 아이콘이 Capacitor 기본값이었습니다
+
+`ic_launcher.png`가 **파란 X(Capacitor 기본 아이콘)** 였습니다. iOS는 Codemagic이 빌드마다
+`npx @capacitor/assets generate --ios`를 돌려서 `assets/icon.png`가 반영되는데, 안드로이드는
+로컬에서 빌드하고 그 명령을 돌린 적이 없어서 템플릿 그대로 남아 있었습니다.
+
+```bash
+npm run cap:icons   # = npx @capacitor/assets generate --android --assetPath assets
+```
+
+`assets/icon.png`(1024×1024)를 고친 뒤에는 **이걸 돌려야** 홈 화면 아이콘과 네이티브
+런치 화면(`@drawable/splash`, 런치 테마가 참조)이 같이 바뀝니다.
+
+> 스토어 이름은 「학습」을 권합니다 — 약관·개인정보 처리방침·앱 안 표기가 전부 「학습」이고,
+> 한국 사용자는 한글로 검색합니다. 아래 작은 글씨 `Haksup`은 **개발자 계정 이름**이라 앱
+> 이름과 별개로 콘솔 계정 설정에서 바꿉니다.

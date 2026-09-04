@@ -1,3 +1,5 @@
+import { NATIVE_AUTH_REDIRECT_URL, isNativeApp } from '../native'
+import { closeAuthBrowser, openAuthBrowser } from './native-auth'
 import { getSupabase, getSupabaseEnv, isSyncEnabled } from './supabase-client'
 import type { SocialProvider } from '../auth'
 
@@ -15,9 +17,19 @@ import type { SocialProvider } from '../auth'
  * 넣고 과제를 푼 학생이 있어도 잃는 게 없다.
  */
 
-/** 로그인을 마치고 돌아올 자리 */
+/**
+ * 로그인을 마치고 돌아올 자리.
+ *
+ * **앱과 웹이 다르다.** 앱 WebView의 주소는 `capacitor://localhost`(iOS)·
+ * `http://localhost`(Android)인데, 이건 Supabase `Redirect URLs`에 없는 주소라
+ * 그대로 넘기면 **Site URL(`https://loopin-webapp.vercel.app`)로 보내 버린다** —
+ * 앱에서 로그인을 눌렀는데 웹앱이 열리던 원인이 이것이다 (2026-09-04 확인).
+ * 앱에서는 우리 스킴으로 돌아온다.
+ */
 export function socialRedirectUrl(): string {
-  return `${window.location.origin}/auth/callback`
+  return isNativeApp()
+    ? NATIVE_AUTH_REDIRECT_URL
+    : `${window.location.origin}/auth/callback`
 }
 
 /*
@@ -39,7 +51,8 @@ export function socialRedirectUrl(): string {
 */
 
 export type SocialLoginResult =
-  | { ok: true }
+  /** `native`면 시스템 브라우저가 떠 있는 상태다 — 화면은 그게 닫힐 때까지 기다린다 */
+  | { ok: true; native: boolean }
   | { ok: false; message: string }
 
 /**
@@ -91,8 +104,12 @@ function isProviderNotConfigured(message: string): boolean {
 }
 
 /**
- * OAuth 시작. 성공하면 **이 함수는 돌아오지 않는다** — 브라우저가 provider로 이동한다.
- * 돌아올 때는 `/auth/callback`이 받는다.
+ * OAuth 시작.
+ *
+ * **웹**이면 이 함수는 돌아오지 않는다 — WebView가 provider로 이동하고,
+ * 돌아올 때 `/auth/callback`이 받는다.
+ * **앱**이면 주소만 받아 시스템 브라우저를 띄우고 바로 돌아온다. 로그인이 끝나면
+ * `haksup://auth/callback` 딥링크로 앱이 다시 열리고 `NativeAuthDeepLink`가 받는다.
  */
 export async function startSocialLogin(
   provider: SocialProvider,
@@ -112,7 +129,13 @@ export async function startSocialLogin(
 
   const { data: sessionData } = await supabase.auth.getSession()
   const current = sessionData.session?.user
-  const redirectTo = socialRedirectUrl()
+  const native = isNativeApp()
+  /*
+    앱에서는 **Supabase가 WebView를 옮기지 못하게 막는다.** 그대로 두면 앱 껍데기가
+    provider 페이지로 바뀌어 돌아올 길이 없어지고, 구글은 임베디드 WebView라며
+    `disallowed_useragent`로 아예 거절한다. 주소만 받아 시스템 브라우저로 연다.
+  */
+  const options = { redirectTo: socialRedirectUrl(), skipBrowserRedirect: native }
 
   /*
     익명으로 이미 뭔가 하고 있었다면 **그 계정에 붙인다.**
@@ -120,11 +143,11 @@ export async function startSocialLogin(
     (대시보드에서 Manual Linking을 켜야 동작한다 — 꺼져 있으면 아래 폴백을 탄다.)
   */
   if (current?.is_anonymous) {
-    const { error } = await supabase.auth.linkIdentity({
+    const { data, error } = await supabase.auth.linkIdentity({
       provider,
-      options: { redirectTo },
+      options,
     })
-    if (!error) return { ok: true }
+    if (!error) return handOffToBrowser(native, data?.url)
 
     if (isProviderNotConfigured(error.message)) {
       return { ok: false, message: notConfiguredMessage(provider) }
@@ -134,9 +157,9 @@ export async function startSocialLogin(
     console.warn('[auth] link identity failed, falling back', error.message)
   }
 
-  const { error } = await supabase.auth.signInWithOAuth({
+  const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
-    options: { redirectTo },
+    options,
   })
   if (error) {
     if (isProviderNotConfigured(error.message)) {
@@ -145,7 +168,26 @@ export async function startSocialLogin(
     console.warn('[auth] oauth start failed', error.message)
     return { ok: false, message: '로그인을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.' }
   }
-  return { ok: true }
+  return handOffToBrowser(native, data?.url)
+}
+
+/** 앱이면 시스템 브라우저로 넘기고, 웹이면 이미 이동 중이라 할 일이 없다 */
+async function handOffToBrowser(
+  native: boolean,
+  url: string | null | undefined,
+): Promise<SocialLoginResult> {
+  if (!native) return { ok: true, native: false }
+  if (!url) {
+    return { ok: false, message: '로그인을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.' }
+  }
+  try {
+    await openAuthBrowser(url)
+  } catch (error) {
+    console.warn('[auth] failed to open auth browser', error)
+    await closeAuthBrowser()
+    return { ok: false, message: '로그인 창을 열지 못했어요. 잠시 후 다시 시도해 주세요.' }
+  }
+  return { ok: true, native: true }
 }
 
 const PROVIDER_LABEL: Record<SocialProvider, string> = {

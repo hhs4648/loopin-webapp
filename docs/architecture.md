@@ -63,7 +63,7 @@ docs/                     # 이 문서 세트
 | `/onboarding/student` | `StudentOnboardingScreen` | |
 | `/onboarding/teacher` | `TeacherOnboardingScreen` | |
 | **`/student/home`** | `HomeScreen` → `MainHomeScreen` | **학원/학교 메인** (초대·성 맵). 구어 “student/main”도 여기 |
-| `/teacher/home` | `HomeScreen` → `MainHomeScreen` | 학생 홈과 동일 UI |
+| `/teacher/home` | `TeacherHandoffScreen` | 선생님 안내 — 앱에 선생님 기능 없음, 선생님 웹으로 안내. 「학생으로 임시 참여하기」→ 로그아웃 후 임시 학생(익명)으로 `/onboarding/student` |
 | `*` | `/`로 리다이렉트 | |
 
 > **`/student/main` 라우트는 없다.** 학원·학교 메인 = `/student/home`.  

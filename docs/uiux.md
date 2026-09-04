@@ -30,9 +30,9 @@ flowchart TD
   memberType -->|학생| studentOnb["학생 온보딩"]
   memberType -->|교사| teacherOnb["교사 온보딩"]
   studentOnb --> studentHome["/student/home 학원·학교 메인"]
-  teacherOnb --> teacherHome["/teacher/home"]
+  teacherOnb --> teacherHome["/teacher/home 선생님 안내"]
+  teacherHome -->|학생으로 임시 참여| studentOnb
   studentHome --> mainSteps["MainHomeScreen steps"]
-  teacherHome --> mainSteps
 ```
 
 ### 학생 메인
@@ -93,7 +93,7 @@ flowchart TD
 |------|------|
 | Figma 프레임 + 오버레이 | SVG/이미지 위에 투명 `button`/`input` |
 | Primary CTA | 하단 고정 버튼 영역 (확인·다음·입장하기) |
-| 하단 내비 → 설정 | **홈** → 학원/학교 메인 · **전체** → `SettingsWindow`. 하단 바는 `MainHomeBottomNav`. 맵에서는 **홈** 검정 활성, 설정에서는 **전체** 검정 활성(홈은 회색). 설정 프로필 **이름**=온보딩 입력, **연동**=로그인 provider(`kakao`/`apple`/`google` → 카카오·애플·구글). **학년 변경**=중1·중2·중3만 (`SettingsGradeSheet` → `upsertStudentProfile`) |
+| 하단 내비 → 설정 | **홈** → 학원/학교 메인 · **전체** → `SettingsWindow`. 하단 바는 `MainHomeBottomNav`. 맵에서는 **홈** 검정 활성, 설정에서는 **전체** 검정 활성(홈은 회색). 설정 프로필 **이름**=온보딩 입력. **닉네임**=누르면 이름 변경(`SettingsNameSheet` → `upsertStudentProfile` + 로컬 auth), **연동**=로그인 provider(`kakao`/`apple`/`google` → 카카오·애플·구글) · 누르면 연동 확인과 **회원탈퇴**(`SettingsAccountSheet` → `delete_own_account` RPC · 2단계 확인), **학년 변경**=중1·중2·중3만 (`SettingsGradeSheet` → `upsertStudentProfile`) |
 | 하단 내비 → **헬스장** | `GymScreen` · 교사 「오답만 다시 출제」가 오면 캐릭터 탭 → `gym-start.svg` 「시작하기」. 대기 없으면 `gym-empty.svg` · 「홈으로 가기」는 메인. 다 풀면 `gym-complete.svg`(오답 있음) / `gym-complete-perfect.svg`(백점). 오답 있으면 「틀린 문제만 다시 풀기」 |
 | 상태바 | 진행 화면 시안에 구워진 가짜 시계·아이콘은 **가리고 다시 그리지 않음**(실기기 OS 상태바와 두 겹 방지). **스플래시는 시계·아이콘 없음** |
 | 뒤로가기 | **시계 아래** 왼쪽 44×44px `<` (`BACK_BUTTON_HIT` y=52) · 시계와 같은 줄에 두지 않음 · 설정 창이 열려 있으면 먼저 설정만 닫음 |
@@ -349,6 +349,6 @@ Figma export `current-learning-cta-card.svg`(392×156)를 그대로 따른다.
 | (위와 같이 진행 불가하여 도달 안 함) | 서버에서 배정된 과제 목록 수신 (`fetchStudentAssignments`) — **구현됨** |
 | 고정 2944px 맵·전 구간 스크롤 | 과제 수만큼 성·구간 생성, 마지막 부여 성까지 스크롤 — **미구현(진짜 목표)**, [design.md](./design.md) §1.1 |
 | (위와 같이 진행 불가하여 도달 안 함) | 제출·진도를 Supabase `attempts`/`answers`에 저장, 교사 대시보드 반영 — **구현됨** |
-| `/teacher/home` = 학생 UI | 교사는 `loopin-project`로 유도 또는 리다이렉트 — **미구현(진짜 목표)** |
+| `/teacher/home` = 학생 UI | `TeacherHandoffScreen`이 선생님 웹으로 유도(주소 표시·복사·열기) — **구현됨**. 학생 쪽을 직접 보려면 「학생으로 임시 참여하기」 |
 
 상세: [student-teacher-sync.md](./student-teacher-sync.md)

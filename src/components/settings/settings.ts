@@ -207,6 +207,29 @@ export const SETTINGS_GRADE_HIT = {
   h: 50,
 } as const
 
+/**
+ * 닉네임 행 전체 히트 — 이름 변경.
+ * 시안에 `>` 쉐브론이 그려져 있어 누를 수 있게 보였는데 히트영역이 없었다.
+ */
+export const SETTINGS_NICKNAME_HIT = {
+  x: 20,
+  y: ACCOUNT_NICK_CY - 25,
+  w: 361,
+  h: 50,
+} as const
+
+/**
+ * 연동 계정 행 전체 히트 — 연동 상태 확인과 **회원탈퇴** 입구.
+ * 탈퇴 버튼을 리스트에 새 행으로 넣으면 시안(구워진 이미지)을 다시 떠야 해서,
+ * 이미 쉐브론이 있는 이 행 안쪽 시트에 뒀다.
+ */
+export const SETTINGS_LINKED_HIT = {
+  x: 20,
+  y: ACCOUNT_LINK_CY - 25,
+  w: 361,
+  h: 50,
+} as const
+
 /** 프로필/온보딩 grade 문자열 → 설정 표시용 */
 export function formatSettingsGradeLabel(grade?: string | null): string {
   const raw = grade?.trim()

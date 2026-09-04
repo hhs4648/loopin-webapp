@@ -4,9 +4,11 @@ import {
   clearAuth,
   getStoredAuth,
   resolveDisplayName,
+  saveAuth,
   socialProviderLabel,
   type SocialProvider,
 } from '../../lib/auth'
+import { deleteOwnAccount } from '../../lib/sync/account-api'
 import {
   getCachedStudentProfile,
   upsertStudentProfile,
@@ -20,7 +22,9 @@ import {
 } from '../main-home/assignment-home'
 import { BackButtonOverlay } from '../navigation/BackButtonOverlay'
 import { BACK_MASK_SETTINGS } from '../navigation/figma-navigation'
+import { SettingsAccountSheet } from './SettingsAccountSheet'
 import { SettingsGradeSheet } from './SettingsGradeSheet'
+import { SettingsNameSheet } from './SettingsNameSheet'
 import {
   SETTINGS_ACCOUNT_VALUE_CLASS,
   SETTINGS_DISPLAY_NAME_MAX,
@@ -28,8 +32,10 @@ import {
   SETTINGS_GRADE_HIT,
   SETTINGS_GRADE_OPTIONS,
   SETTINGS_GRADE_VALUE,
+  SETTINGS_LINKED_HIT,
   SETTINGS_LINKED_VALUE,
   SETTINGS_LIST_ROWS,
+  SETTINGS_NICKNAME_HIT,
   SETTINGS_NICKNAME_VALUE,
   SETTINGS_PROFILE_BADGE,
   SETTINGS_PROFILE_BADGE_CLASS,
@@ -78,15 +84,28 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
     'privacy' | 'terms' | 'marketing' | null
   >(null)
   const [gradeSheetOpen, setGradeSheetOpen] = useState(false)
+  const [nameSheetOpen, setNameSheetOpen] = useState(false)
+  const [accountSheetOpen, setAccountSheetOpen] = useState(false)
 
   const user = getStoredAuth()
   const profile = getCachedStudentProfile()
-  const displayName = resolveDisplayName(user, profile?.displayName).slice(
-    0,
-    SETTINGS_DISPLAY_NAME_MAX,
+  /*
+    이름은 **상태로 들고 있는다.** 설정 안에서 바꿀 수 있게 되면서, 저장소 값을 매 렌더
+    다시 읽는 것만으로는 시트를 닫은 뒤 화면이 안 바뀐다.
+  */
+  const [displayName, setDisplayName] = useState(() =>
+    resolveDisplayName(user, profile?.displayName).slice(
+      0,
+      SETTINGS_DISPLAY_NAME_MAX,
+    ),
   )
   const provider: SocialProvider = user?.provider ?? 'kakao'
-  const providerLabel = socialProviderLabel(provider)
+  /*
+    선생님이 「학생으로 임시 참여」로 들어온 경우는 소셜 계정이 아니라 익명 세션이다.
+    그대로 두면 연동 계정 자리에 로그인한 적 없는 provider 이름이 뜬다.
+  */
+  const isTemporary = user?.temporary === true
+  const providerLabel = isTemporary ? '임시 참여' : socialProviderLabel(provider)
   const [gradeValue, setGradeValue] = useState(profile?.grade ?? null)
   const gradeLabel = formatSettingsGradeLabel(gradeValue)
   const selectedGradeId = parseSettingsGradeId(gradeValue)
@@ -130,6 +149,51 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
     if (row.action === 'privacy' || row.action === 'terms' || row.action === 'marketing') {
       setOpenDoc(row.action)
     }
+  }
+
+  /**
+   * 이름 변경 — **서버가 먼저**다.
+   * 로컬만 바꾸면 앱에서는 새 이름인데 선생님 명단에는 옛 이름이 남는다.
+   */
+  async function handleSaveName(
+    name: string,
+  ): Promise<{ ok: boolean; message?: string }> {
+    const saved = await upsertStudentProfile({
+      displayName: name,
+      grade: gradeValue ?? undefined,
+      birthdate: profile?.birthdate,
+    })
+    if (!saved) {
+      return {
+        ok: false,
+        message: '이름을 저장하지 못했어요. 인터넷 연결을 확인해 주세요.',
+      }
+    }
+
+    // `resolveDisplayName`이 로컬 auth를 먼저 보므로 여기도 같이 고쳐야 한다
+    const current = getStoredAuth()
+    if (current) saveAuth({ ...current, displayName: name })
+    setDisplayName(name.slice(0, SETTINGS_DISPLAY_NAME_MAX))
+    return { ok: true }
+  }
+
+  /**
+   * 회원탈퇴 — 성공하면 돌아올 화면이 없다.
+   *
+   * **라우터로 넘기지 않고 앱을 통째로 다시 띄운다.** 이 화면 뒤에서는 과제 목록이
+   * 주기적으로 다시 조회되는데, 그 경로가 세션이 없으면 `signInAnonymously()`로
+   * **익명 사용자를 새로 만든다.** 방금 계정을 지운 직후에 그게 돌면 탈퇴하자마자
+   * 빈 계정이 하나 생기고 토큰이 다시 저장된다. 새로고침이 그 타이머들을 확실히 끊는다.
+   * 첫 화면(스플래시)은 세션이 없으면 로그인으로 보낸다.
+   */
+  async function handleDeleteAccount(): Promise<{
+    ok: boolean
+    message?: string
+  }> {
+    const result = await deleteOwnAccount()
+    if (!result.ok) return result
+    window.location.replace('/')
+    return { ok: true }
   }
 
   async function handleSelectGrade(id: SettingsMiddleGradeId) {
@@ -212,7 +276,11 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
           aria-hidden
         >
           <span
-            className={`${SETTINGS_PROFILE_BADGE_CLASS} ${providerBadgeClass(provider)}`}
+            className={`${SETTINGS_PROFILE_BADGE_CLASS} ${
+              isTemporary
+                ? 'bg-[#EEF1F5] text-[#5A6472]'
+                : providerBadgeClass(provider)
+            }`}
             style={{
               WebkitFontSmoothing: 'antialiased',
               MozOsxFontSmoothing: 'grayscale',
@@ -263,6 +331,30 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
         <div className="pointer-events-none absolute inset-0 z-10">
           <button
             type="button"
+            aria-label="닉네임 변경"
+            className="pointer-events-auto absolute bg-transparent"
+            style={settingsContentRectStyle(
+              settingsCanvasToCropRect(SETTINGS_NICKNAME_HIT),
+            )}
+            onClick={() => {
+              playTapSfx()
+              setNameSheetOpen(true)
+            }}
+          />
+          <button
+            type="button"
+            aria-label="연동 계정, 회원탈퇴"
+            className="pointer-events-auto absolute bg-transparent"
+            style={settingsContentRectStyle(
+              settingsCanvasToCropRect(SETTINGS_LINKED_HIT),
+            )}
+            onClick={() => {
+              playTapSfx()
+              setAccountSheetOpen(true)
+            }}
+          />
+          <button
+            type="button"
             aria-label="학년 변경"
             className="pointer-events-auto absolute bg-transparent"
             style={gradeHitStyle}
@@ -297,6 +389,23 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
             void handleSelectGrade(id)
           }}
           onClose={() => setGradeSheetOpen(false)}
+        />
+      ) : null}
+
+      {nameSheetOpen ? (
+        <SettingsNameSheet
+          initialName={displayName}
+          onSubmit={handleSaveName}
+          onClose={() => setNameSheetOpen(false)}
+        />
+      ) : null}
+
+      {accountSheetOpen ? (
+        <SettingsAccountSheet
+          providerLabel={providerLabel}
+          temporary={isTemporary}
+          onDeleteAccount={handleDeleteAccount}
+          onClose={() => setAccountSheetOpen(false)}
         />
       ) : null}
 

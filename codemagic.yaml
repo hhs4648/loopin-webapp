@@ -40,6 +40,22 @@ workflows:
 
           npx cap sync ios
 
+      - name: Register login deep link scheme
+        script: |
+          # ios/ 는 빌드마다 새로 만들어지므로 Info.plist도 매번 다시 심는다.
+          # 이게 없으면 소셜 로그인이 끝나도 haksup:// 로 앱이 열리지 않아
+          # 학생이 사파리(웹앱)에 남는다. (src/lib/native.ts 의 NATIVE_AUTH_SCHEME)
+          PLIST="$CM_BUILD_DIR/ios/App/App/Info.plist"
+
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" "$PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string com.haksup.haksupApp" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string haksup" "$PLIST"
+
+          echo "등록된 URL 스킴:"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" "$PLIST"
+
       - name: Generate iOS app icon
         script: |
           echo "Using new app icon:"

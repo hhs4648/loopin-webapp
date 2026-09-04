@@ -40,6 +40,18 @@ export function AuthCallbackScreen() {
     if (startedRef.current) return
     startedRef.current = true
 
+    /*
+      **먼저 실패부터 본다.** provider나 Supabase가 거절하면 `?error=`를 달고 돌아온다
+      (앱에서는 `NativeAuthDeepLink`가 그 문구를 같은 형태로 붙여 보낸다).
+      이걸 안 보면 세션 확인을 20번 헛돌린 뒤에야, 그것도 원인 없이 실패한다.
+    */
+    const failure = new URLSearchParams(window.location.search).get('error')
+    if (failure) {
+      setErrorDetail(failure)
+      setFailed(true)
+      return
+    }
+
     void (async () => {
       /*
         `detectSessionInUrl`이 코드를 교환하는 데 한 틱 이상 걸린다.

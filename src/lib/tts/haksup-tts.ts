@@ -1,5 +1,6 @@
 import { getSupabaseEnv } from '../sync/supabase-client'
 import audioManifest from './audio-manifest.json'
+import audioHashes from './audio-hashes.json'
 import { PRELOAD_ENGLISH } from './preload-texts'
 
 export type HaksupTtsLang = 'en' | 'ko'
@@ -43,6 +44,30 @@ const staticAudio = audioManifest as Record<string, string>
 function staticAudioUrl(text: string, lang: HaksupTtsLang): string | null {
   const file = staticAudio[`${lang}:${normalizeText(text)}`]
   return file ? `/assets/audio/${file}` : null
+}
+
+/**
+ * **평문을 안 남기고 미리 만들어 둔 음성.**
+ *
+ * 교과서 본문은 저작권 때문에 문제은행에 싣지 않고 교사가 직접 입력한다. 그런데 교사가
+ * 치는 문장은 결국 원문 그대로라, 음성만 미리 뽑아 두면 Edge Function을 한 번도 안 친다.
+ * 위 `audio-manifest.json`은 **키가 평문**이라 여기 쓰면 본문을 배포 번들에 그대로 싣는
+ * 꼴이 된다 — 그래서 그런 문장은 `audio-hashes.json`에 **파일명(=해시)만** 넣고,
+ * 재생 직전에 해시를 계산해 맞춰 본다.
+ *
+ * 해시는 비동기(`crypto.subtle`)라 평문 매니페스트보다 한 틱 늦고, 보안 컨텍스트가 아니면
+ * 아예 못 쓴다. 그래서 **평문 매니페스트를 먼저 보고** 여기로 온다.
+ */
+const staticAudioFiles = new Set(audioHashes as string[])
+
+async function prebuiltByHashUrl(
+  text: string,
+  lang: HaksupTtsLang,
+): Promise<string | null> {
+  const hex = await sha1Hex(`${lang}:${normalizeText(text)}`)
+  if (!hex) return null
+  const name = `${lang}-${hex.slice(0, 16)}.mp3`
+  return staticAudioFiles.has(name) ? `/assets/audio/${name}` : null
 }
 
 /**
@@ -218,6 +243,16 @@ async function getAudioUrl(text: string, lang: HaksupTtsLang): Promise<string> {
   if (prebuilt) {
     blobUrlCache.set(key, prebuilt)
     return prebuilt
+  }
+
+  /*
+    평문 매니페스트에 없으면 해시로 한 번 더 본다 — 교과서 본문처럼 텍스트는 안 싣고
+    음성만 갖고 있는 것들이 여기서 잡힌다. 네트워크는 안 탄다(이미 받은 목록과 대조).
+  */
+  const prebuiltByHash = await prebuiltByHashUrl(text, lang)
+  if (prebuiltByHash) {
+    blobUrlCache.set(key, prebuiltByHash)
+    return prebuiltByHash
   }
 
   /*

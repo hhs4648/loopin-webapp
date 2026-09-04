@@ -11,6 +11,11 @@ export interface AuthUser {
   schoolName?: string
   memberType?: MemberType
   onboardingCompleted: boolean
+  /**
+   * 선생님이 학생 화면을 직접 보려고 잠깐 들어온 상태.
+   * 소셜 계정이 아니라 **익명 세션**이므로 설정에서 「연동 계정」을 그대로 보여 주면 거짓말이 된다.
+   */
+  temporary?: boolean
 }
 
 const AUTH_KEY = 'haksup_auth'
@@ -54,6 +59,32 @@ export function clearAuth(): void {
  */
 export function createDevUser(): AuthUser {
   return { id: 'dev-local', provider: 'kakao', onboardingCompleted: false }
+}
+
+/**
+ * **임시 학생** — 선생님이 학생 쪽을 직접 보려고 들어갈 때 쓰는 별개 신원.
+ *
+ * 선생님 계정 그대로 학생으로 들어갈 수 없다. `enroll_with_invite_code`가
+ * `profiles.role = 'student'`만 받기 때문이다(001). 역할을 학생으로 바꿔 버리면
+ * **같은 uid를 쓰는 선생님 계정이 망가진다** — 두 앱이 프로필 한 행을 공유한다.
+ * 그래서 로그아웃하고 새 익명 세션으로 들어간다. 선생님 계정은 서버에 그대로 있으므로
+ * 다시 소셜 로그인하면 선생님 화면으로 돌아온다.
+ *
+ * `id`는 자리표시자다. 실제 uid는 `ensureStudentSession()`이 만들고, 서버 조회는
+ * 전부 그 uid로 한다(`createDevUser`와 같은 방식).
+ */
+export function createTemporaryStudent(): AuthUser {
+  const next: AuthUser = {
+    id: 'temp-student',
+    // 익명 세션이라 provider가 없다. 타입을 맞추려는 자리표시자이고,
+    // 화면에는 `temporary`를 보고 「임시 참여」로 표시한다.
+    provider: 'kakao',
+    memberType: 'student',
+    onboardingCompleted: false,
+    temporary: true,
+  }
+  saveAuth(next)
+  return next
 }
 
 /**
