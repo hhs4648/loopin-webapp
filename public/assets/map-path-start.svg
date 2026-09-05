@@ -9,37 +9,23 @@
      구 맵 실측: 길이 프레임 x≈55(중심선)에서 시작해 깃발(x 33~86)과 겹친다.
      반복 곡선 그대로면 x=80에서 시작해 깃발 오른쪽에 떠 있는 것처럼 보인다.
      시작점을 −25 옮기고 그 이동량을 뒤로 갈수록 0으로 줄여
-     (−25 → −22 → −18 → −13.5 → −13 → −10 → −7 → −5 → −3 → −1 → 0)
-     **주기 끝에서는 반복 곡선과 정확히 일치**시킨다. 그래야 다음 타일과 이음새가 안 어긋난다.
+     주기 끝에서는 반복 곡선과 정확히 일치시킨다.
 
   3) **상단 패딩 40px** (`viewBox` y = 29.0667−40).
-     viewBox 윗변을 곡선 시작 y에 딱 맞추면 둥근 캡 윗반 + 흰 글로우가 잘려
-     출발선에 白い 사각 이음새·얇은 길로 보인다(2026-08-08). 패딩만큼 위로 열어
-     캡·글로우를 온전히 담고, 캔버스에서는 `MAP_PATH_START_PAD`만큼 위에 배치한다.
+     둥근 캡이 잘리지 않게. (예전 흰 글로우용이었으나 캡용으로 유지)
 
-  y 좌표에 세로 배율 0.929424가 미리 반영돼 있다 — 이유는 `map-path-tile.svg` 주석 참고
-  (비균등 scale 을 쓰면 수평 구간의 획이 얇아진다).
+  4) **흰 글로우(테두리처럼 보이던 블러) 없음** (2026-09-05).
 
-  앞에 직선(리드인)을 덧대는 방식은 쓰지 말 것 — 곡선 시작부가 이미 거의 수평이라
-  캐릭터 밑에 납작한 가로 막대가 생기고 끝이 꺾여 「ㄱ자」가 된다(시도했다 되돌림).
+  y 좌표에 세로 배율 0.929424가 미리 반영돼 있다 — 이유는 `map-path-tile.svg` 주석 참고.
+
   이 파일을 고치면 `MAIN_HOME_ASSETS`의 `?v=` 숫자도 올릴 것.
 -->
 <defs>
-  <filter id="glow" filterUnits="userSpaceOnUse" x="-60" y="-520" width="513" height="1420" color-interpolation-filters="sRGB">
-    <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-    <feGaussianBlur stdDeviation="10"/>
-    <feComposite in2="hardAlpha" operator="out"/>
-    <feColorMatrix type="matrix" values="0 0 0 0 0.988995 0 0 0 0 0.988995 0 0 0 0 0.988995 0 0 0 1 0"/>
-    <feBlend mode="normal" in2="BackgroundImageFix" result="shadow"/>
-    <feBlend mode="normal" in="SourceGraphic" in2="shadow"/>
-  </filter>
   <path id="p-first" fill="none" stroke="#FFF59D" stroke-width="16" stroke-linecap="round"
     d="M16 29.0667C41.5 25.8137 82 27.4908 106 83.2543C112 98.4144 127 109.1461 145 116.732C202 144.2379 277 176.1623 284 233.7264C287.573 261.8281 275.516 283.027 223 282.1488C111.8 280.29 47.6667 340.7122 41 370.9147"/>
   <path id="p" fill="none" stroke="#FFF59D" stroke-width="16" stroke-linecap="round"
     d="M41 29.0667C63.5 25.8137 99.9 27.4908 119.5 83.2543C124.828 98.4144 137.014 109.1461 152.086 116.732C206.723 144.2379 280.176 176.1623 285.147 233.7264C287.573 261.8281 275.516 283.027 223 282.1488C111.8 280.29 47.6667 340.7122 41 370.9147"/>
 </defs>
-<g filter="url(#glow)">
-  <use href="#p-first" transform="translate(39,0)"/>
-  <use href="#p" transform="translate(39,341.848)"/>
-</g>
+<use href="#p-first" transform="translate(39,0)"/>
+<use href="#p" transform="translate(39,341.848)"/>
 </svg>

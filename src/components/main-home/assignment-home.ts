@@ -18,14 +18,15 @@ export const MAIN_HOME_ASSETS = {
    * 맵 길 — **벡터 타일 1장**을 세로 반복해 맵 전체를 만든다(`MAP_PATH_*`).
    * 6.2MB SVG(안에 360px 폭 PNG가 박혀 있었다)를 대체한다.
    */
-  mapPathTile: '/assets/map-path-tile.svg?v=4',
+  mapPathTile: '/assets/map-path-tile.svg?v=5',
   /**
    * 길의 첫 주기 — 둥근 캡으로 시작한다(반복 타일은 위아래가 이어져 있어 캡이 없다).
+   * `?v=6` — 흰 글로우(테두리처럼 보이던 외곽 블러) 제거.
    *
    * **이 SVG들을 고치면 `?v=` 숫자를 반드시 올릴 것.** 브라우저가 파일을 캐시해서
    * 고쳐도 화면이 그대로인 일이 실제로 있었다(2026-08-08, 지운 리드인이 계속 보였다).
    */
-  mapPathStart: '/assets/map-path-start.svg?v=5',
+  mapPathStart: '/assets/map-path-start.svg?v=6',
   /** @deprecated Figma 원본 export — 렌더에는 `mapPathTile`을 쓴다 (좌표 변환·이음새 처리 포함) */
   mapPathSource: '/assets/map-path.svg',
   /** @deprecated 성은 색을 입혀야 해서 `MapCastleSprite`(인라인 SVG)로 그린다 */

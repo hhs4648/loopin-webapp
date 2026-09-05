@@ -51,7 +51,7 @@ export function MainHomeMapCanvas() {
         background: `linear-gradient(180deg, ${MAP_GRASS_TOP} 0%, ${MAP_GRASS_BOTTOM} ${pct(GRASS_FADE_H)})`,
       }}
     >
-      {/* 길 시작 — 둥근 캡(+상단 글로우 패딩). 이 위쪽에는 길을 그리지 않는다 */}
+      {/* 길 시작 — 둥근 캡(+상단 패딩). 이 위쪽에는 길을 그리지 않는다 */}
       <div
         className="absolute inset-x-0"
         style={{

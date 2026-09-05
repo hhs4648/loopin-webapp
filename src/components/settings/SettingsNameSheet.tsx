@@ -67,14 +67,17 @@ export function SettingsNameSheet({
         }}
       />
       <form
-        className="shrink-0 rounded-t-[24px] bg-white px-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-4 shadow-[0_-10px_24px_rgba(0,0,0,0.08)]"
+        className="shrink-0 rounded-t-[28px] bg-white px-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-3 shadow-[0_-12px_32px_rgba(15,23,42,0.12)]"
         onSubmit={(event) => {
           event.preventDefault()
           void handleSubmit()
         }}
       >
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#E5E7EB]" aria-hidden />
-        <h2 className="mb-3 font-['Pretendard',sans-serif] text-[18px] font-bold text-[#111111]">
+        <div
+          className="mx-auto mb-4 h-1.5 w-11 rounded-full bg-gradient-to-r from-[#2AA3FF]/30 via-[#B2F165]/80 to-[#2AA3FF]/30"
+          aria-hidden
+        />
+        <h2 className="mb-3 font-sans text-[20px] font-extrabold tracking-[-0.03em] text-[#0B1220]">
           닉네임 변경
         </h2>
 
@@ -93,12 +96,12 @@ export function SettingsNameSheet({
             setName(sanitizeNameInput(event.target.value))
             setError(null)
           }}
-          className="h-[52px] w-full rounded-[14px] bg-[#F7F8FA] px-4 font-['Pretendard',sans-serif] text-[16px] font-semibold text-[#111111] outline-none placeholder:font-medium placeholder:text-[#A5ADBA] focus:ring-2 focus:ring-[#2AA3FF]"
+          className="h-[54px] w-full rounded-[16px] bg-[#F3F6FA] px-4 font-sans text-[17px] font-bold tracking-[-0.02em] text-[#0B1220] outline-none placeholder:font-medium placeholder:text-[#94A3B8] focus:bg-white focus:ring-2 focus:ring-[#2AA3FF]"
         />
 
         <p
-          className={`mt-2 min-h-[18px] px-1 font-['Pretendard',sans-serif] text-[13px] font-medium ${
-            error ? 'text-[#FF5A5A]' : 'text-[#8C94A1]'
+          className={`mt-2 min-h-[18px] px-1 font-sans text-[13px] font-medium ${
+            error ? 'text-[#FF5A5A]' : 'text-[#64748B]'
           }`}
           role={error ? 'alert' : undefined}
         >
@@ -109,7 +112,7 @@ export function SettingsNameSheet({
         <div className="mt-3 flex gap-2 pb-2">
           <button
             type="button"
-            className="h-[52px] flex-1 rounded-[14px] bg-[#F7F8FA] font-['Pretendard',sans-serif] text-[16px] font-bold text-[#667085]"
+            className="h-[54px] flex-1 rounded-[16px] bg-[#F3F6FA] font-sans text-[16px] font-bold text-[#475569]"
             onClick={() => {
               playTapSfx()
               onClose()
@@ -120,7 +123,7 @@ export function SettingsNameSheet({
           <button
             type="submit"
             disabled={!canSave}
-            className="h-[52px] flex-1 rounded-[14px] bg-[#2AA3FF] font-['Pretendard',sans-serif] text-[16px] font-bold text-white disabled:opacity-40"
+            className="h-[54px] flex-1 rounded-[16px] bg-[#2AA3FF] font-sans text-[16px] font-extrabold text-white shadow-[0_6px_16px_rgba(42,163,255,0.35)] disabled:opacity-40 disabled:shadow-none"
           >
             {saving ? '저장 중…' : '저장'}
           </button>

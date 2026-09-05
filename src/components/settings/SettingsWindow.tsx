@@ -41,8 +41,8 @@ import {
   SETTINGS_PROFILE_BADGE_CLASS,
   SETTINGS_PROFILE_NAME,
   SETTINGS_PROFILE_NAME_CLASS,
-  SETTINGS_PROFILE_NAME_PATCH,
   SETTINGS_PROFILE_STRIP,
+  SETTINGS_PROFILE_STRIP_BG,
   SETTINGS_WINDOW_ASSET,
   formatSettingsGradeLabel,
   openSettingsContactMail,
@@ -228,6 +228,7 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
           aria-hidden
           draggable={false}
           className="pointer-events-none select-none"
+          decoding="async"
           style={settingsWindowImageStyle()}
         />
 
@@ -243,32 +244,21 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
           aria-hidden
         />
 
-        {/* 베이크 이름·연동 뱃지 — 하늘 복제 패치로 가린 뒤 온보딩/로그인 값 */}
-        <img
-          src={SETTINGS_PROFILE_NAME_PATCH}
-          alt=""
-          aria-hidden
-          draggable={false}
-          className="pointer-events-none absolute z-[11] select-none"
+        {/* 베이크 이름·연동 뱃지 — 하늘톤으로 가린 뒤 온보딩/로그인 값 */}
+        <div
+          className="pointer-events-none absolute z-[11]"
           style={{
             ...stripStyle,
-            objectFit: 'fill',
+            background: SETTINGS_PROFILE_STRIP_BG,
           }}
+          aria-hidden
         />
         <div
           className="pointer-events-none absolute z-[12] flex items-center justify-end overflow-hidden"
           style={nameStyle}
           aria-hidden
         >
-          <span
-            className={SETTINGS_PROFILE_NAME_CLASS}
-            style={{
-              WebkitFontSmoothing: 'antialiased',
-              MozOsxFontSmoothing: 'grayscale',
-            }}
-          >
-            {displayName}
-          </span>
+          <span className={SETTINGS_PROFILE_NAME_CLASS}>{displayName}</span>
         </div>
         <div
           className="pointer-events-none absolute z-[12] flex items-center justify-center"
@@ -281,51 +271,32 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
                 ? 'bg-[#EEF1F5] text-[#5A6472]'
                 : providerBadgeClass(provider)
             }`}
-            style={{
-              WebkitFontSmoothing: 'antialiased',
-              MozOsxFontSmoothing: 'grayscale',
-            }}
           >
             {providerLabel}
           </span>
         </div>
 
-        {/* 계정 행 우측 값 — 닉네임·연동·학년 동일 18px · 좌측 라벨과 세로 맞춤 */}
+        {/* 계정 행 우측 값 — 닉네임·연동·학년 */}
         <div
           className="pointer-events-none absolute z-[12] flex items-center justify-end bg-white"
           style={nickStyle}
           aria-hidden
         >
-          <span
-            className={SETTINGS_ACCOUNT_VALUE_CLASS}
-            style={{ WebkitFontSmoothing: 'antialiased' }}
-          >
-            {displayName}
-          </span>
+          <span className={SETTINGS_ACCOUNT_VALUE_CLASS}>{displayName}</span>
         </div>
         <div
           className="pointer-events-none absolute z-[12] flex items-center justify-end bg-white"
           style={linkedStyle}
           aria-hidden
         >
-          <span
-            className={SETTINGS_ACCOUNT_VALUE_CLASS}
-            style={{ WebkitFontSmoothing: 'antialiased' }}
-          >
-            {providerLabel}
-          </span>
+          <span className={SETTINGS_ACCOUNT_VALUE_CLASS}>{providerLabel}</span>
         </div>
         <div
           className="pointer-events-none absolute z-[12] flex items-center justify-end bg-white"
           style={gradeStyle}
           aria-hidden
         >
-          <span
-            className={SETTINGS_ACCOUNT_VALUE_CLASS}
-            style={{ WebkitFontSmoothing: 'antialiased' }}
-          >
-            {gradeLabel}
-          </span>
+          <span className={SETTINGS_ACCOUNT_VALUE_CLASS}>{gradeLabel}</span>
         </div>
 
         <div className="pointer-events-none absolute inset-0 z-10">

@@ -20,6 +20,10 @@ import {
   getStoredAuth,
   resetMemberType,
 } from '../../lib/auth'
+import {
+  SETTINGS_GRADE_OPTIONS,
+  type SettingsMiddleGradeId,
+} from '../../components/settings/settings'
 import { upsertStudentProfile } from '../../lib/sync/student-api'
 
 const STUDENT_ONBOARDING_ASSETS = [
@@ -29,13 +33,21 @@ const STUDENT_ONBOARDING_ASSETS = [
   '/assets/onboarding-student-04-grade.svg?v=2',
 ] as const
 
-const GRADE_ROWS = [
-  { id: 'elementary', cx: 32, cy: 244, label: '초등학생' },
-  { id: 'middle', cx: 32, cy: 318, label: '중학생' },
-  { id: 'high', cx: 32, cy: 392, label: '고등학생' },
-] as const
-
-type GradeId = (typeof GRADE_ROWS)[number]['id']
+/**
+ * 시안(`onboarding-student-04-grade.svg`) 문구: 1학년 / 2학년 / 3학년.
+ * 저장값은 설정 「학년 변경」과 동일하게 `중학교 n학년` (`SETTINGS_GRADE_OPTIONS`).
+ * (예전 elementary/middle/high → 초등/중등/고등 저장은 설정과 어긋나서 폐기)
+ */
+const GRADE_ROWS: ReadonlyArray<{
+  id: SettingsMiddleGradeId
+  cx: number
+  cy: number
+  label: string
+}> = [
+  { id: '1', cx: 32, cy: 244, label: '1학년' },
+  { id: '2', cx: 32, cy: 318, label: '2학년' },
+  { id: '3', cx: 32, cy: 392, label: '3학년' },
+]
 
 export function StudentOnboardingScreen() {
   const navigate = useNavigate()
@@ -49,7 +61,7 @@ export function StudentOnboardingScreen() {
   const [birthYear, setBirthYear] = useState('')
   const [birthMonth, setBirthMonth] = useState('')
   const [birthDay, setBirthDay] = useState('')
-  const [grade, setGrade] = useState<GradeId | null>(null)
+  const [grade, setGrade] = useState<SettingsMiddleGradeId | null>(null)
 
   useBackNavigation(() => {
     if (step > 0) {
@@ -125,14 +137,9 @@ export function StudentOnboardingScreen() {
       birthYear && birthMonth && birthDay
         ? `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
         : undefined
-    const gradeLabel =
-      grade === 'elementary'
-        ? '초등'
-        : grade === 'middle'
-          ? '중등'
-          : grade === 'high'
-            ? '고등'
-            : undefined
+    const gradeLabel = SETTINGS_GRADE_OPTIONS.find(
+      (option) => option.id === grade,
+    )?.value
 
     void (async () => {
       await upsertStudentProfile({

@@ -23,6 +23,9 @@
     --app-vw: 100%;
     --app-v-top: 0px;
     --app-v-left: 0px;
+    /* 키보드가 입력칸을 가릴 때만 프레임을 위로 민다 (크기는 유지) */
+    --keyboard-inset: 0px;
+    --keyboard-shift: 0px;
   }
 
   html,
@@ -84,6 +87,9 @@
   background: #ffffff;
   container-type: inline-size;
   container-name: app;
+  /* 키보드가 열려도 스케일은 유지하고, 포커스 입력칸이 보이게만 올림 */
+  transform: translateY(calc(-1 * var(--keyboard-shift, 0px)));
+  transition: transform 160ms ease-out;
 }
 
 .screen {

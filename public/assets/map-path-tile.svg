@@ -5,33 +5,19 @@
 
   이 파일이 원본과 다른 점:
   1) 끝점 x를 28 → 41로 당겨 시작점과 맞췄다. 안 그러면 이음새마다 13px 턱이 생긴다.
-  2) 곡선을 앞뒤 주기까지 3벌 그린다. 글로우(가우시안 블러)가 타일 경계에서 잘리지 않고
-     이웃 타일과 이어지게 하려는 것 — 1벌만 그리면 이음새에 어두운 띠가 보인다.
+  2) **흰 글로우(가우시안 블러) 없음** (2026-09-05). 예전엔 테두리처럼 보이는 외곽선이
+     생겼다. 지금은 `#FFF59D` 획만 그린다. 글로우가 없으므로 이웃 주기 복사본도 불필요.
   3) **y 좌표에 세로 배율 0.929424를 미리 반영해 두었다.**
      `transform="scale(1, 0.929424)"` 로 눌러 그리면 stroke 에도 비균등 배율이 걸려
-     **수평 구간은 16×0.929=14.9로 얇아지고 수직 구간만 16으로 남는다.** 맵에서 가장 수평인
-     출발 구간이 눈에 띄게 얇아 보였던 원인이다(2026-08-08 사용자 지적). 좌표를 미리 계산해
-     넣으면 이동(translate)만 남아 획이 어디서나 정확히 16이다.
+     수평 구간이 얇아진다. 좌표를 미리 계산해 넣으면 획이 어디서나 16.
      y' = 29.0667 + (y − 29.0667) × 0.929424
 
   좌표·주기는 `assignment-home.ts`의 MAP_PATH_* 와 짝이므로 한쪽만 고치지 말 것.
   이 파일을 고치면 `MAIN_HOME_ASSETS`의 `?v=` 숫자도 올릴 것.
 -->
 <defs>
-  <filter id="glow" filterUnits="userSpaceOnUse" x="-60" y="-520" width="513" height="1420" color-interpolation-filters="sRGB">
-    <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-    <feGaussianBlur stdDeviation="10"/>
-    <feComposite in2="hardAlpha" operator="out"/>
-    <feColorMatrix type="matrix" values="0 0 0 0 0.988995 0 0 0 0 0.988995 0 0 0 0 0.988995 0 0 0 1 0"/>
-    <feBlend mode="normal" in2="BackgroundImageFix" result="shadow"/>
-    <feBlend mode="normal" in="SourceGraphic" in2="shadow"/>
-  </filter>
   <path id="p" fill="none" stroke="#FFF59D" stroke-width="16" stroke-linecap="round"
     d="M41 29.0667C63.5 25.8137 99.9 27.4908 119.5 83.2543C124.828 98.4144 137.014 109.1461 152.086 116.732C206.723 144.2379 280.176 176.1623 285.147 233.7264C287.573 261.8281 275.516 283.027 223 282.1488C111.8 280.29 47.6667 340.7122 41 370.9147"/>
 </defs>
-<g filter="url(#glow)">
-  <use href="#p" transform="translate(39,-341.848)"/>
-  <use href="#p" transform="translate(39,0)"/>
-  <use href="#p" transform="translate(39,341.848)"/>
-</g>
+<use href="#p" transform="translate(39,0)"/>
 </svg>

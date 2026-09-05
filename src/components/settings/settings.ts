@@ -8,7 +8,7 @@
  * `?v=22` — 맨 아래 **가짜 홈 인디케이터(검은 막대)를 지웠다.** iOS가 그 자리에
  * 자기 것을 그려서 두 겹이 되고, 안드로이드에서는 있지도 않은 막대가 붙는다.
  */
-export const SETTINGS_WINDOW_ASSET = '/assets/settings-window.svg?v=22'
+export const SETTINGS_WINDOW_ASSET = '/assets/settings-window.svg?v=23'
 
 /**
  * 표시 영역: 에셋 전체 폭 · 하단 베이크 내비(≈81px)는 패널 `overflow`로 잘림.
@@ -23,18 +23,19 @@ export const SETTINGS_SOURCE = {
   contentH: 771,
 } as const
 
-/** 설정 본문 패널(내비 위)에 크롭 이미지를 가로·세로 꽉 채움 */
+/** 설정 본문 패널에 에셋을 올릴 때 — **가로·세로를 따로 늘리지 않는다.**
+ * `object-fit: fill`이면 패널 비율과 SVG(401×852)가 어긋나 글자가 납작해 보인다.
+ */
 export function settingsWindowImageStyle() {
-  const { canvasW, canvasH, contentX, contentY, contentW, contentH } =
-    SETTINGS_SOURCE
   return {
     position: 'absolute' as const,
-    width: `${(canvasW / contentW) * 100}%`,
-    height: `${(canvasH / contentH) * 100}%`,
-    left: `${(-contentX / contentW) * 100}%`,
-    top: `${(-contentY / contentH) * 100}%`,
+    width: '100%',
+    height: 'auto',
+    aspectRatio: `${SETTINGS_SOURCE.canvasW} / ${SETTINGS_SOURCE.canvasH}`,
+    left: 0,
+    top: 0,
     maxWidth: 'none',
-    objectFit: 'fill' as const,
+    objectFit: 'contain' as const,
   }
 }
 
@@ -94,7 +95,7 @@ export const SETTINGS_DISPLAY_NAME_MAX = 5
 
 /**
  * 베이크된 이름·연동 뱃지를 가리는 패치.
- * 단색 사각은 카드 그라데이션과 이음새가 생겨 `--`처럼 보였음 → 옆 하늘 복제 PNG.
+ * 예전 PNG(266B)를 늘려 쓰면 뭉개져 보였다 → 카드 하늘톤 그라데이션으로 덮는다.
  */
 export const SETTINGS_PROFILE_STRIP = {
   x: 110,
@@ -103,38 +104,41 @@ export const SETTINGS_PROFILE_STRIP = {
   h: 34,
 } as const
 
+export const SETTINGS_PROFILE_STRIP_BG =
+  'linear-gradient(180deg, #EAF4FF 0%, #E3EFFF 55%, #DEECFF 100%)'
+
+/** @deprecated 저해상 PNG — `SETTINGS_PROFILE_STRIP_BG` 사용 */
 export const SETTINGS_PROFILE_NAME_PATCH =
   '/assets/settings-profile-name-patch.png?v=1'
 
-/** @deprecated 단색 덮개 — `SETTINGS_PROFILE_NAME_PATCH` 사용 */
+/** @deprecated 단색 덮개 — `SETTINGS_PROFILE_STRIP_BG` 사용 */
 export const SETTINGS_PROFILE_COVER = '#E5F0FF'
 
 /**
- * 프로필 이름 — 시안 글리프 높이 ≈19px → 17px bold.
- * 뱃지 왼쪽, 짧은 이름은 우측 정렬.
+ * 프로필 이름 — 시안보다 조금 또렷·굵게 (생동감).
  */
 export const SETTINGS_PROFILE_NAME = {
   x: 114,
-  y: 152,
+  y: 150,
   w: 68,
-  h: 24,
+  h: 26,
 } as const
 
-/** 연동 뱃지 (카카오/애플/구글). 시안 글자 높이 ≈10px */
+/** 연동 뱃지 (카카오/애플/구글) */
 export const SETTINGS_PROFILE_BADGE = {
   x: 185,
-  y: 154,
-  w: 70,
-  h: 20,
+  y: 153,
+  w: 72,
+  h: 22,
 } as const
 
-/** 프로필 이름 타이포 — 시안 글리프 ≈19px */
+/** 프로필 이름 타이포 */
 export const SETTINGS_PROFILE_NAME_CLASS =
-  "truncate font-['Pretendard',sans-serif] text-[18px] font-bold leading-none tracking-[-0.02em] text-[#111111]"
+  "truncate font-sans text-[20px] font-extrabold leading-none tracking-[-0.04em] text-[#0B1220]"
 
 /** 연동 뱃지 타이포 */
 export const SETTINGS_PROFILE_BADGE_CLASS =
-  'inline-flex h-[18px] min-w-[54px] items-center justify-center rounded-full px-2 text-[11px] font-semibold leading-none'
+  'inline-flex h-[20px] min-w-[56px] items-center justify-center rounded-full px-2.5 text-[11px] font-bold leading-none shadow-[0_1px_2px_rgba(15,23,42,0.12)]'
 
 /**
  * 계정 1줄 행 — 쉐브론 세로 중심 (401×852 시안).
@@ -177,9 +181,10 @@ export const SETTINGS_GRADE_VALUE = {
 
 /**
  * 계정 행 우측 값 타이포 — 닉네임·연동·학년 동일.
+ * 흐린 회색 medium → 또렷한 slate + semibold (베이크 라벨과 대비).
  */
 export const SETTINGS_ACCOUNT_VALUE_CLASS =
-  "truncate font-['Pretendard',sans-serif] text-[18px] font-medium leading-none tracking-[-0.01em] text-[#8C94A1]"
+  "truncate font-sans text-[17px] font-semibold leading-none tracking-[-0.02em] text-[#334155]"
 
 /** 시안에 구워진 기본 학년 문구 (프로필 grade 없을 때) */
 export const SETTINGS_DEFAULT_GRADE_LABEL = '중학교 3학년'
@@ -230,14 +235,22 @@ export const SETTINGS_LINKED_HIT = {
   h: 50,
 } as const
 
+/** 예전 온보딩·데모가 남긴 학교급/영문 id — 중n을 지어내지 않는다 */
+const LEGACY_SCHOOL_LEVEL_LABEL: Record<string, string> = {
+  초등: '초등',
+  중등: '중등',
+  고등: '고등',
+  elementary: '초등',
+  middle: '중등',
+  high: '고등',
+}
+
 /** 프로필/온보딩 grade 문자열 → 설정 표시용 */
 export function formatSettingsGradeLabel(grade?: string | null): string {
   const raw = grade?.trim()
   if (!raw) return SETTINGS_DEFAULT_GRADE_LABEL
-  // 학교급만 있는 온보딩 값 — 연도 미정
-  if (raw === '초등' || raw === '중등' || raw === '고등') {
-    return SETTINGS_DEFAULT_GRADE_LABEL
-  }
+  const legacy = LEGACY_SCHOOL_LEVEL_LABEL[raw]
+  if (legacy) return legacy
   // 이미 「중학교 n학년」형태면 그대로
   if (raw.includes('학년')) return raw
   // `중3` / `중3학년` / `3` 등
@@ -252,7 +265,7 @@ export function parseSettingsGradeId(
 ): SettingsMiddleGradeId | null {
   const raw = grade?.trim()
   if (!raw) return null
-  if (raw === '초등' || raw === '중등' || raw === '고등') return null
+  if (raw in LEGACY_SCHOOL_LEVEL_LABEL) return null
   const m = raw.match(/([123])/)
   if (!m) return null
   return m[1] as SettingsMiddleGradeId

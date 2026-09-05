@@ -49,7 +49,6 @@ export function SettingsAccountSheet({
       setError(result.message ?? '탈퇴에 실패했어요. 잠시 후 다시 시도해 주세요.')
       setDeleting(false)
     }
-    // 성공하면 부모가 화면을 통째로 바꾼다 — 여기서 상태를 되돌릴 필요가 없다
   }
 
   return (
@@ -69,55 +68,58 @@ export function SettingsAccountSheet({
           onClose()
         }}
       />
-      <div className="shrink-0 rounded-t-[24px] bg-white px-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-4 shadow-[0_-10px_24px_rgba(0,0,0,0.08)]">
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#E5E7EB]" aria-hidden />
+      <div className="shrink-0 rounded-t-[28px] bg-white px-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-3 shadow-[0_-12px_32px_rgba(15,23,42,0.12)]">
+        <div
+          className="mx-auto mb-4 h-1.5 w-11 rounded-full bg-gradient-to-r from-[#2AA3FF]/30 via-[#B2F165]/80 to-[#2AA3FF]/30"
+          aria-hidden
+        />
 
         {confirming ? (
           <>
-            <h2 className="mb-2 font-['Pretendard',sans-serif] text-[18px] font-bold text-[#111111]">
+            <h2 className="mb-2 font-sans text-[20px] font-extrabold tracking-[-0.03em] text-[#0B1220]">
               정말 탈퇴할까요?
             </h2>
-            <p className="mb-3 font-['Pretendard',sans-serif] text-[14px] font-medium leading-relaxed text-[#5A6472]">
-              아래가 <b className="font-bold text-[#111111]">모두 지워지고 되돌릴 수 없어요.</b>
+            <p className="mb-3 font-sans text-[14px] font-medium leading-relaxed text-[#475569]">
+              아래가{' '}
+              <b className="font-extrabold text-[#0B1220]">모두 지워지고 되돌릴 수 없어요.</b>
             </p>
-            <ul className="mb-3 flex flex-col gap-1 rounded-[14px] bg-[#F7F8FA] px-4 py-3 font-['Pretendard',sans-serif] text-[14px] font-medium text-[#5A6472]">
+            <ul className="mb-3 flex flex-col gap-1 rounded-[16px] bg-[#F3F6FA] px-4 py-3 font-sans text-[14px] font-semibold text-[#475569]">
               <li>· 이름·학년 등 내 정보</li>
               <li>· 가입한 반과 받은 과제</li>
               <li>· 지금까지 푼 기록과 점수·칭찬 기록</li>
             </ul>
-            <p className="mb-3 font-['Pretendard',sans-serif] text-[13px] font-medium leading-relaxed text-[#8C94A1]">
+            <p className="mb-3 font-sans text-[13px] font-medium leading-relaxed text-[#64748B]">
               선생님 화면에서도 내 기록이 사라져요. 같은 계정으로 다시 가입해도
               예전 기록은 되살릴 수 없어요.
             </p>
           </>
         ) : (
           <>
-            <h2 className="mb-3 font-['Pretendard',sans-serif] text-[18px] font-bold text-[#111111]">
+            <h2 className="mb-3 font-sans text-[20px] font-extrabold tracking-[-0.03em] text-[#0B1220]">
               연동 계정
             </h2>
-            <div className="mb-3 flex h-[52px] items-center justify-between rounded-[14px] bg-[#F7F8FA] px-4 font-['Pretendard',sans-serif] text-[16px]">
-              <span className="font-semibold text-[#111111]">현재 로그인</span>
-              <span className="font-semibold text-[#2AA3FF]">{providerLabel}</span>
+            <div className="mb-3 flex h-[54px] items-center justify-between rounded-[16px] bg-[#F3F6FA] px-4 font-sans text-[16px]">
+              <span className="font-bold text-[#0B1220]">현재 로그인</span>
+              <span className="font-extrabold text-[#2AA3FF]">{providerLabel}</span>
             </div>
             {temporary ? (
-              <p className="mb-3 font-['Pretendard',sans-serif] text-[13px] font-medium leading-relaxed text-[#8C94A1]">
-                지금은 <b className="font-bold">임시 학생</b>으로 참여 중이에요. 로그아웃하면
-                이 기록은 다시 볼 수 없고, 선생님으로 돌아가려면 원래 계정으로 로그인하면 돼요.
+              <p className="mb-3 font-sans text-[13px] font-medium leading-relaxed text-[#64748B]">
+                지금은 <b className="font-bold text-[#0B1220]">임시 학생</b>으로 참여 중이에요.
+                로그아웃하면 이 기록은 다시 볼 수 없고, 선생님으로 돌아가려면 원래 계정으로
+                로그인하면 돼요.
               </p>
             ) : (
-              <p className="mb-3 font-['Pretendard',sans-serif] text-[13px] font-medium leading-relaxed text-[#8C94A1]">
+              <p className="mb-3 font-sans text-[13px] font-medium leading-relaxed text-[#64748B]">
                 처음 가입한 방법({providerLabel})으로 계속 로그인해 주세요. 다른 방법으로
-                로그인하면 <b className="font-bold">다른 계정</b>이 되어 학습 기록이 보이지 않아요.
+                로그인하면 <b className="font-bold text-[#0B1220]">다른 계정</b>이 되어 학습
+                기록이 보이지 않아요.
               </p>
             )}
           </>
         )}
 
         {error ? (
-          <p
-            role="alert"
-            className="mb-3 font-['Pretendard',sans-serif] text-[13px] font-semibold text-[#FF5A5A]"
-          >
+          <p role="alert" className="mb-3 font-sans text-[13px] font-bold text-[#FF5A5A]">
             {error}
           </p>
         ) : null}
@@ -126,7 +128,7 @@ export function SettingsAccountSheet({
           <button
             type="button"
             disabled={deleting}
-            className="h-[52px] flex-1 rounded-[14px] bg-[#F7F8FA] font-['Pretendard',sans-serif] text-[16px] font-bold text-[#667085] disabled:opacity-40"
+            className="h-[54px] flex-1 rounded-[16px] bg-[#F3F6FA] font-sans text-[16px] font-bold text-[#475569] disabled:opacity-40"
             onClick={() => {
               playTapSfx()
               if (confirming) {
@@ -143,9 +145,9 @@ export function SettingsAccountSheet({
             type="button"
             disabled={deleting}
             aria-label={confirming ? '회원탈퇴 확정' : '회원탈퇴'}
-            className={`h-[52px] flex-1 rounded-[14px] font-['Pretendard',sans-serif] text-[16px] font-bold disabled:opacity-40 ${
+            className={`h-[54px] flex-1 rounded-[16px] font-sans text-[16px] font-extrabold disabled:opacity-40 ${
               confirming
-                ? 'bg-[#FF5A5A] text-white'
+                ? 'bg-[#FF5A5A] text-white shadow-[0_6px_16px_rgba(255,90,90,0.35)]'
                 : 'border border-[#FFD5D5] bg-white text-[#FF5A5A]'
             }`}
             onClick={() => {

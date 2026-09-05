@@ -35,12 +35,15 @@ export function SettingsGradeSheet({
           onClose()
         }}
       />
-      <div className="shrink-0 rounded-t-[24px] bg-white px-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-4 shadow-[0_-10px_24px_rgba(0,0,0,0.08)]">
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#E5E7EB]" aria-hidden />
-        <h2 className="mb-3 font-['Pretendard',sans-serif] text-[18px] font-bold text-[#111111]">
+      <div className="shrink-0 rounded-t-[28px] bg-white px-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-3 shadow-[0_-12px_32px_rgba(15,23,42,0.12)]">
+        <div
+          className="mx-auto mb-4 h-1.5 w-11 rounded-full bg-gradient-to-r from-[#2AA3FF]/30 via-[#B2F165]/80 to-[#2AA3FF]/30"
+          aria-hidden
+        />
+        <h2 className="mb-3 font-sans text-[20px] font-extrabold tracking-[-0.03em] text-[#0B1220]">
           학년 변경
         </h2>
-        <ul className="flex flex-col gap-2 pb-2">
+        <ul className="flex flex-col gap-2.5 pb-2">
           {SETTINGS_GRADE_OPTIONS.map((option) => {
             const selected = selectedId === option.id
             return (
@@ -49,10 +52,10 @@ export function SettingsGradeSheet({
                   type="button"
                   aria-label={option.shortLabel}
                   aria-pressed={selected}
-                  className={`flex h-[52px] w-full items-center justify-between rounded-[14px] px-4 font-['Pretendard',sans-serif] text-[16px] font-semibold ${
+                  className={`flex h-[54px] w-full items-center justify-between rounded-[16px] px-4 font-sans text-[16px] font-bold transition-colors ${
                     selected
-                      ? 'bg-[#E8F4FF] text-[#2AA3FF]'
-                      : 'bg-[#F7F8FA] text-[#111111]'
+                      ? 'bg-[#2AA3FF] text-white shadow-[0_6px_16px_rgba(42,163,255,0.35)]'
+                      : 'bg-[#F3F6FA] text-[#0B1220] hover:bg-[#E8F4FF]'
                   }`}
                   onClick={() => {
                     playTapSfx()
@@ -61,7 +64,7 @@ export function SettingsGradeSheet({
                 >
                   <span>{option.shortLabel}</span>
                   {selected ? (
-                    <span className="text-[14px] font-bold" aria-hidden>
+                    <span className="text-[15px] font-extrabold" aria-hidden>
                       ✓
                     </span>
                   ) : null}

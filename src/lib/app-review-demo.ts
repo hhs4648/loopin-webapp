@@ -21,7 +21,8 @@ export type AppReviewDemoLoginResult =
   | { ok: false; message: string }
 
 const DEMO_DISPLAY_NAME = '심사'
-const DEMO_GRADE = 'middle'
+/** 설정·온보딩과 동일 형식 (`중학교 n학년`) — 예전 `'middle'`은 설정에 영문으로 노출됨 */
+const DEMO_GRADE = '중학교 2학년'
 const DEMO_BIRTHDATE = '2012-06-15'
 
 /** 심사용 데모 비밀번호 — 미설정 시 `1234` */
