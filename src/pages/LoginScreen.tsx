@@ -16,7 +16,7 @@ import {
   verifyAppReviewDemoPassword,
 } from '../lib/app-review-demo'
 
-const LOGIN_ASSET = '/assets/login-screen.svg?v=4'
+const LOGIN_ASSET = '/assets/login-screen.svg?v=5'
 
 /** Figma Export: 학습 로그인 (`플래시화면.svg` 1.16MB) — Apple / 카카오 / 구글 */
 export function LoginScreen() {
