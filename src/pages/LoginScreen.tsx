@@ -16,7 +16,7 @@ import {
   verifyAppReviewDemoPassword,
 } from '../lib/app-review-demo'
 
-const LOGIN_ASSET = '/assets/login-screen.svg?v=5'
+const LOGIN_ASSET = '/assets/login-screen.svg?v=6'
 
 /** Figma Export: 학습 로그인 (`플래시화면.svg` 1.16MB) — Apple / 카카오 / 구글 */
 export function LoginScreen() {
@@ -106,6 +106,16 @@ export function LoginScreen() {
           draggable={false}
         />
 
+        {/*
+          Figma 에셋 상단에 그려진 가짜 상태바(18:00·신호 등).
+          아이폰 시스템 상태바와 겹치므로 덮는다. SVG를 래스터로 다시 굽지 않는다 —
+          캐릭터 WebP가 sharp에서 빠져 사라지기 때문이다.
+        */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 z-20 h-[5.2%] bg-[#FBFEFF]"
+        />
+
         {/* Apple — x=20.58 y=605.58 w=351.84 h=58.84 @ 393×852 */}
         <button
           type="button"
@@ -136,7 +146,7 @@ export function LoginScreen() {
             aria-label="심사용 데모 로그인"
             onClick={openAppReviewDemoPassword}
             disabled={demoPending}
-            className="absolute left-1/2 top-[3%] z-30 -translate-x-1/2 cursor-pointer rounded-full border border-[#2AA3FF]/40 bg-white/90 px-4 py-2 font-sans text-[13px] font-bold text-[#155DFC] backdrop-blur-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2AA3FF] disabled:cursor-wait disabled:opacity-70"
+            className="absolute left-1/2 top-[6.5%] z-30 -translate-x-1/2 cursor-pointer rounded-full border border-[#2AA3FF]/40 bg-white/90 px-4 py-2 font-sans text-[13px] font-bold text-[#155DFC] backdrop-blur-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2AA3FF] disabled:cursor-wait disabled:opacity-70"
           >
             {demoPending ? '데모 로그인 중…' : '심사용 데모 로그인'}
           </button>
@@ -144,7 +154,7 @@ export function LoginScreen() {
           <button
             type="button"
             onClick={handleDevLogin}
-            className="absolute left-1/2 top-[3%] z-30 -translate-x-1/2 cursor-pointer rounded-full border border-black/20 bg-white/80 px-4 py-2 font-sans text-[13px] font-bold text-[#1E242F] backdrop-blur-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2AA3FF]"
+            className="absolute left-1/2 top-[6.5%] z-30 -translate-x-1/2 cursor-pointer rounded-full border border-black/20 bg-white/80 px-4 py-2 font-sans text-[13px] font-bold text-[#1E242F] backdrop-blur-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2AA3FF]"
           >
             임시 로그인 (개발용)
           </button>

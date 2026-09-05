@@ -12,11 +12,10 @@ workflows:
         distribution_type: app_store
         bundle_identifier: com.haksup.haksupApp
 
-      # Vite는 빌드 시점에 env를 JS에 박아 넣는다.
-      # Codemagic UI → Environment variables 에서 그룹명 `haksup_vite` 로 넣을 것:
-      #   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
-      # (선택) VITE_TEACHER_WEB_URL, VITE_APP_REVIEW_DEMO, VITE_DEMO_INVITE_CODE, VITE_DEMO_LOGIN_PASSWORD
-      # 없으면 TestFlight에서 「서버 연결이 없어요」만 뜬다.
+      # Codemagic UI → Environment variables → 그룹 `haksup_vite`:
+      #   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY  (필수)
+      #   VITE_DEMO_INVITE_CODE, VITE_DEMO_LOGIN_PASSWORD  (심사용 데모)
+      # VITE_APP_REVIEW_DEMO 는 아래 vars 로 iOS 빌드에 켠다.
       groups:
         - haksup_vite
       vars:
@@ -24,6 +23,7 @@ workflows:
         APP_STORE_APPLE_ID: "6754501427"
         XCODE_PROJECT: "App.xcodeproj"
         XCODE_SCHEME: "App"
+        VITE_APP_REVIEW_DEMO: "true"
 
       node: 22
       xcode: latest
@@ -41,6 +41,10 @@ workflows:
             exit 1
           fi
           echo "Supabase URL prefix: ${VITE_SUPABASE_URL:0:40}..."
+          echo "VITE_APP_REVIEW_DEMO=${VITE_APP_REVIEW_DEMO:-}"
+          if [ "${VITE_APP_REVIEW_DEMO:-}" = "true" ] && [ -z "${VITE_DEMO_INVITE_CODE:-}" ]; then
+            echo "WARNING: 심사용 데모가 켜져 있는데 VITE_DEMO_INVITE_CODE 가 비어 있습니다."
+          fi
 
       - name: Build React app
         script: |
