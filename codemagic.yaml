@@ -14,8 +14,8 @@ workflows:
 
       # Codemagic UI → Environment variables → 그룹 `haksup_vite`:
       #   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY  (필수)
-      #   VITE_DEMO_INVITE_CODE, VITE_DEMO_LOGIN_PASSWORD  (심사용 데모)
-      # VITE_APP_REVIEW_DEMO 는 아래 vars 로 iOS 빌드에 켠다.
+      # 심사용 데모 초대코드·비밀번호는 아래 vars 에 고정 (그룹 값이 있어도 yaml vars 가 우선).
+      # VITE_APP_REVIEW_DEMO 는 iOS 심사 빌드에서만 켠다.
       groups:
         - haksup_vite
       vars:
@@ -24,6 +24,8 @@ workflows:
         XCODE_PROJECT: "App.xcodeproj"
         XCODE_SCHEME: "App"
         VITE_APP_REVIEW_DEMO: "true"
+        VITE_DEMO_INVITE_CODE: "AB6NKL"
+        VITE_DEMO_LOGIN_PASSWORD: "1234"
 
       node: 22
       xcode: latest
@@ -59,6 +61,17 @@ workflows:
           fi
 
           npx cap sync ios
+
+      # Capacitor 기본 템플릿은 Universal(1,2). 폰 전용 UI라 iPhone only로 고정.
+      # (Info.plist UIDeviceFamily 직접 수정은 Xcode가 덮어쓰므로 pbxproj 빌드 설정을 씀)
+      - name: Restrict to iPhone only
+        script: |
+          PBX="$CM_BUILD_DIR/ios/App/App.xcodeproj/project.pbxproj"
+          # "1,2" / 1,2 / "1" 등 변형을 iPhone(1)로 통일
+          sed -i '' 's/TARGETED_DEVICE_FAMILY = "[^"]*";/TARGETED_DEVICE_FAMILY = "1";/g' "$PBX"
+          sed -i '' 's/TARGETED_DEVICE_FAMILY = [^;]*;/TARGETED_DEVICE_FAMILY = 1;/g' "$PBX"
+          echo "TARGETED_DEVICE_FAMILY entries:"
+          grep TARGETED_DEVICE_FAMILY "$PBX" || true
 
       - name: Register login deep link scheme
         script: |
