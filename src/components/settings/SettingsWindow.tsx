@@ -184,7 +184,9 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
    * 주기적으로 다시 조회되는데, 그 경로가 세션이 없으면 `signInAnonymously()`로
    * **익명 사용자를 새로 만든다.** 방금 계정을 지운 직후에 그게 돌면 탈퇴하자마자
    * 빈 계정이 하나 생기고 토큰이 다시 저장된다. 새로고침이 그 타이머들을 확실히 끊는다.
-   * 첫 화면(스플래시)은 세션이 없으면 로그인으로 보낸다.
+   *
+   * 도착지는 `/`(스플래시)가 아니라 **탈퇴 완료 화면**. 스플래시로 가면 예전에 쓰다
+   * 남은 로그인 딥링크가 PKCE 오류 「로그인 실패」로 떨어지는 경우가 있었다.
    */
   async function handleDeleteAccount(): Promise<{
     ok: boolean
@@ -192,7 +194,7 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
   }> {
     const result = await deleteOwnAccount()
     if (!result.ok) return result
-    window.location.replace('/')
+    window.location.replace('/account-deleted')
     return { ok: true }
   }
 
@@ -233,16 +235,9 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
         />
 
         {/*
-          시안에 구워진 가짜 상태바(시계·배터리)를 흰색으로 덮는다.
-          **시계·아이콘은 그리지 않는다** — 실기기에서는 OS가 진짜 상태바를 그리므로
-          우리가 그리면 두 겹이 되고, 하드코딩된 시각이 실제와 달라 고장처럼 보인다
-          (2026-08-11 제거). 이 자리는 그냥 비워 둔다.
+          상단 시계·신호·배터리는 AppFrame `IphoneStatusBar`가 전역으로 그린다.
+          시안 베이크는 그 아래 레이어에 남아 있어도 흰 상태바 배경이 덮는다.
         */}
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 z-[14] bg-white"
-          style={{ height: `${(53 / FRAME_H) * 100}%` }}
-          aria-hidden
-        />
 
         {/* 베이크 이름·연동 뱃지 — 하늘톤으로 가린 뒤 온보딩/로그인 값 */}
         <div
@@ -276,23 +271,23 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
           </span>
         </div>
 
-        {/* 계정 행 우측 값 — 닉네임·연동·학년 */}
+        {/* 계정 행 우측 값 — 닉네임·연동·학년 (베이크 값은 SVG에서 숨김) */}
         <div
-          className="pointer-events-none absolute z-[12] flex items-center justify-end bg-white"
+          className="pointer-events-none absolute z-[12] flex items-center justify-end"
           style={nickStyle}
           aria-hidden
         >
           <span className={SETTINGS_ACCOUNT_VALUE_CLASS}>{displayName}</span>
         </div>
         <div
-          className="pointer-events-none absolute z-[12] flex items-center justify-end bg-white"
+          className="pointer-events-none absolute z-[12] flex items-center justify-end"
           style={linkedStyle}
           aria-hidden
         >
           <span className={SETTINGS_ACCOUNT_VALUE_CLASS}>{providerLabel}</span>
         </div>
         <div
-          className="pointer-events-none absolute z-[12] flex items-center justify-end bg-white"
+          className="pointer-events-none absolute z-[12] flex items-center justify-end"
           style={gradeStyle}
           aria-hidden
         >

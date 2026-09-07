@@ -25,6 +25,11 @@ import { SplashScreen } from './pages/SplashScreen'
 const LoginScreen = lazy(() =>
   import('./pages/LoginScreen').then((m) => ({ default: m.LoginScreen })),
 )
+const AccountDeletedScreen = lazy(() =>
+  import('./pages/AccountDeletedScreen').then((m) => ({
+    default: m.AccountDeletedScreen,
+  })),
+)
 const AuthCallbackScreen = lazy(() =>
   import('./pages/AuthCallbackScreen').then((m) => ({
     default: m.AuthCallbackScreen,
@@ -105,6 +110,10 @@ export function App() {
               <Routes>
                 <Route path="/" element={<SplashScreen />} />
                 <Route path="/login" element={<LoginScreen />} />
+                <Route
+                  path="/account-deleted"
+                  element={<AccountDeletedScreen />}
+                />
                 {/* 소셜 로그인에서 돌아오는 자리 */}
                 <Route path="/auth/callback" element={<AuthCallbackScreen />} />
                 <Route path="/onboarding/member-type" element={<MemberTypeScreen />} />

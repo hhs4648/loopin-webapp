@@ -47,6 +47,14 @@ export function AuthCallbackScreen() {
     */
     const failure = new URLSearchParams(window.location.search).get('error')
     if (failure) {
+      /*
+        탈퇴·재설치 뒤 남은 딥링크 PKCE 오류는 로그인 실패로 보여 주지 않는다.
+        (NativeAuthDeepLink에서도 막지만, 웹·직접 진입 경로용 방어.)
+      */
+      if (/code verifier not found/i.test(failure)) {
+        navigate('/login', { replace: true })
+        return
+      }
       setErrorDetail(failure)
       setFailed(true)
       return

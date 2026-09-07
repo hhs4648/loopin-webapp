@@ -39,6 +39,14 @@ export function NativeAuthDeepLink() {
         return
       }
       console.warn('[auth] deep link login failed', result.message)
+      /*
+        예전에 쓰다 남은 `?code=`(탈퇴·재설치·다른 기기 로그인 뒤)는 verifier가 없어
+        PKCE 오류가 난다. 그걸 「로그인을 마치지 못했어요」로 보여 주면 탈퇴 직후처럼
+        엉뚱한 실패 화면이 된다 — 조용히 무시한다.
+      */
+      if (/code verifier not found/i.test(result.message)) {
+        return
+      }
       navigate(`/auth/callback?error=${encodeURIComponent(result.message)}`, {
         replace: true,
       })
