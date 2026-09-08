@@ -95,7 +95,7 @@ flowchart TD
 | Primary CTA | 하단 고정 버튼 영역 (확인·다음·입장하기) |
 | 하단 내비 → 설정 | **홈** → 학원/학교 메인 · **전체** → `SettingsWindow`. 하단 바는 `MainHomeBottomNav`. 맵에서는 **홈** 검정 활성, 설정에서는 **전체** 검정 활성(홈은 회색). 설정 프로필 **이름**=온보딩 입력. **닉네임**=누르면 이름 변경(`SettingsNameSheet` → `upsertStudentProfile` + 로컬 auth), **연동**=로그인 provider(`kakao`/`apple`/`google` → 카카오·애플·구글) · 누르면 연동 확인과 **회원탈퇴**(`SettingsAccountSheet` → `delete_own_account` RPC · 2단계 확인), **학년 변경**=중1·중2·중3만 (`SettingsGradeSheet` → `upsertStudentProfile`) |
 | 하단 내비 → **헬스장** | `GymScreen` · 교사 「오답만 다시 출제」가 오면 캐릭터 탭 → `gym-start.svg` 「시작하기」. 대기 없으면 `gym-empty.svg` · 「홈으로 가기」는 메인. 다 풀면 `gym-complete.svg`(오답 있음) / `gym-complete-perfect.svg`(백점). 오답 있으면 「틀린 문제만 다시 풀기」 |
-| 상태바 | 진행 화면 시안에 구워진 가짜 시계·아이콘은 **가리고 다시 그리지 않음**(실기기 OS 상태바와 두 겹 방지). **스플래시는 시계·아이콘 없음** |
+| 상태바 | **브라우저**: `AppFrame` `IphoneStatusBar`. **실기기(iOS/Android)**: OS 상태바만(인앱 흰 상태바는 상단 제목을 자르므로 올리지 않음). `SystemBars` style `DARK` |
 | 뒤로가기 | **시계 아래** 왼쪽 44×44px `<` (`BACK_BUTTON_HIT` y=52) · 시계와 같은 줄에 두지 않음 · 설정 창이 열려 있으면 먼저 설정만 닫음 |
 | Enter 키 | 일부 입력·연습에서 계속하기 (`use-enter-to-continue`) |
 | 탭 사운드 | `playTapSfx` / 정오답 `playAnswerSfx` |

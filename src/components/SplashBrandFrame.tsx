@@ -21,8 +21,8 @@ export function SplashBrandFrame({ children }: { children?: ReactNode }) {
           draggable={false}
         />
         {/*
-          시안에 구워진 가짜 상태바(18:00·신호·와이파이·배터리)를 가린다.
-          시계·아이콘은 다시 그리지 않는다 — 실기기에서는 OS가 진짜 상태바를 그린다.
+          시안 베이크 상태바 자리. 실제 시계·아이콘은 AppFrame `IphoneStatusBar`가
+          전역으로 그린다(흰 덮개 + React 레이어로 두 겹·빈 상단 방지).
         */}
         <div
           className="pointer-events-none absolute inset-x-0 top-0 z-[1] bg-white"

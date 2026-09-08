@@ -1963,6 +1963,14 @@ export function MainHomeScreen() {
         passThreshold={praisePassThreshold}
         startYear={calendarStart.year}
         startMonthIndex={calendarStart.monthIndex}
+        onSelectNav={(id) => {
+          /*
+            맵 위 창이 아니라 별도 step. 복습·전체는 맵에서 열리는 창이므로
+            먼저 맵으로 돌아간 뒤 연다 — 안 그러면 캘린더 위에 겹친다.
+          */
+          goBack()
+          handleInviteNavSelect(id)
+        }}
       />
     )
   }
@@ -2091,6 +2099,7 @@ export function MainHomeScreen() {
         <button
           type="button"
           aria-label="입장하기"
+          data-keyboard-end
           disabled={inviteLoading}
           className={`z-20 ${INVITE_SUBMIT} cursor-pointer bg-transparent disabled:cursor-wait`}
           onClick={tryEnter}

@@ -224,7 +224,8 @@ export function GrammarType1Screen({
   }
 
   return (
-    <FigmaAssetFrame backButtonMask={BACK_MASK_WHITE_HEADER} src={GRAMMAR_TYPE_1_ASSET} alt="문법 유형 1" bgClassName="bg-white">
+    <FigmaAssetFrame backButtonMask={BACK_MASK_WHITE_HEADER}
+      maskBakedExerciseChrome src={GRAMMAR_TYPE_1_ASSET} alt="문법 유형 1" bgClassName="bg-white">
       <div className={`absolute inset-0 z-10 ${showFeedback ? 'pointer-events-none' : ''}`}>
         {hideProgressBar ? (
           <BakedProgressBarMask />

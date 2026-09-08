@@ -167,6 +167,22 @@ if (CHECK_ONLY) {
 }
 
 // ── 생성 ────────────────────────────────────────────────────────────────────
+/*
+  음성을 만드는 길이 둘이다.
+
+  1. **Edge Function 호출**(기본) — 앱이 실시간으로 만드는 것과 같은 경로라 소리가
+     절대 달라지지 않는다.
+  2. **`--local`** — 이 스크립트가 `edge-tts-universal`을 직접 불러 만든다. 목소리·속도·
+     높이를 함수와 **같은 값**으로 박아 두었으므로 결과는 같다.
+
+  2번이 필요한 이유: 2026-09-09, 배포된 함수가 합성 단계에서 응답 없이 멈췄다
+  (로그: `booted` → `Not implemented: ClientRequest.options.createConnection` → `shutdown`).
+  같은 버전 라이브러리가 **로컬 Node에서는 0.4초에 성공**하므로 Supabase Deno 런타임
+  쪽 문제다. 함수가 고쳐질 때까지 미리 만들기가 통째로 막히면 안 되니 길을 하나 더 둔다.
+
+  `--jobs=N`으로 동시에 만드는 개수를 정한다(기본: 로컬 6, 함수 1). 함수 쪽은 남의
+  서버라 기본을 1로 둔다.
+*/
 function env(key) {
   const file = path.join(APP, '.env.local')
   if (!fs.existsSync(file)) return null
@@ -174,20 +190,51 @@ function env(key) {
   return line ? line.slice(key.length + 1).trim().replace(/^["']|["']$/g, '') : null
 }
 
-const url = env('VITE_SUPABASE_URL')
-const anon = env('VITE_SUPABASE_ANON_KEY')
-if (!url || !anon) {
-  console.error('.env.local에 VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY가 필요합니다.')
-  process.exit(1)
-}
+const LOCAL = args.includes('--local')
+const JOBS = Math.max(
+  1,
+  Number(args.find((a) => a.startsWith('--jobs='))?.slice('--jobs='.length)) ||
+    (LOCAL ? 6 : 1),
+)
+/** 함수가 멈춰도 배치 전체가 매달리지 않게 — 2026-09-09에 실제로 무한 대기했다 */
+const REMOTE_TIMEOUT_MS = 20_000
+
+/** 함수(`supabase/functions/haksup-tts`)와 **같은 값이어야 한다** */
+const VOICES = { en: 'en-US-AriaNeural', ko: 'ko-KR-SunHiNeural' }
+const RATE = '+10%'
+const PITCH = '+0Hz'
 
 const TTS_CACHE_VERSION = 'v3' // haksup-tts.ts와 같아야 한다
-let ok = 0
-let failed = 0
 
-for (const [i, t] of missing.entries()) {
-  process.stdout.write(`  [${i + 1}/${missing.length}] ${t.text.slice(0, 40)}… `)
+let makeAudio
+if (LOCAL) {
+  let Communicate
   try {
+    ({ Communicate } = await import('edge-tts-universal'))
+  } catch {
+    console.error('--local 을 쓰려면 edge-tts-universal이 필요합니다: npm i -D edge-tts-universal')
+    process.exit(1)
+  }
+  makeAudio = async (t) => {
+    const communicate = new Communicate(t.text, {
+      voice: VOICES[t.lang],
+      rate: RATE,
+      pitch: PITCH,
+    })
+    const chunks = []
+    for await (const message of communicate.stream()) {
+      if (message.type === 'audio' && message.data) chunks.push(Buffer.from(message.data))
+    }
+    return Buffer.concat(chunks)
+  }
+} else {
+  const url = env('VITE_SUPABASE_URL')
+  const anon = env('VITE_SUPABASE_ANON_KEY')
+  if (!url || !anon) {
+    console.error('.env.local에 VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY가 필요합니다.')
+    process.exit(1)
+  }
+  makeAudio = async (t) => {
     const res = await fetch(`${url}/functions/v1/haksup-tts`, {
       method: 'POST',
       headers: {
@@ -196,17 +243,48 @@ for (const [i, t] of missing.entries()) {
         apikey: anon,
       },
       body: JSON.stringify({ text: t.text, lang: t.lang, cacheVersion: TTS_CACHE_VERSION }),
+      signal: AbortSignal.timeout(REMOTE_TIMEOUT_MS),
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const buf = Buffer.from(await res.arrayBuffer())
-    if (buf.length < 500) throw new Error(`너무 작음 (${buf.length}B)`)
-    fs.writeFileSync(path.join(OUT_DIR, t.file), buf)
-    ok += 1
-    console.log(`${(buf.length / 1024).toFixed(0)}KB`)
-  } catch (e) {
-    failed += 1
-    console.log(`실패 — ${e.message}`)
+    return Buffer.from(await res.arrayBuffer())
   }
+}
+
+let ok = 0
+let failed = 0
+let done = 0
+const failures = []
+
+console.log(`만드는 방법: ${LOCAL ? '로컬 edge-tts' : 'Edge Function'} · 동시 ${JOBS}개`)
+
+async function worker(queue) {
+  for (;;) {
+    const t = queue.pop()
+    if (!t) return
+    try {
+      const buf = await makeAudio(t)
+      if (buf.length < 500) throw new Error(`너무 작음 (${buf.length}B)`)
+      fs.writeFileSync(path.join(OUT_DIR, t.file), buf)
+      ok += 1
+    } catch (e) {
+      failed += 1
+      failures.push(`${t.lang}  ${t.text.slice(0, 50)} — ${e.message}`)
+    }
+    done += 1
+    /* 한 줄씩 찍으면 7,000줄이 된다 — 25개마다 한 번만 */
+    if (done % 25 === 0 || done === missing.length) {
+      console.log(`  [${done}/${missing.length}] 성공 ${ok} · 실패 ${failed}`)
+    }
+  }
+}
+
+const queue = [...missing].reverse()
+await Promise.all(Array.from({ length: Math.min(JOBS, queue.length) }, () => worker(queue)))
+
+if (failures.length) {
+  console.log(`
+실패 ${failures.length}개 (앞 10개):`)
+  failures.slice(0, 10).forEach((line) => console.log(`  ${line}`))
 }
 
 // ── 매니페스트 ──────────────────────────────────────────────────────────────

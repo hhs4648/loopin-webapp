@@ -153,7 +153,8 @@ export function WordQuizScreen({
   }
 
   return (
-    <FigmaAssetFrame backButtonMask={BACK_MASK_WHITE_HEADER} src={WORD_QUIZ_ASSETS.base} alt="단어 퀴즈" bgClassName="bg-white">
+    <FigmaAssetFrame backButtonMask={BACK_MASK_WHITE_HEADER}
+      maskBakedExerciseChrome src={WORD_QUIZ_ASSETS.base} alt="단어 퀴즈" bgClassName="bg-white">
       <div className="absolute inset-0 z-10">
         {hideProgressBar ? (
           <BakedProgressBarMask />

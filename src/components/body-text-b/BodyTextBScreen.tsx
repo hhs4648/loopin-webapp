@@ -260,7 +260,8 @@ export function BodyTextBScreen({
   }
 
   return (
-    <FigmaAssetFrame backButtonMask={BACK_MASK_WHITE_HEADER} src={BODY_TEXT_B_ASSET} alt="본문 B" bgClassName="bg-white">
+    <FigmaAssetFrame backButtonMask={BACK_MASK_WHITE_HEADER}
+      maskBakedExerciseChrome src={BODY_TEXT_B_ASSET} alt="본문 B" bgClassName="bg-white">
       <div className={`absolute inset-0 z-10 ${showFeedback ? 'pointer-events-none' : ''}`}>
         {hideProgressBar ? (
           <BakedProgressBarMask />

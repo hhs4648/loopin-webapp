@@ -22,6 +22,7 @@ import {
  * 실데이터로 갈아 끼운다.
  *
  * - 뒤로가기: 공통 `<` (`BACK_MASK_WHITE_HEADER`로 구운 것 지움)
+ *   · 문제 화면용 `maskBakedExerciseChrome`은 켜지 않음(제목「연속학습」이 잘림)
  * - 하단 내비: `MainHomeBottomNav` — 실제로 눌린다
  * - 연속 일수: `useStudyStreak()` — 맵·복습 배지와 **같은 출처**라 숫자가 갈리지 않는다
  *

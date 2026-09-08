@@ -278,7 +278,8 @@ export function WordSpellScreen({
   }
 
   return (
-    <FigmaAssetFrame backButtonMask={BACK_MASK_WHITE_HEADER} src={WORD_SPELL_ASSETS.base} alt="단어 스펠링" bgClassName="bg-white">
+    <FigmaAssetFrame backButtonMask={BACK_MASK_WHITE_HEADER}
+      maskBakedExerciseChrome src={WORD_SPELL_ASSETS.base} alt="단어 스펠링" bgClassName="bg-white">
       <div className={`absolute inset-0 z-10 ${showFeedback ? 'pointer-events-none' : ''}`}>
         {hideProgressBar ? (
           <BakedProgressBarMask />

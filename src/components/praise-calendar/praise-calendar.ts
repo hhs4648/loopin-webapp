@@ -21,6 +21,28 @@ export const FRAME_H = 852
  */
 export const PRAISE_CALENDAR_ASSET = '/assets/praise-calendar.svg?v=4'
 
+/**
+ * 시안에 구워진 하단 내비(홈·단어장·복습하기·전체, y≈770~827).
+ * 그림이라 눌리지 않아 `MainHomeBottomNav`로 갈아 끼운다 — 연속 학습 캘린더와 동일.
+ */
+export const PRAISE_CALENDAR_BAKED_NAV_COVER = {
+  x: 0,
+  y: 766,
+  w: 393,
+  h: 66,
+} as const
+
+/**
+ * 시안 맨 아래 가짜 홈 인디케이터(검은 막대 y≈827).
+ * OS 막대와 두 겹이 되고, 안드로이드에는 없는 막대가 보여서 가린다.
+ */
+export const PRAISE_CALENDAR_HOME_INDICATOR_COVER = {
+  x: 0,
+  y: 827,
+  w: 393,
+  h: 25,
+} as const
+
 export const PRAISE_STATUS_FACE_ASSETS = {
   pass: '/assets/praise-status-pass.png',
   regrettable: '/assets/praise-status-regrettable.png',

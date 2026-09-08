@@ -87,9 +87,9 @@
   background: #ffffff;
   container-type: inline-size;
   container-name: app;
-  /* 키보드가 열려도 스케일은 유지하고, 포커스 입력칸이 보이게만 올림 */
+  /* 키보드가 열려도 스케일은 유지하고, 포커스 입력칸이 보이게만 올림.
+   * transition 있으면 높이 측정이 바뀔 때마다 올렸다 내렸다 보인다 → 없음. */
   transform: translateY(calc(-1 * var(--keyboard-shift, 0px)));
-  transition: transform 160ms ease-out;
 }
 
 .screen {

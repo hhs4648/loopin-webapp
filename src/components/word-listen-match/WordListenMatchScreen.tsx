@@ -338,6 +338,7 @@ export function WordListenMatchScreen({
 
   return (
     <FigmaAssetFrame backButtonMask={BACK_MASK_WHITE_HEADER}
+      maskBakedExerciseChrome
       src={WORD_LISTEN_MATCH_ASSETS.base}
       alt="단어 TTS 뜻 짝맞추기"
       bgClassName="bg-white"

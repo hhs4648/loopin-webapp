@@ -21,7 +21,7 @@
 
 | 상태 | 동작 |
 |------|------|
-| 표시 | `splash-screen.svg` 풀프레임 (흰→하늘 그라데이션, 가운데 학습 워드마크) · 시안에 구워진 **18:00·신호·배터리는 흰 덮개로 가림**(실기기 OS 상태바와 두 겹이 되지 않게) |
+| 표시 | `splash-screen.svg` 풀프레임 (흰→하늘 그라데이션, 가운데 학습 워드마크) · 시안 베이크 상태바는 가림 · 시계·아이콘은 `AppFrame` `IphoneStatusBar` |
 | 1.8초 후 | `getStoredAuth()` → `getPostAuthPath` 또는 `/login` |
 
 ## 레이아웃

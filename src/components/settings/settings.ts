@@ -7,12 +7,16 @@
  *
  * `?v=22` — 맨 아래 **가짜 홈 인디케이터(검은 막대)를 지웠다.** iOS가 그 자리에
  * 자기 것을 그려서 두 겹이 되고, 안드로이드에서는 있지도 않은 막대가 붙는다.
+ *
+ * `?v=24` — 베이크 하단 내비·계정 우측 기본값을 SVG에서 숨김. 이미지 매핑을
+ * contentH에 맞춰 글씨·구분선·React 내비 위치가 어긋나지 않게.
  */
-export const SETTINGS_WINDOW_ASSET = '/assets/settings-window.svg?v=23'
+export const SETTINGS_WINDOW_ASSET = '/assets/settings-window.svg?v=24'
 
 /**
- * 표시 영역: 에셋 전체 폭 · 하단 베이크 내비(≈81px)는 패널 `overflow`로 잘림.
- * React `MainHomeBottomNav`가 그 자리를 담당.
+ * 표시 영역: 에셋 전체 폭 · 하단 베이크 내비(y≥770)는 SVG에서 숨김.
+ * React `MainHomeBottomNav`(NAV_H=81)가 그 자리를 담당.
+ * contentH = FRAME_H − NAV_H = 771 — 본문 패널과 크롭이 같아야 밑·글씨가 안 어긋난다.
  */
 export const SETTINGS_SOURCE = {
   canvasW: 401,
@@ -23,19 +27,22 @@ export const SETTINGS_SOURCE = {
   contentH: 771,
 } as const
 
-/** 설정 본문 패널에 에셋을 올릴 때 — **가로·세로를 따로 늘리지 않는다.**
- * `object-fit: fill`이면 패널 비율과 SVG(401×852)가 어긋나 글자가 납작해 보인다.
+/**
+ * 설정 본문 패널에 에셋을 올릴 때.
+ * 패널 높이 = contentH. 전체 캔버스(canvasH)를 그리되 overflow로 하단을 잘라
+ * 좌표 %(contentH)와 픽셀이 맞는다. (aspect-ratio만 쓰면 프레임 393과 SVG 401
+ * 비율 차로 내비 잔상이 비치고 계정 글씨·밑줄이 어긋났다.)
  */
 export function settingsWindowImageStyle() {
+  const { canvasH, contentH } = SETTINGS_SOURCE
   return {
     position: 'absolute' as const,
-    width: '100%',
-    height: 'auto',
-    aspectRatio: `${SETTINGS_SOURCE.canvasW} / ${SETTINGS_SOURCE.canvasH}`,
     left: 0,
     top: 0,
+    width: '100%',
+    height: `${(canvasH / contentH) * 100}%`,
     maxWidth: 'none',
-    objectFit: 'contain' as const,
+    objectFit: 'fill' as const,
   }
 }
 
@@ -142,14 +149,13 @@ export const SETTINGS_PROFILE_BADGE_CLASS =
 
 /**
  * 계정 1줄 행 — 쉐브론 세로 중심 (401×852 시안).
- * 구분선 276/327/378/429 → 닉네임·연동·학년 중심 ≈301.5 / 352.5 / 403.5
- * 우측 React 값은 좌측 베이크 라벨과 광학적으로 맞추려고 +2px 내린다.
+ * 구분선 327 / 378 · 닉네임·연동·학년 중심 ≈ 302 / 353 / 403.5
+ * 높이 28로 구분선과 겹치지 않게 (흰 패치가 밑줄을 자르던 회귀 방지).
  */
-const ACCOUNT_LINE_H = 34
-const ACCOUNT_VALUE_Y_NUDGE = 2
-const ACCOUNT_NICK_CY = 301.5 + ACCOUNT_VALUE_Y_NUDGE
-const ACCOUNT_LINK_CY = 352.5 + ACCOUNT_VALUE_Y_NUDGE
-const ACCOUNT_GRADE_CY = 403.5 + ACCOUNT_VALUE_Y_NUDGE
+const ACCOUNT_LINE_H = 28
+const ACCOUNT_NICK_CY = 302
+const ACCOUNT_LINK_CY = 353
+const ACCOUNT_GRADE_CY = 403.5
 
 function accountLineY(centerY: number) {
   return centerY - ACCOUNT_LINE_H / 2
@@ -157,25 +163,25 @@ function accountLineY(centerY: number) {
 
 /** 닉네임 행 우측 값 — `>` 쉐브론은 가리지 않음 */
 export const SETTINGS_NICKNAME_VALUE = {
-  x: 248,
+  x: 250,
   y: accountLineY(ACCOUNT_NICK_CY),
-  w: 104,
+  w: 100,
   h: ACCOUNT_LINE_H,
 } as const
 
 /** 연동 계정 행 우측 값 */
 export const SETTINGS_LINKED_VALUE = {
-  x: 248,
+  x: 250,
   y: accountLineY(ACCOUNT_LINK_CY),
-  w: 104,
+  w: 100,
   h: ACCOUNT_LINE_H,
 } as const
 
-/** 학년 변경 행 우측 값 */
+/** 학년 변경 행 우측 값 — 「중학교 n학년」이 길어서 조금 더 넓게 */
 export const SETTINGS_GRADE_VALUE = {
-  x: 218,
+  x: 230,
   y: accountLineY(ACCOUNT_GRADE_CY),
-  w: 134,
+  w: 120,
   h: ACCOUNT_LINE_H,
 } as const
 
@@ -184,7 +190,7 @@ export const SETTINGS_GRADE_VALUE = {
  * 흐린 회색 medium → 또렷한 slate + semibold (베이크 라벨과 대비).
  */
 export const SETTINGS_ACCOUNT_VALUE_CLASS =
-  "truncate font-sans text-[17px] font-semibold leading-none tracking-[-0.02em] text-[#334155]"
+  'truncate font-sans text-[17px] font-semibold leading-none tracking-[-0.02em] text-[#334155]'
 
 /** 시안에 구워진 기본 학년 문구 (프로필 grade 없을 때) */
 export const SETTINGS_DEFAULT_GRADE_LABEL = '중학교 3학년'

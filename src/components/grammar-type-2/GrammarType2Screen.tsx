@@ -426,6 +426,7 @@ export function GrammarType2Screen({
 
   return (
     <FigmaAssetFrame backButtonMask={BACK_MASK_WHITE_HEADER}
+      maskBakedExerciseChrome
       key={question.id}
       src={getQuestionAsset(question)}
       alt={question.kind === 'word-choice' ? '문법 유형 2 정답 X' : '문법 유형 2'}

@@ -10,7 +10,7 @@
 |----------|------|------|
 | `AppFrame` | `src/components/AppFrame.tsx` | 가운데 정렬 앱 셸 (max 540px) |
 | `FigmaAssetFrame` | `src/components/FigmaAssetFrame.tsx` | 393×852 비율로 Export 이미지 + children 오버레이 |
-| `SplashBrandFrame` | `src/components/SplashBrandFrame.tsx` | 학습 플래시화면 풀프레임 (스플래시·온보딩 로딩) · 시안 가짜 상태바는 가리고 다시 그리지 않음 |
+| `SplashBrandFrame` | `src/components/SplashBrandFrame.tsx` | 학습 플래시화면 풀프레임 (스플래시·온보딩 로딩) · 시안 베이크 상태바는 가림 · 시계·아이콘은 `AppFrame` `IphoneStatusBar` |
 | `HaksupLogo` | `src/components/HaksupLogo.tsx` | 구 브랜드 로고 (선생님 안내 등 잔여) — 그림은 아직 옛 워드마크 |
 | `LoginMascot` / `MascotCharacter` | `src/components/...` | 로그인 마스코트 |
 

@@ -11,7 +11,8 @@
     "tts:check": "node scripts/build-tts-audio.mjs --check",
     "cap:sync": "npm run build && npx cap sync android",
     "cap:open": "npx cap open android",
-    "cap:icons": "npx @capacitor/assets generate --android --assetPath assets"
+    "cap:icons": "npx @capacitor/assets generate --android --assetPath assets",
+    "tts:build:local": "node scripts/build-tts-audio.mjs --local"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",
@@ -36,6 +37,7 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.5.2",
+    "edge-tts-universal": "^1.4.0",
     "playwright": "^1.62.1",
     "sharp": "^0.35.4",
     "typescript": "~5.8.3",

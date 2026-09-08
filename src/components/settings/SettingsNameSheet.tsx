@@ -109,7 +109,7 @@ export function SettingsNameSheet({
             `${NAME_MIN_LENGTH}~${NAME_MAX_LENGTH}자 이내여야 하고 특수문자는 쓸 수 없어요.`}
         </p>
 
-        <div className="mt-3 flex gap-2 pb-2">
+        <div className="mt-3 flex gap-2 pb-2" data-keyboard-end>
           <button
             type="button"
             className="h-[54px] flex-1 rounded-[16px] bg-[#F3F6FA] font-sans text-[16px] font-bold text-[#475569]"

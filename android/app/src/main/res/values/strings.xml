@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">학습</string>
+    <string name="title_activity_main">학습</string>
+    <string name="package_name">com.haksup.haksup_app</string>
+    <string name="custom_url_scheme">com.haksup.haksup_app</string>
+    <!-- 소셜 로그인 딥링크 스킴 — iOS와 같은 값이어야 한다 (Supabase Redirect URLs에도 이 한 줄) -->
+    <string name="auth_url_scheme">haksup</string>
+</resources>

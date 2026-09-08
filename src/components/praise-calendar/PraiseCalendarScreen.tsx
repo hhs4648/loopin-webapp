@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import type { StudentAssignment } from '../../lib/sync/types'
 import { FigmaAssetFrame } from '../FigmaAssetFrame'
+import { MainHomeBottomNav } from '../main-home/MainHomeBottomNav'
+import type { MainHomeNavTabId } from '../main-home/assignment-home'
+import { BACK_MASK_WHITE_HEADER } from '../navigation/figma-navigation'
 import {
   buildDayStatusByDate,
   buildMonthCells,
@@ -17,6 +20,8 @@ import {
   MONTH_TITLE_MASK,
   CARD_BORDER_COLOR,
   PRAISE_CALENDAR_ASSET,
+  PRAISE_CALENDAR_BAKED_NAV_COVER,
+  PRAISE_CALENDAR_HOME_INDICATOR_COVER,
   PRAISE_STATUS_FACE_ASSETS,
   PROGRESS_HERO_FACE,
   PROGRESS_SUBTITLE,
@@ -46,6 +51,8 @@ type PraiseCalendarScreenProps = {
    */
   startYear?: number
   startMonthIndex?: number
+  /** 하단 내비 — 맵과 동일. 복습·전체는 호출 측에서 맵으로 돌아간 뒤 연다 */
+  onSelectNav?: (id: MainHomeNavTabId) => void
 }
 
 function StatusFaceImg({
@@ -146,6 +153,7 @@ export function PraiseCalendarScreen({
   passThreshold = DEFAULT_PASS_SCORE_THRESHOLD,
   startYear,
   startMonthIndex,
+  onSelectNav,
 }: PraiseCalendarScreenProps) {
   const today = useMemo(() => new Date(), [])
   const todayKey = toDateKey(today)
@@ -239,6 +247,7 @@ export function PraiseCalendarScreen({
       alt="칭찬 캘린더"
       bgClassName="bg-white"
       backButton="labeled"
+      backButtonMask={BACK_MASK_WHITE_HEADER}
     >
       {/* 구워진 연·월 글자 가림 */}
       <div
@@ -352,6 +361,22 @@ export function PraiseCalendarScreen({
           />
         )
       })}
+
+      {/*
+        구워진 하단 내비는 그림이라 눌리지 않는다. 흰 덮개로 지운 뒤
+        `MainHomeBottomNav`로 갈아 끼운다(연속 학습 캘린더와 동일).
+      */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute z-[50] bg-white"
+        style={figmaRectStyle(PRAISE_CALENDAR_BAKED_NAV_COVER)}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute z-[2] bg-white"
+        style={figmaRectStyle(PRAISE_CALENDAR_HOME_INDICATOR_COVER)}
+      />
+      <MainHomeBottomNav activeId="home" onSelect={onSelectNav} />
     </FigmaAssetFrame>
   )
 }
