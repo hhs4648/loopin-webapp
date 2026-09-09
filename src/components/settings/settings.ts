@@ -1,4 +1,4 @@
-/** Figma `설정 창` — ASCII: `settings-window.svg` (401×852, 하단 내비는 패널에서 크롭) */
+/** Figma `설정` — ASCII: `settings-window.svg` (401×918, 하단 내비는 패널에서 크롭) */
 /**
  * `?v=21` — 계정 카드에서 **「혼자 공부모드로 변경」 행을 지웠다**(2026-08-11).
  * React 히트영역이 아예 없던 죽은 행이라 눌러도 아무 일이 없었다. 라벨·쉐브론·구분선을
@@ -10,21 +10,28 @@
  *
  * `?v=24` — 베이크 하단 내비·계정 우측 기본값을 SVG에서 숨김. 이미지 매핑을
  * contentH에 맞춰 글씨·구분선·React 내비 위치가 어긋나지 않게.
+ *
+ * `?v=25` — Figma `설정.svg`(401×918) 적용. 제목 「설정」, 회원탈퇴 카드·빨간
+ * 로그아웃 버튼이 시안에 베이크됨. 하단 내비·홈 인디케이터는 SVG에서 숨김.
+ *
+ * `?v=26` — 918 전체(홈 인디케이터 포함)를 그리면 이미지가 아래로 붙어 **설정
+ * 제목·프로필 상단이 상태바에 잘렸다.** 내비 위(836)만 viewBox로 두고 패널에
+ * 1:1로 맞춘다.
  */
-export const SETTINGS_WINDOW_ASSET = '/assets/settings-window.svg?v=24'
+export const SETTINGS_WINDOW_ASSET = '/assets/settings-window.svg?v=26'
 
 /**
- * 표시 영역: 에셋 전체 폭 · 하단 베이크 내비(y≥770)는 SVG에서 숨김.
+ * 표시 영역: 에셋 폭 · 내비 위(836)만. 하단 베이크 내비·홈 인디케이터는 viewBox 밖.
  * React `MainHomeBottomNav`(NAV_H=81)가 그 자리를 담당.
- * contentH = FRAME_H − NAV_H = 771 — 본문 패널과 크롭이 같아야 밑·글씨가 안 어긋난다.
+ * canvasH = contentH 이라 이미지가 패널에 꽉 차고 위로 밀리지 않는다.
  */
 export const SETTINGS_SOURCE = {
   canvasW: 401,
-  canvasH: 852,
+  canvasH: 836,
   contentX: 0,
   contentY: 0,
   contentW: 401,
-  contentH: 771,
+  contentH: 836,
 } as const
 
 /**
@@ -43,6 +50,7 @@ export function settingsWindowImageStyle() {
     height: `${(canvasH / contentH) * 100}%`,
     maxWidth: 'none',
     objectFit: 'fill' as const,
+    objectPosition: 'top',
   }
 }
 
@@ -148,40 +156,44 @@ export const SETTINGS_PROFILE_BADGE_CLASS =
   'inline-flex h-[20px] min-w-[56px] items-center justify-center rounded-full px-2.5 text-[11px] font-bold leading-none shadow-[0_1px_2px_rgba(15,23,42,0.12)]'
 
 /**
- * 계정 1줄 행 — 쉐브론 세로 중심 (401×852 시안).
+ * 계정 1줄 행 — 쉐브론 세로 중심 (401×836 시안).
  * 구분선 327 / 378 · 닉네임·연동·학년 중심 ≈ 302 / 353 / 403.5
  * 높이 28로 구분선과 겹치지 않게 (흰 패치가 밑줄을 자르던 회귀 방지).
+ * `>` 는 x≈355. 값 박스 오른쪽을 328에서 끊어 화살표가 가려지지 않게 한다.
  */
 const ACCOUNT_LINE_H = 28
 const ACCOUNT_NICK_CY = 302
 const ACCOUNT_LINK_CY = 353
 const ACCOUNT_GRADE_CY = 403.5
+const ACCOUNT_VALUE_RIGHT = 328
+const ACCOUNT_VALUE_W = 100
+const ACCOUNT_GRADE_W = 118
 
 function accountLineY(centerY: number) {
   return centerY - ACCOUNT_LINE_H / 2
 }
 
-/** 닉네임 행 우측 값 — `>` 쉐브론은 가리지 않음 */
+/** 닉네임 행 우측 값 — `>` 쉐브론 왼쪽 */
 export const SETTINGS_NICKNAME_VALUE = {
-  x: 250,
+  x: ACCOUNT_VALUE_RIGHT - ACCOUNT_VALUE_W,
   y: accountLineY(ACCOUNT_NICK_CY),
-  w: 100,
+  w: ACCOUNT_VALUE_W,
   h: ACCOUNT_LINE_H,
 } as const
 
 /** 연동 계정 행 우측 값 */
 export const SETTINGS_LINKED_VALUE = {
-  x: 250,
+  x: ACCOUNT_VALUE_RIGHT - ACCOUNT_VALUE_W,
   y: accountLineY(ACCOUNT_LINK_CY),
-  w: 100,
+  w: ACCOUNT_VALUE_W,
   h: ACCOUNT_LINE_H,
 } as const
 
 /** 학년 변경 행 우측 값 — 「중학교 n학년」이 길어서 조금 더 넓게 */
 export const SETTINGS_GRADE_VALUE = {
-  x: 230,
+  x: ACCOUNT_VALUE_RIGHT - ACCOUNT_GRADE_W,
   y: accountLineY(ACCOUNT_GRADE_CY),
-  w: 120,
+  w: ACCOUNT_GRADE_W,
   h: ACCOUNT_LINE_H,
 } as const
 
@@ -192,8 +204,8 @@ export const SETTINGS_GRADE_VALUE = {
 export const SETTINGS_ACCOUNT_VALUE_CLASS =
   'truncate font-sans text-[17px] font-semibold leading-none tracking-[-0.02em] text-[#334155]'
 
-/** 시안에 구워진 기본 학년 문구 (프로필 grade 없을 때) */
-export const SETTINGS_DEFAULT_GRADE_LABEL = '중학교 3학년'
+/** 학년을 아직 고르지 않았을 때 — 온보딩 선택을 가짜 중3으로 채우지 않는다 */
+export const SETTINGS_DEFAULT_GRADE_LABEL = ''
 
 /** 설정 「학년 변경」— 중1·중2·중3만 */
 export type SettingsMiddleGradeId = '1' | '2' | '3'
@@ -241,18 +253,15 @@ export const SETTINGS_LINKED_HIT = {
 } as const
 
 /**
- * 로그아웃 아래 「회원탈퇴」 히트.
- * 시안에 글씨가 베이크돼 있으면 투명 히트만, 없으면 React 라벨을 같이 그린다.
+ * 「회원탈퇴」 빨간 버튼 — 시안 y 743.5–797.5.
+ * 글씨·아이콘이 베이크돼 있어 투명 히트만 쓴다.
  */
 export const SETTINGS_DELETE_HIT = {
   x: 20,
-  y: 708,
+  y: 744,
   w: 361,
-  h: 48,
+  h: 54,
 } as const
-
-export const SETTINGS_DELETE_LABEL_CLASS =
-  'font-sans text-[15px] font-bold leading-none text-[#FF5A5A]'
 
 /** 예전 온보딩·데모가 남긴 학교급/영문 id — 중n을 지어내지 않는다 */
 const LEGACY_SCHOOL_LEVEL_LABEL: Record<string, string> = {
@@ -264,18 +273,15 @@ const LEGACY_SCHOOL_LEVEL_LABEL: Record<string, string> = {
   high: '고등',
 }
 
-/** 프로필/온보딩 grade 문자열 → 설정 표시용 */
+/** 프로필/온보딩 grade → 설정 행. 온보딩·시트와 같이 중1·중2·중3 */
 export function formatSettingsGradeLabel(grade?: string | null): string {
+  const id = parseSettingsGradeId(grade)
+  if (id) {
+    return SETTINGS_GRADE_OPTIONS.find((row) => row.id === id)?.shortLabel ?? ''
+  }
   const raw = grade?.trim()
   if (!raw) return SETTINGS_DEFAULT_GRADE_LABEL
-  const legacy = LEGACY_SCHOOL_LEVEL_LABEL[raw]
-  if (legacy) return legacy
-  // 이미 「중학교 n학년」형태면 그대로
-  if (raw.includes('학년')) return raw
-  // `중3` / `중3학년` / `3` 등
-  const m = raw.match(/([123])/)
-  if (m) return `중학교 ${m[1]}학년`
-  return raw
+  return LEGACY_SCHOOL_LEVEL_LABEL[raw] ?? raw
 }
 
 /** 저장된 grade → 중1·2·3 선택 id (없으면 null) */
@@ -292,7 +298,7 @@ export function parseSettingsGradeId(
 
 /**
  * 설정 리스트 행 — 투명 히트 (이용안내·문의·로그아웃).
- * 실측: 이용안내 ≈550/600/660, 로그아웃 ≈730.
+ * `설정.svg` 실측: 구분선 535.5 / 586.5, 로그아웃 카드 y=677.5, 회원탈퇴 빨간 버튼 y=743.5.
  */
 export type SettingsListAction =
   | 'privacy'
@@ -310,36 +316,30 @@ export type SettingsListRow = {
 
 const ROW_X = 20
 const ROW_W = 361
-/** 「혼자 공부모드로 변경」을 뺀 만큼 아래 블록이 통째로 올라갔다 (`?v=21`) */
-const REMOVED_ROW_H = 51
-
-function row(centerY: number, h: number) {
-  return { x: ROW_X, y: centerY - REMOVED_ROW_H - h / 2, w: ROW_W, h }
-}
 
 export const SETTINGS_LIST_ROWS: ReadonlyArray<SettingsListRow> = [
   {
     id: 'privacy',
     ariaLabel: '개인정보 처리방침',
-    canvas: row(550, 50),
+    canvas: { x: ROW_X, y: 485, w: ROW_W, h: 50 },
     action: 'privacy',
   },
   {
     id: 'terms',
     ariaLabel: '이용약관',
-    canvas: row(600, 50),
+    canvas: { x: ROW_X, y: 536, w: ROW_W, h: 50 },
     action: 'terms',
   },
   {
     id: 'inquiry',
     ariaLabel: `문의 사항, ${SETTINGS_CONTACT_EMAIL}로 메일 보내기`,
-    canvas: row(660, 56),
+    canvas: { x: ROW_X, y: 587, w: ROW_W, h: 65 },
     action: 'mailto',
   },
   {
     id: 'logout',
     ariaLabel: '로그아웃',
-    canvas: row(730, 52),
+    canvas: { x: ROW_X, y: 678, w: ROW_W, h: 54 },
     action: 'logout',
   },
 ]

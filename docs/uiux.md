@@ -49,7 +49,7 @@ flowchart TD
 | 단계 | 경로 | 동작 (현재) |
 |------|------|-------------|
 | 스플래시 | `/` | 1.8초 후 `localStorage` auth로 분기. 에셋 `splash-screen.svg`(학습 워드마크) · **가짜 시계·상태 아이콘은 표시하지 않음** |
-| 로그인 | `/login` | 학습 시안 · Apple / 카카오 / 구글 투명 히트 |
+| 로그인 | `/login` | 학습 시안 · Apple / 카카오 / 구글 투명 히트 · **심사용 데모 로그인**(로컬·심사 빌드) → 비밀번호 `1234` 후 온보딩 생략·데모 반 입장 · **임시 로그인 (개발용)**은 비밀번호 없이 온보딩으로 감 |
 | 회원 유형 | `/onboarding/member-type` | 학생 / 교사 선택 |
 | 학생 온보딩 | `/onboarding/student` | 약관 → 이름 → 생년월일 → 학년 → 완료(`/student/home`) |
 | 교사 온보딩 | `/onboarding/teacher` | 약관 → 학교명 → 이름 → 완료 |
@@ -93,10 +93,10 @@ flowchart TD
 |------|------|
 | Figma 프레임 + 오버레이 | SVG/이미지 위에 투명 `button`/`input` |
 | Primary CTA | 하단 고정 버튼 영역 (확인·다음·입장하기) |
-| 하단 내비 → 설정 | **홈** → 학원/학교 메인 · **전체** → `SettingsWindow`. 하단 바는 `MainHomeBottomNav`. 맵에서는 **홈** 검정 활성, 설정에서는 **전체** 검정 활성(홈은 회색). 설정 프로필 **이름**=온보딩 입력. **닉네임**=누르면 이름 변경(`SettingsNameSheet` → `upsertStudentProfile` + 로컬 auth), **연동**=로그인 provider(`kakao`/`apple`/`google` → 카카오·애플·구글) · 누르면 연동 확인과 **회원탈퇴**(`SettingsAccountSheet` → `delete_own_account` RPC · 2단계 확인), **학년 변경**=중1·중2·중3만 (`SettingsGradeSheet` → `upsertStudentProfile`) |
+| 하단 내비 → 설정 | **홈** → 학원/학교 메인 · **전체** → `SettingsWindow`. 하단 바는 `MainHomeBottomNav`. 맵에서는 **홈** 검정 활성, 설정에서는 **전체** 검정 활성(홈은 회색). 설정 프로필 **이름**=온보딩 입력. **닉네임**=누르면 이름 변경(`SettingsNameSheet` → `upsertStudentProfile` + 로컬 auth), **연동**=로그인 provider(`kakao`/`apple`/`google` → 카카오·애플·구글) · 누르면 연동 확인과 **회원탈퇴**(`SettingsAccountSheet` → `delete_own_account` RPC · 2단계 확인), **학년 변경**=온보딩과 같은 **중1·중2·중3** (`SettingsGradeSheet` → `upsertStudentProfile`, 행 표시도 중1·중2·중3) |
 | 하단 내비 → **헬스장** | `GymScreen` · 교사 「오답만 다시 출제」가 오면 캐릭터 탭 → `gym-start.svg` 「시작하기」. 대기 없으면 `gym-empty.svg` · 「홈으로 가기」는 메인. 다 풀면 `gym-complete.svg`(오답 있음) / `gym-complete-perfect.svg`(백점). 오답 있으면 「틀린 문제만 다시 풀기」 |
-| 상태바 | **브라우저**: `AppFrame` `IphoneStatusBar`. **실기기(iOS/Android)**: OS 상태바만(인앱 흰 상태바는 상단 제목을 자르므로 올리지 않음). `SystemBars` style `DARK` |
-| 뒤로가기 | **시계 아래** 왼쪽 44×44px `<` (`BACK_BUTTON_HIT` y=52) · 시계와 같은 줄에 두지 않음 · 설정 창이 열려 있으면 먼저 설정만 닫음 |
+| 상태바 | 프레임 안 시계·신호·배터리는 **그리지 않음**. 실기기(iOS/Android)는 OS 상태바만. `SystemBars` style `DARK` |
+| 뒤로가기 | 왼쪽 44×44px `<` (`BACK_BUTTON_HIT` y=52) · 설정 창이 열려 있으면 먼저 설정만 닫음 |
 | Enter 키 | 일부 입력·연습에서 계속하기 (`use-enter-to-continue`) |
 | 탭 사운드 | `playTapSfx` / 정오답 `playAnswerSfx` |
 | 컨테이너 클리핑 | 긴 문제 텍스트는 문제 박스가 **안전선(`PASSAGE_SAFE_BOTTOM` 등)까지 아래로 커져** 전부 보이게 한다. 그 한도를 넘을 때만 박스 안 스크롤(최후 수단). 빈칸·배경 마스크는 프레임 밖으로 튀어나오지 않게 유지 |

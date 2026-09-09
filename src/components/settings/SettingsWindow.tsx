@@ -29,7 +29,6 @@ import { SettingsNameSheet } from './SettingsNameSheet'
 import {
   SETTINGS_ACCOUNT_VALUE_CLASS,
   SETTINGS_DELETE_HIT,
-  SETTINGS_DELETE_LABEL_CLASS,
   SETTINGS_DISPLAY_NAME_MAX,
   SETTINGS_DOC_URLS,
   SETTINGS_GRADE_HIT,
@@ -238,11 +237,6 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
           style={settingsWindowImageStyle()}
         />
 
-        {/*
-          상단 시계·신호·배터리는 AppFrame `IphoneStatusBar`가 전역으로 그린다.
-          시안 베이크는 그 아래 레이어에 남아 있어도 흰 상태바 배경이 덮는다.
-        */}
-
         {/* 베이크 이름·연동 뱃지 — 하늘톤으로 가린 뒤 온보딩/로그인 값 */}
         <div
           className="pointer-events-none absolute z-[11]"
@@ -275,23 +269,23 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
           </span>
         </div>
 
-        {/* 계정 행 우측 값 — 닉네임·연동·학년 (베이크 값은 SVG에서 숨김) */}
+        {/* 계정 행 우측 값 — 닉네임·연동·학년. `>` 왼쪽만 쓰고 넘치면 자른다. */}
         <div
-          className="pointer-events-none absolute z-[12] flex items-center justify-end"
+          className="pointer-events-none absolute z-[12] flex items-center justify-end overflow-hidden"
           style={nickStyle}
           aria-hidden
         >
           <span className={SETTINGS_ACCOUNT_VALUE_CLASS}>{displayName}</span>
         </div>
         <div
-          className="pointer-events-none absolute z-[12] flex items-center justify-end"
+          className="pointer-events-none absolute z-[12] flex items-center justify-end overflow-hidden"
           style={linkedStyle}
           aria-hidden
         >
           <span className={SETTINGS_ACCOUNT_VALUE_CLASS}>{providerLabel}</span>
         </div>
         <div
-          className="pointer-events-none absolute z-[12] flex items-center justify-end"
+          className="pointer-events-none absolute z-[12] flex items-center justify-end overflow-hidden"
           style={gradeStyle}
           aria-hidden
         >
@@ -345,19 +339,7 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
               onClick={() => handleActivateSettingsRow(row)}
             />
           ))}
-          {/*
-            시안에 「회원탈퇴」가 베이크돼 있으면 라벨은 가려지고 히트만 쓴다.
-            아직 없으면 React 글씨로 하단 입구를 보여 준다.
-          */}
-          <div
-            className="pointer-events-none absolute z-[11] flex items-center"
-            style={settingsContentRectStyle(
-              settingsCanvasToCropRect(SETTINGS_DELETE_HIT),
-            )}
-            aria-hidden
-          >
-            <span className={SETTINGS_DELETE_LABEL_CLASS}>회원탈퇴</span>
-          </div>
+          {/* 회원탈퇴는 `설정.svg`에 베이크됨 — 투명 히트만 */}
           <button
             type="button"
             aria-label="회원탈퇴"

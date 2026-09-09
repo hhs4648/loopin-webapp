@@ -150,11 +150,15 @@ export function LoginScreen() {
           >
             {demoPending ? '데모 로그인 중…' : '심사용 데모 로그인'}
           </button>
-        ) : isDevLoginAllowed() ? (
+        ) : null}
+        {isDevLoginAllowed() ? (
           <button
             type="button"
+            aria-label="임시 로그인 (개발용)"
             onClick={handleDevLogin}
-            className="absolute left-1/2 top-[6.5%] z-30 -translate-x-1/2 cursor-pointer rounded-full border border-black/20 bg-white/80 px-4 py-2 font-sans text-[13px] font-bold text-[#1E242F] backdrop-blur-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2AA3FF]"
+            className={`absolute left-1/2 z-30 -translate-x-1/2 cursor-pointer rounded-full border border-black/20 bg-white/80 px-3 py-1.5 font-sans text-[12px] font-bold text-[#1E242F] backdrop-blur-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2AA3FF] ${
+              isAppReviewDemoAllowed() ? 'top-[11.2%]' : 'top-[6.5%]'
+            }`}
           >
             임시 로그인 (개발용)
           </button>

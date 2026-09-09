@@ -12,7 +12,7 @@ const config: CapacitorConfig = {
     },
     SystemBars: {
       // 밝은 화면 위 OS 아이콘이 안 보이던 회귀 방지(검정 아이콘).
-      // 프레임 안 시계는 AppFrame `IphoneStatusBar`가 담당.
+      // 프레임 안에 가짜 시계·상태 아이콘을 그리지 않는다.
       style: 'DARK',
       hidden: false,
     },

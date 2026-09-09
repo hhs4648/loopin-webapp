@@ -20,9 +20,15 @@ import {
 } from './sync/student-api'
 import { isSyncEnabled } from './sync/supabase-client'
 
-/** App Store 심사용 데모 입구 — `VITE_APP_REVIEW_DEMO=true`일 때만 빌드에 포함 */
+/**
+ * App Store 심사용 데모 입구.
+ * 로컬 `npm run dev`에서도 켜서 비밀번호·온보딩 스킵 흐름을 그대로 확인한다.
+ * 스토어 빌드는 `VITE_APP_REVIEW_DEMO=true`일 때만 들어간다.
+ */
 export function isAppReviewDemoAllowed(): boolean {
-  return import.meta.env.VITE_APP_REVIEW_DEMO === 'true'
+  return (
+    import.meta.env.DEV || import.meta.env.VITE_APP_REVIEW_DEMO === 'true'
+  )
 }
 
 export type AppReviewDemoLoginResult =
@@ -61,14 +67,8 @@ export async function performAppReviewDemoLogin(): Promise<AppReviewDemoLoginRes
     }
   }
 
-  const inviteCode = import.meta.env.VITE_DEMO_INVITE_CODE?.trim()
-  if (!inviteCode) {
-    return {
-      ok: false,
-      message:
-        '데모 초대코드가 설정되지 않았어요. VITE_DEMO_INVITE_CODE를 확인해 주세요.',
-    }
-  }
+  const inviteCode =
+    import.meta.env.VITE_DEMO_INVITE_CODE?.trim() || 'AB6NKL'
 
   const userId = await ensureStudentSession()
   if (!userId) {

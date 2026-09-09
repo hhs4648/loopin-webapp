@@ -94,7 +94,7 @@ Figma 파일: `https://www.figma.com/design/NFmd87QHBjrA3r9zV9s8Q7/Haksup`
 | `Container.svg` | `birthdate-dropdown-container.svg` |
 | `회색 성.svg` | `castle-gray.svg` |
 | *(과제부여 프레임 하단)* | `main-home-bottom-nav.svg` | 학원/학교 메인 하단 탭 (홈·단어장·복습노트·메뉴). **바 전체 탭 → 설정 창** |
-| `설정 창.svg` | `settings-window.svg` | 설정 풀스크린 오버레이 (`SettingsWindow`). **401×852** 단일 프레임(하단 베이크 내비는 패널에서 크롭). 이름·연동(카카오/애플/구글)·이용안내/로그아웃 히트는 `settings.ts` 좌표 |
+| `설정.svg` (`설정 창.svg`) | `settings-window.svg` | 설정 풀스크린 오버레이 (`SettingsWindow`). **401×836** 표시(원본 918에서 홈 인디케이터·베이크 내비 제외). 제목 「설정」·회원탈퇴·빨간 로그아웃이 베이크됨. 이름·연동·이용안내 히트는 `settings.ts` 좌표 |
 | `복습하기 메인화면.svg` | `review-main.svg` | 복습하기 시안 393×811(내비 위). **코드에서 쓰지 않는다** — 글자가 전부 벡터 path(`<text>` 0개)라 유형명·정답률 숫자를 바꿀 수 없어서, `ReviewMainWindow`는 이 시안의 색·간격을 참고해 직접 그린다. 색·치수 대조용으로만 보관 |
 | *(위 시안 내장 PNG 추출)* | `review-cat-reading.png` | 복습 파란 카드 속 책 읽는 고양이 (420px) |
 | *(위 시안 내장 PNG 추출)* | `review-cat-cheer.png` | 복습 빈 상태의 만세 고양이 (260px) |

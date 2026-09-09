@@ -112,25 +112,28 @@ export async function upsertStudentProfile(input: {
   grade?: string
   birthdate?: string
 }): Promise<StudentProfile | null> {
+  const previous = getCachedStudentProfile()
+  const now = new Date().toISOString()
+  const localCached: StudentProfile = {
+    id: previous?.id ?? 'local',
+    role: 'student',
+    displayName: input.displayName,
+    grade: input.grade ?? previous?.grade,
+    birthdate: input.birthdate ?? previous?.birthdate,
+    createdAt: previous?.createdAt ?? now,
+    updatedAt: now,
+  }
+  // 서버 업서트가 실패해도 온보딩에서 고른 학년이 설정에 바로 보이게
+  localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(localCached))
+
   if (!isSyncEnabled()) {
-    const cached: StudentProfile = {
-      id: 'local',
-      role: 'student',
-      displayName: input.displayName,
-      grade: input.grade,
-      birthdate: input.birthdate,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-    localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(cached))
-    return cached
+    return localCached
   }
 
   const supabase = getSupabase()
   const userId = await ensureStudentSession()
-  if (!supabase || !userId) return null
+  if (!supabase || !userId) return localCached
 
-  const now = new Date().toISOString()
   const { data, error } = await supabase
     .from('profiles')
     .upsert(
@@ -149,15 +152,15 @@ export async function upsertStudentProfile(input: {
 
   if (error || !data) {
     console.warn('[sync] student profile upsert failed', error?.message)
-    return null
+    return localCached
   }
 
   const profile: StudentProfile = {
     id: data.id,
     role: 'student',
     displayName: data.display_name ?? input.displayName,
-    grade: data.grade ?? undefined,
-    birthdate: data.birthdate ?? undefined,
+    grade: data.grade ?? input.grade ?? previous?.grade,
+    birthdate: data.birthdate ?? input.birthdate ?? previous?.birthdate,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   }

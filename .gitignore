@@ -18,3 +18,6 @@ tmp-*/
 # 애플 로그인 비밀키 — 절대 커밋 금지
 *.p8
 apple-client-secret.txt
+
+# 미리 만든 TTS 음성 — 저장소가 아니라 공유 버킷에 둔다 (scripts/upload-tts-audio.mjs)
+tts-audio/

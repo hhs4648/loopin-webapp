@@ -7,6 +7,7 @@ import {
   NAV_H,
   type MainHomeNavTabId,
 } from '../main-home/assignment-home'
+import { BACK_BUTTON_HIT } from '../navigation/figma-navigation'
 import { BackButtonOverlay } from '../navigation/BackButtonOverlay'
 import { resolveActiveClassId } from '../../lib/sync/student-api'
 import { isSyncEnabled } from '../../lib/sync/supabase-client'
@@ -38,14 +39,18 @@ import {
   REVIEW_COLORS,
 } from './review-main'
 
+/** 본문 좌우 `px-5`(20). 제목이 `<` 히트와 겹치지 않게 이만큼 더 띄운다. */
+const REVIEW_CONTENT_PAD_X = 20
+
 /**
- * 뒤로가기 히트 **바로 아래**에 제목 (옆이 아님).
- * `padding-top` %는 높이 기준이 아니라 **너비** 기준(CSS)이라 FRAME_W로 나눈다.
+ * 제목 「복습하기」를 공통 `<`와 **같은 줄**에 둔다.
+ * `padding-%` 는 높이 기준이 아니라 **너비** 기준(CSS)이라 FRAME_W로 나눈다.
  */
-const REVIEW_CONTENT_PAD_TOP_PCT =
-  // 뒤로가기를 좌상단으로 옮겨도(2026-08-10) 본문은 제자리에 둔다 —
-  // 따라 올라가면 복습 목록 전체가 62px 위로 밀린다. 예전 값(68+44+2)을 고정.
-  (114 / FRAME_W) * 100
+const REVIEW_CONTENT_PAD_TOP_PCT = (BACK_BUTTON_HIT.y / FRAME_W) * 100
+const REVIEW_TITLE_PAD_LEFT_PCT =
+  ((BACK_BUTTON_HIT.x + BACK_BUTTON_HIT.w + 8 - REVIEW_CONTENT_PAD_X) /
+    FRAME_W) *
+  100
 
 const EMPTY_SUMMARY: ReviewSummary = {
   recommended: null,
@@ -185,8 +190,7 @@ export function ReviewMainWindow({
         <ReviewMainContent state={state} onStart={handleStart} />
       </div>
 
-      {/* 메인·설정과 동일 — 위 시계/아이콘, 그 아래 `<` */}
-      {/* 호출 측 useBackNavigation이 닫기를 담당 · 자리는 BACK_BUTTON_HIT(시계 아래) */}
+      {/* 호출 측 useBackNavigation이 닫기를 담당 · 자리는 BACK_BUTTON_HIT */}
       <BackButtonOverlay variant="labeled" />
 
       {notice ? (
@@ -232,9 +236,15 @@ export function ReviewMainContent({
         `min-h`가 줄 높이를 미리 잡아 둬서 나타나도 아무것도 움직이지 않는다.
         복습할 게 없는 날에도 띄운다 — 습관에 대한 칭찬이라 목록 유무와 무관하다.
       */}
-      <div className="flex min-h-[34px] items-center justify-between gap-3">
+      <div
+        className="flex items-center justify-between gap-3"
+        style={{
+          minHeight: BACK_BUTTON_HIT.h,
+          paddingLeft: `${REVIEW_TITLE_PAD_LEFT_PCT}%`,
+        }}
+      >
         <h1
-          className="text-[26px] font-bold tracking-tight"
+          className="text-[26px] font-bold leading-none tracking-tight"
           style={{ color: REVIEW_COLORS.text }}
         >
           복습하기

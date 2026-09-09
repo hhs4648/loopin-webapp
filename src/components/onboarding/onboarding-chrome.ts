@@ -6,8 +6,7 @@ export const ONBOARDING_HEADER_MASK_H = 98
 /**
  * 화면 최상단에 비워 두는 높이(53).
  *
- * 시계·아이콘은 `AppFrame`의 `IphoneStatusBar`가 전역으로 그린다.
- * 여기 숫자는 시안 여백·뒤로가기 위치 계산용이다.
+ * 프레임 안 시계·아이콘은 그리지 않는다. 여기 숫자는 시안 여백·뒤로가기 위치 계산용이다.
  */
 export const ONBOARDING_STATUS_H = 53
 

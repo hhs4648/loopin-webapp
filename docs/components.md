@@ -10,7 +10,7 @@
 |----------|------|------|
 | `AppFrame` | `src/components/AppFrame.tsx` | 가운데 정렬 앱 셸 (max 540px) |
 | `FigmaAssetFrame` | `src/components/FigmaAssetFrame.tsx` | 393×852 비율로 Export 이미지 + children 오버레이 |
-| `SplashBrandFrame` | `src/components/SplashBrandFrame.tsx` | 학습 플래시화면 풀프레임 (스플래시·온보딩 로딩) · 시안 베이크 상태바는 가림 · 시계·아이콘은 `AppFrame` `IphoneStatusBar` |
+| `SplashBrandFrame` | `src/components/SplashBrandFrame.tsx` | 학습 플래시화면 풀프레임 (스플래시·온보딩 로딩) · 시안 베이크 시계·상태 아이콘은 가림 |
 | `HaksupLogo` | `src/components/HaksupLogo.tsx` | 구 브랜드 로고 (선생님 안내 등 잔여) — 그림은 아직 옛 워드마크 |
 | `LoginMascot` / `MascotCharacter` | `src/components/...` | 로그인 마스코트 |
 
@@ -62,8 +62,8 @@
 | `MissionCheckBadge` | `main-home/` | 완료 성 = 별표. 깃발과 같은 원형 뱃지 계열(글리프만 다름) |
 | `CastleStatusPill` | `main-home/CastleRetryingPill.tsx` | 진행중·재도전 코랄 필 |
 | `MainHomeBottomNav` | `main-home/` | 하단 탭바 고정 (`main-home-bottom-nav.svg` + 투명 히트). **바 전체 탭 → 설정 창** |
-| `SettingsWindow` | `settings/` | Figma `설정 창` 풀스크린 오버레이 (`settings-window.svg` 401×852). 이름·연동=온보딩/로그인 React 오버레이 · 학년 변경=`SettingsGradeSheet`(중1·2·3) · 나머지 문구는 에셋 |
-| `SettingsGradeSheet` | `settings/` | 설정 학년 변경 바텀시트. 선택지 **중1·중2·중3**만 · 저장값 `중학교 n학년` |
+| `SettingsWindow` | `settings/` | Figma `설정` 풀스크린 오버레이 (`settings-window.svg` 401×918). 이름·연동=온보딩/로그인 React 오버레이 · 학년 변경=`SettingsGradeSheet`(중1·2·3) · 회원탈퇴·로그아웃은 에셋 |
+| `SettingsGradeSheet` | `settings/` | 설정 학년 변경 바텀시트. 선택·행 표시 **중1·중2·중3**(온보딩과 동일) · 저장값 `중학교 n학년` |
 | `ReviewMainWindow` | `review/` | 복습하기 오버레이. **이 화면만 Figma 이미지 오버레이를 쓰지 않고 직접 그린다** — 시안 글자가 벡터 path라 유형명·정답률을 코드로 못 바꿈. 데이터 로딩 담당이며 표시는 `ReviewMainContent` |
 | `StudyStreakBadge` | `review/` | 맵 연속 학습 배지. 탭 → `StreakCalendarScreen` |
 | `StreakCalendarScreen` | `streak-calendar/` | 연속 학습 캘린더 (`streak-calendar.svg`). 1차는 시안 그대로 + 홈 인디케이터 가림 |

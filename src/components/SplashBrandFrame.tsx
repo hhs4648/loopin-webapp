@@ -20,10 +20,7 @@ export function SplashBrandFrame({ children }: { children?: ReactNode }) {
           className="pointer-events-none absolute inset-0 h-full w-full select-none"
           draggable={false}
         />
-        {/*
-          시안 베이크 상태바 자리. 실제 시계·아이콘은 AppFrame `IphoneStatusBar`가
-          전역으로 그린다(흰 덮개 + React 레이어로 두 겹·빈 상단 방지).
-        */}
+        {/* 시안 베이크 시계·신호·배터리 — 표시하지 않음 */}
         <div
           className="pointer-events-none absolute inset-x-0 top-0 z-[1] bg-white"
           style={{ height: `${(SPLASH_STATUS_BAR_H / SPLASH_FRAME_H) * 100}%` }}
