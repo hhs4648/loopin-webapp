@@ -23,10 +23,13 @@ import {
 import { BackButtonOverlay } from '../navigation/BackButtonOverlay'
 import { BACK_MASK_SETTINGS } from '../navigation/figma-navigation'
 import { SettingsAccountSheet } from './SettingsAccountSheet'
+import { SettingsDeleteSheet } from './SettingsDeleteSheet'
 import { SettingsGradeSheet } from './SettingsGradeSheet'
 import { SettingsNameSheet } from './SettingsNameSheet'
 import {
   SETTINGS_ACCOUNT_VALUE_CLASS,
+  SETTINGS_DELETE_HIT,
+  SETTINGS_DELETE_LABEL_CLASS,
   SETTINGS_DISPLAY_NAME_MAX,
   SETTINGS_DOC_URLS,
   SETTINGS_GRADE_HIT,
@@ -86,6 +89,7 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
   const [gradeSheetOpen, setGradeSheetOpen] = useState(false)
   const [nameSheetOpen, setNameSheetOpen] = useState(false)
   const [accountSheetOpen, setAccountSheetOpen] = useState(false)
+  const [deleteSheetOpen, setDeleteSheetOpen] = useState(false)
 
   const user = getStoredAuth()
   const profile = getCachedStudentProfile()
@@ -309,7 +313,7 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
           />
           <button
             type="button"
-            aria-label="연동 계정, 회원탈퇴"
+            aria-label="연동 계정"
             className="pointer-events-auto absolute bg-transparent"
             style={settingsContentRectStyle(
               settingsCanvasToCropRect(SETTINGS_LINKED_HIT),
@@ -341,6 +345,31 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
               onClick={() => handleActivateSettingsRow(row)}
             />
           ))}
+          {/*
+            시안에 「회원탈퇴」가 베이크돼 있으면 라벨은 가려지고 히트만 쓴다.
+            아직 없으면 React 글씨로 하단 입구를 보여 준다.
+          */}
+          <div
+            className="pointer-events-none absolute z-[11] flex items-center"
+            style={settingsContentRectStyle(
+              settingsCanvasToCropRect(SETTINGS_DELETE_HIT),
+            )}
+            aria-hidden
+          >
+            <span className={SETTINGS_DELETE_LABEL_CLASS}>회원탈퇴</span>
+          </div>
+          <button
+            type="button"
+            aria-label="회원탈퇴"
+            className="pointer-events-auto absolute z-[12] bg-transparent"
+            style={settingsContentRectStyle(
+              settingsCanvasToCropRect(SETTINGS_DELETE_HIT),
+            )}
+            onClick={() => {
+              playTapSfx()
+              setDeleteSheetOpen(true)
+            }}
+          />
         </div>
       </div>
 
@@ -370,8 +399,14 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
         <SettingsAccountSheet
           providerLabel={providerLabel}
           temporary={isTemporary}
-          onDeleteAccount={handleDeleteAccount}
           onClose={() => setAccountSheetOpen(false)}
+        />
+      ) : null}
+
+      {deleteSheetOpen ? (
+        <SettingsDeleteSheet
+          onDeleteAccount={handleDeleteAccount}
+          onClose={() => setDeleteSheetOpen(false)}
         />
       ) : null}
 

@@ -230,9 +230,8 @@ export const SETTINGS_NICKNAME_HIT = {
 } as const
 
 /**
- * 연동 계정 행 전체 히트 — 연동 상태 확인과 **회원탈퇴** 입구.
- * 탈퇴 버튼을 리스트에 새 행으로 넣으면 시안(구워진 이미지)을 다시 떠야 해서,
- * 이미 쉐브론이 있는 이 행 안쪽 시트에 뒀다.
+ * 연동 계정 행 전체 히트 — 연동 상태 확인만.
+ * 회원탈퇴는 `SETTINGS_DELETE_HIT` (로그아웃 아래).
  */
 export const SETTINGS_LINKED_HIT = {
   x: 20,
@@ -240,6 +239,20 @@ export const SETTINGS_LINKED_HIT = {
   w: 361,
   h: 50,
 } as const
+
+/**
+ * 로그아웃 아래 「회원탈퇴」 히트.
+ * 시안에 글씨가 베이크돼 있으면 투명 히트만, 없으면 React 라벨을 같이 그린다.
+ */
+export const SETTINGS_DELETE_HIT = {
+  x: 20,
+  y: 708,
+  w: 361,
+  h: 48,
+} as const
+
+export const SETTINGS_DELETE_LABEL_CLASS =
+  'font-sans text-[15px] font-bold leading-none text-[#FF5A5A]'
 
 /** 예전 온보딩·데모가 남긴 학교급/영문 id — 중n을 지어내지 않는다 */
 const LEGACY_SCHOOL_LEVEL_LABEL: Record<string, string> = {

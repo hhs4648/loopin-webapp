@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { playTapSfx } from '../exercise/answer-sfx'
 import { useBackNavigation } from '../navigation/BackNavigationProvider'
 
@@ -7,49 +6,19 @@ type SettingsAccountSheetProps = {
   providerLabel: string
   /** 선생님이 학생 화면을 보려고 임시로 들어온 상태 — 소셜 계정이 아니다 */
   temporary?: boolean
-  /** 실제 삭제 — 성공하면 부모가 로그인 화면으로 보낸다 */
-  onDeleteAccount: () => Promise<{ ok: boolean; message?: string }>
   onClose: () => void
 }
 
 /**
- * 설정 「연동 계정」 시트 — 연동 상태 확인과 **회원탈퇴**.
- *
- * 탈퇴는 **두 번 눌러야** 실행된다. 되돌릴 수 없는 일이라 리스트에서 한 번에
- * 닿게 두지 않았다. 무엇이 사라지는지 확인 단계에서 그대로 적는다 — "정말요?"만
- * 묻는 창은 읽지 않고 누르게 된다.
+ * 설정 「연동 계정」 시트 — 연동 상태만 확인.
+ * 회원탈퇴는 설정 하단 별도 입구(`SettingsDeleteSheet`)로 둔다.
  */
 export function SettingsAccountSheet({
   providerLabel,
   temporary = false,
-  onDeleteAccount,
   onClose,
 }: SettingsAccountSheetProps) {
-  const [confirming, setConfirming] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  useBackNavigation(() => {
-    if (deleting) return
-    if (confirming) {
-      setConfirming(false)
-      return
-    }
-    onClose()
-  })
-
-  async function handleDelete() {
-    if (deleting) return
-    playTapSfx()
-    setError(null)
-    setDeleting(true)
-
-    const result = await onDeleteAccount()
-    if (!result.ok) {
-      setError(result.message ?? '탈퇴에 실패했어요. 잠시 후 다시 시도해 주세요.')
-      setDeleting(false)
-    }
-  }
+  useBackNavigation(onClose)
 
   return (
     <div
@@ -62,7 +31,6 @@ export function SettingsAccountSheet({
         type="button"
         aria-label="닫기"
         className="min-h-0 flex-1 bg-transparent"
-        disabled={deleting}
         onClick={() => {
           playTapSfx()
           onClose()
@@ -74,94 +42,37 @@ export function SettingsAccountSheet({
           aria-hidden
         />
 
-        {confirming ? (
-          <>
-            <h2 className="mb-2 font-sans text-[20px] font-extrabold tracking-[-0.03em] text-[#0B1220]">
-              정말 탈퇴할까요?
-            </h2>
-            <p className="mb-3 font-sans text-[14px] font-medium leading-relaxed text-[#475569]">
-              아래가{' '}
-              <b className="font-extrabold text-[#0B1220]">모두 지워지고 되돌릴 수 없어요.</b>
-            </p>
-            <ul className="mb-3 flex flex-col gap-1 rounded-[16px] bg-[#F3F6FA] px-4 py-3 font-sans text-[14px] font-semibold text-[#475569]">
-              <li>· 이름·학년 등 내 정보</li>
-              <li>· 가입한 반과 받은 과제</li>
-              <li>· 지금까지 푼 기록과 점수·칭찬 기록</li>
-            </ul>
-            <p className="mb-3 font-sans text-[13px] font-medium leading-relaxed text-[#64748B]">
-              선생님 화면에서도 내 기록이 사라져요. 같은 계정으로 다시 가입해도
-              예전 기록은 되살릴 수 없어요.
-            </p>
-          </>
+        <h2 className="mb-3 font-sans text-[20px] font-extrabold tracking-[-0.03em] text-[#0B1220]">
+          연동 계정
+        </h2>
+        <div className="mb-3 flex h-[54px] items-center justify-between rounded-[16px] bg-[#F3F6FA] px-4 font-sans text-[16px]">
+          <span className="font-bold text-[#0B1220]">현재 로그인</span>
+          <span className="font-extrabold text-[#2AA3FF]">{providerLabel}</span>
+        </div>
+        {temporary ? (
+          <p className="mb-3 font-sans text-[13px] font-medium leading-relaxed text-[#64748B]">
+            지금은 <b className="font-bold text-[#0B1220]">임시 학생</b>으로 참여 중이에요.
+            로그아웃하면 이 기록은 다시 볼 수 없고, 선생님으로 돌아가려면 원래 계정으로
+            로그인하면 돼요.
+          </p>
         ) : (
-          <>
-            <h2 className="mb-3 font-sans text-[20px] font-extrabold tracking-[-0.03em] text-[#0B1220]">
-              연동 계정
-            </h2>
-            <div className="mb-3 flex h-[54px] items-center justify-between rounded-[16px] bg-[#F3F6FA] px-4 font-sans text-[16px]">
-              <span className="font-bold text-[#0B1220]">현재 로그인</span>
-              <span className="font-extrabold text-[#2AA3FF]">{providerLabel}</span>
-            </div>
-            {temporary ? (
-              <p className="mb-3 font-sans text-[13px] font-medium leading-relaxed text-[#64748B]">
-                지금은 <b className="font-bold text-[#0B1220]">임시 학생</b>으로 참여 중이에요.
-                로그아웃하면 이 기록은 다시 볼 수 없고, 선생님으로 돌아가려면 원래 계정으로
-                로그인하면 돼요.
-              </p>
-            ) : (
-              <p className="mb-3 font-sans text-[13px] font-medium leading-relaxed text-[#64748B]">
-                처음 가입한 방법({providerLabel})으로 계속 로그인해 주세요. 다른 방법으로
-                로그인하면 <b className="font-bold text-[#0B1220]">다른 계정</b>이 되어 학습
-                기록이 보이지 않아요.
-              </p>
-            )}
-          </>
+          <p className="mb-3 font-sans text-[13px] font-medium leading-relaxed text-[#64748B]">
+            처음 가입한 방법({providerLabel})으로 계속 로그인해 주세요. 다른 방법으로
+            로그인하면 <b className="font-bold text-[#0B1220]">다른 계정</b>이 되어 학습
+            기록이 보이지 않아요.
+          </p>
         )}
 
-        {error ? (
-          <p role="alert" className="mb-3 font-sans text-[13px] font-bold text-[#FF5A5A]">
-            {error}
-          </p>
-        ) : null}
-
-        <div className="flex gap-2 pb-2">
-          <button
-            type="button"
-            disabled={deleting}
-            className="h-[54px] flex-1 rounded-[16px] bg-[#F3F6FA] font-sans text-[16px] font-bold text-[#475569] disabled:opacity-40"
-            onClick={() => {
-              playTapSfx()
-              if (confirming) {
-                setConfirming(false)
-                setError(null)
-                return
-              }
-              onClose()
-            }}
-          >
-            {confirming ? '아니요' : '닫기'}
-          </button>
-          <button
-            type="button"
-            disabled={deleting}
-            aria-label={confirming ? '회원탈퇴 확정' : '회원탈퇴'}
-            className={`h-[54px] flex-1 rounded-[16px] font-sans text-[16px] font-extrabold disabled:opacity-40 ${
-              confirming
-                ? 'bg-[#FF5A5A] text-white shadow-[0_6px_16px_rgba(255,90,90,0.35)]'
-                : 'border border-[#FFD5D5] bg-white text-[#FF5A5A]'
-            }`}
-            onClick={() => {
-              if (!confirming) {
-                playTapSfx()
-                setConfirming(true)
-                return
-              }
-              void handleDelete()
-            }}
-          >
-            {deleting ? '탈퇴 중…' : confirming ? '탈퇴하기' : '회원탈퇴'}
-          </button>
-        </div>
+        <button
+          type="button"
+          className="mb-2 h-[54px] w-full rounded-[16px] bg-[#F3F6FA] font-sans text-[16px] font-bold text-[#475569]"
+          onClick={() => {
+            playTapSfx()
+            onClose()
+          }}
+        >
+          닫기
+        </button>
       </div>
     </div>
   )

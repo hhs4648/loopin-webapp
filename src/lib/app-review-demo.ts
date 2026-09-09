@@ -5,8 +5,17 @@ import {
   type AuthUser,
 } from './auth'
 import {
+  buildAssignmentSections,
+  listSectionQuestionIds,
+} from '../features/assignments/build-session-sections'
+import {
+  completeAttempt,
   enrollWithInviteCode,
   ensureStudentSession,
+  fetchStudentAssignments,
+  recordAnswer,
+  resolveActiveClassId,
+  startOrResumeAttempt,
   upsertStudentProfile,
 } from './sync/student-api'
 import { isSyncEnabled } from './sync/supabase-client'
@@ -42,6 +51,7 @@ export function verifyAppReviewDemoPassword(input: string): boolean {
  * - Supabase 익명 세션 확보
  * - 학생 프로필·온보딩 완료 상태를 로컬·서버에 기록
  * - `VITE_DEMO_INVITE_CODE`로 데모 반 자동 가입
+ * - 반의 **첫 숙제**를 약 70% 정답으로 한 번 풀어 둔다 (복습·헬스장 오답용)
  */
 export async function performAppReviewDemoLogin(): Promise<AppReviewDemoLoginResult> {
   if (!isSyncEnabled()) {
@@ -86,5 +96,69 @@ export async function performAppReviewDemoLogin(): Promise<AppReviewDemoLoginRes
   user = completeMemberType(user, 'student')
   user = completeOnboarding(user, { displayName: DEMO_DISPLAY_NAME })
 
+  try {
+    await seedAppReviewFirstAssignmentProgress()
+  } catch (error) {
+    console.warn('[demo] first-assignment seed failed', error)
+  }
+
   return { ok: true, user }
+}
+
+/**
+ * 데모 반에서 성 맵의 **첫 숙제**(개인 오답 재출제 제외)를 약 70%로 완료한다.
+ * 이미 완료한 숙제가 있으면 건드리지 않는다.
+ * 틀린 문항이 복습 탭에 쌓이고, 교사가 「오답만 다시 출제」하면 헬스장에도 간다.
+ */
+export async function seedAppReviewFirstAssignmentProgress(): Promise<void> {
+  const classId = await resolveActiveClassId()
+  if (!classId) return
+
+  const assignments = await fetchStudentAssignments(classId)
+  const first = assignments.find((item) => !item.targetStudentId)
+  if (!first || first.questionTotal < 1) return
+  if (first.status === 'completed') return
+
+  const questionIds = listSectionQuestionIds(
+    buildAssignmentSections(first.contentSnapshot),
+  )
+  if (questionIds.length === 0) return
+
+  const attempt = await startOrResumeAttempt({
+    assignmentId: first.assignmentId,
+    questionTotal: questionIds.length,
+  })
+  if (!attempt) return
+
+  const wrongIds = pickDemoWrongIds(questionIds, 0.3)
+  let combo = 0
+  let maxCombo = 0
+  for (const questionId of questionIds) {
+    const isCorrect = !wrongIds.has(questionId)
+    combo = isCorrect ? combo + 1 : 0
+    if (combo > maxCombo) maxCombo = combo
+    await recordAnswer({
+      attemptId: attempt.id,
+      questionId,
+      clientAnswerId: `${attempt.id}:${questionId}`,
+      payload: { kind: 'app-review-demo', questionId },
+      isCorrect,
+    })
+  }
+  await completeAttempt(attempt.id, maxCombo)
+}
+
+/** 문항을 고르게 틀려 유형이 한쪽에만 몰리지 않게 한다. 목표는 오답 비율 `wrongRatio`. */
+function pickDemoWrongIds(questionIds: string[], wrongRatio: number): Set<string> {
+  const wrongCount = Math.max(1, Math.round(questionIds.length * wrongRatio))
+  const step = Math.max(1, Math.floor(questionIds.length / wrongCount))
+  const wrong = new Set<string>()
+  for (let index = 0; index < questionIds.length && wrong.size < wrongCount; index += step) {
+    wrong.add(questionIds[index]!)
+  }
+  for (const questionId of questionIds) {
+    if (wrong.size >= wrongCount) break
+    wrong.add(questionId)
+  }
+  return wrong
 }
