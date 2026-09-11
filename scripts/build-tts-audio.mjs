@@ -1,5 +1,6 @@
 /**
- * 문제은행의 **고정 콘텐츠 음성을 미리 만들어** `public/assets/audio/`에 넣는다.
+ * 문제은행의 **고정 콘텐츠 음성을 미리 만들어** `tts-audio/`에 넣는다.
+ * (번들 밖이다 — 배포는 `scripts/upload-tts-audio.mjs`가 공유 버킷으로 올린다)
  *
  * 왜: 지금은 학생이 스피커를 누를 때마다 Supabase Edge Function을 거친다.
  *   - 첫 재생에 2초 가까이 걸린다(콜드 스타트). 미리 받아 두면 즉시 난다.
@@ -36,7 +37,7 @@ import { execSync } from 'node:child_process'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const APP = path.join(__dirname, '..')
-const OUT_DIR = path.join(APP, 'public/assets/audio')
+const OUT_DIR = path.join(APP, 'tts-audio')
 const MANIFEST = path.join(APP, 'src/lib/tts/audio-manifest.json')
 /* 평문을 남기면 안 되는 것들 — 파일명(=해시)만 적는다. 앱이 해시를 계산해 대조한다. */
 const HASHES = path.join(APP, 'src/lib/tts/audio-hashes.json')
@@ -319,31 +320,15 @@ console.log(
 if (failed) console.log('실패한 것은 앱에서 예전처럼 Edge Function으로 재생됩니다.')
 
 /*
-  **매니페스트에 적힌 파일은 반드시 커밋돼 있어야 한다.**
+  **매니페스트에 적힌 파일은 반드시 버킷에 올라가 있어야 한다.**
 
   2026-09-09에 이걸로 사고가 났다. 음성 7,624개를 만들었는데 GitHub 푸시가 막혀
-  절반만 올라간 채 매니페스트만 먼저 배포됐다. 앱은 매니페스트를 믿고
-  `/assets/audio/...`를 요청하는데 파일이 없어 404가 나고, 재생 실패 폴백이 도는
-  바람에 **단어 2,034개가 브라우저 내장 음성으로** 나갔다 — 기기마다 목소리가 달라진다.
+  절반만 올라간 채 매니페스트만 먼저 배포됐다. 앱은 매니페스트를 믿고 파일을
+  요청하는데 없어서 404가 나고, 재생 실패 폴백이 도는 바람에 **단어 2,034개가
+  브라우저 내장 음성으로** 나갔다 — 기기마다 목소리가 달라진다.
 
-  파일이 없으면 매니페스트에서 빠지는 게 맞다(그럼 Edge Function으로 가서 같은
-  목소리가 난다). 커밋 안 된 파일이 남아 있으면 여기서 알려 준다.
+  그래서 mp3는 이제 저장소가 아니라 공유 버킷에 둔다. 순서가 생명이다 —
+  **올린 다음에 배포한다.** 아직 안 올린 게 있으면 여기서 알려 준다.
 */
-try {
-  const tracked = new Set(
-    execSync('git ls-files public/assets/audio', { cwd: APP, maxBuffer: 1 << 28 })
-      .toString()
-      .split(/\r?\n/)
-      .map((line) => line.split('/').pop())
-      .filter(Boolean),
-  )
-  const untracked = [...have].filter((file) => !tracked.has(file))
-  if (untracked.length) {
-    console.log(
-      `\n⚠ 커밋 안 된 음성 ${untracked.length}개 — 매니페스트에는 있는데 배포에는 없게 됩니다.` +
-        '\n  커밋·푸시한 뒤에 배포하세요. 그 전에 배포하면 그 문장들이 브라우저 음성으로 나갑니다.',
-    )
-  }
-} catch {
-  /* git이 없는 환경(배포 머신 등)에서는 건너뛴다 */
-}
+console.log(`
+다음 단계: npm run tts:upload  (버킷에 올린 뒤 배포하세요)`)

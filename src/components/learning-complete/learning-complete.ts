@@ -22,7 +22,7 @@ export const LEARNING_COMPLETE_STATS_DIVIDER_INSET = 22
 
 /**
  * 「오늘 배운 단어」카드 스크롤 영역.
- * 제목 아래 ~ 「단어장에서도 복습할 수 있어요」 위. 베이크 8칸을 덮고 React 그리드로 대체.
+ * 제목 아래 ~ 안내 문구(`LEARNING_COMPLETE_REVIEW_HINT`) 위. 베이크 8칸을 덮고 React 그리드로 대체.
  */
 export const LEARNING_COMPLETE_WORD_SCROLL = { x: 12, y: 478, w: 369, h: 216 }
 
@@ -31,6 +31,15 @@ export const LEARNING_COMPLETE_WORD_GRID_PAD = 6
 
 /** 카드 한 칸 (그리드 gap 계산용) */
 export const LEARNING_COMPLETE_WORD_CARD = { w: 172, h: 46 }
+
+/**
+ * 시안에 구워진 「단어장에서도 복습할 수 있어요」 자리.
+ *
+ * 단어장 탭을 내비에서 뺐으므로(갈 화면이 없어 「준비 중」만 떴다) 이 문구가 그대로
+ * 남으면 **없는 화면을 가리킨다.** 흰색으로 덮고 복습하기로 다시 쓴다.
+ * 실측(2026-09-09): 글자 x 112.8~264.5 · y 717~728 · 배경 순백.
+ */
+export const LEARNING_COMPLETE_REVIEW_HINT = { x: 12, y: 706, w: 369, h: 33 }
 
 /** 파란「계속하기」 */
 export const LEARNING_COMPLETE_PRIMARY_BTN = { x: 29, y: 757, w: 228, h: 54 }

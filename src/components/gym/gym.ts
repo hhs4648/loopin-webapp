@@ -102,17 +102,17 @@ export const GYM_EMPTY_HOME_HIT = {
 } as const
 
 /**
- * **이 시안에는 하단 내비가 구워져 있다**(y 770, 393×82 · 5칸).
- * 그래서 React 내비(`MainHomeBottomNav`)를 위에 또 올리지 않는다 — 두 겹이 된다.
- * 대신 구워진 칸 위에 **투명 히트영역만** 얹어 탭이 동작하게 한다.
+ * **이 시안에는 하단 내비가 구워져 있다**(y≈769~852 · 5칸, 헬스장 활성).
  *
- * 슬롯은 내비 시안(`nav-bar.svg`)과 같은 5등분이다.
+ * 예전에는 그 그림 위에 투명 히트영역만 얹었다(`GymNavHits`). 그런데 5칸 중 단어장은
+ * 갈 화면이 없어 내비에서 뺐고, 그림은 그대로라 **없는 탭이 계속 보였다.**
+ * 그래서 구워진 내비를 흰색으로 지우고 다른 화면과 같은 `MainHomeBottomNav`를 올린다 —
+ * 내비가 한 곳(`MAIN_HOME_NAV_TABS`)에서만 정해지므로 다시 어긋날 수 없다.
+ *
+ * 실측(2026-09-09): 내비 윗변 y≈769, 그 위(y 765)는 5장 모두 순백이라 흰색으로 덮는다.
+ * `MainHomeBottomNav`는 y 771부터 그리므로 덮개가 그 위 몇 px을 메운다.
  */
-export const GYM_NAV_BAR = { y: 770, h: 82 } as const
-export const GYM_NAV_TAB_COUNT = 5
-
-/** 탭 슬롯 대비 클릭 가능 폭 — 다른 내비와 같은 비율(좌우 여백으로 오탭 방지) */
-export const GYM_NAV_HIT_WIDTH_RATIO = 0.52
+export const GYM_BAKED_NAV_COVER = { x: 0, y: 766, w: 393, h: 86 } as const
 
 /**
  * 운동하는 캐릭터(일러스트) 자리 — 시안 실측 283.594² @ (39, 257.164).

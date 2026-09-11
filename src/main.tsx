@@ -4,12 +4,14 @@ import { App } from './App'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { startAppViewportSync } from './lib/app-viewport'
 import { migrateLegacyBrandStorage } from './lib/legacy-brand-storage'
+import { ensureNativeSystemBarsVisible } from './lib/system-bars'
 import './index.css'
 
 // 구 브랜드 키 → 새 키. **저장소를 읽는 어떤 코드보다 먼저** 돌아야 한다.
 migrateLegacyBrandStorage()
 
 startAppViewportSync()
+void ensureNativeSystemBarsVisible()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

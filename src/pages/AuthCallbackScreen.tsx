@@ -8,7 +8,9 @@ import {
   mergeServerProfile,
   saveAuth,
 } from '../lib/auth'
+import { extractSocialDisplayName } from '../lib/sync/social-display-name'
 import { fetchOwnProfile, getSignedInUser } from '../lib/sync/social-auth'
+import { getSupabase } from '../lib/sync/supabase-client'
 
 /**
  * 소셜 로그인에서 돌아오는 자리(`/auth/callback`).
@@ -114,10 +116,27 @@ export function AuthCallbackScreen() {
       const base =
         getStoredAuth() ??
         createUserFromSession(signedIn.id, signedIn.provider!)
+
+      // Apple/Google/Kakao가 준 이름 — 온보딩 「이름」 단계를 건너뛸 근거
+      setStage('소셜 프로필 확인 중')
+      let socialName: string | null = null
+      try {
+        const supabase = getSupabase()
+        const { data } = supabase
+          ? await supabase.auth.getUser()
+          : { data: { user: null } }
+        socialName = extractSocialDisplayName(data.user)
+      } catch {
+        socialName = null
+      }
+
       const withId = {
         ...base,
         id: signedIn.id,
         ...(signedIn.provider ? { provider: signedIn.provider } : {}),
+        ...(socialName && !base.displayName
+          ? { displayName: socialName }
+          : {}),
       }
       saveAuth(withId)
 
@@ -138,6 +157,13 @@ export function AuthCallbackScreen() {
           ? { role: profile.role, displayName: profile.displayName }
           : null,
       )
+      // 서버에 이름이 없고 소셜만 있으면 소셜 이름을 유지
+      if (!merged.displayName && socialName) {
+        const withSocial = { ...merged, displayName: socialName }
+        saveAuth(withSocial)
+        navigate(getPostAuthPath(withSocial), { replace: true })
+        return
+      }
       navigate(getPostAuthPath(merged), { replace: true })
     })().catch((error) => {
       /*

@@ -17,11 +17,17 @@ export function HomeScreen({ memberType }: HomeScreenProps) {
       navigate('/login', { replace: true })
       return
     }
-    if (user.memberType !== memberType) {
-      navigate(
-        memberType === 'student' ? '/teacher/home' : '/student/home',
-        { replace: true },
-      )
+    // 학생·선생님 모두 `/student/home`(초대코드·과제)을 쓴다.
+    if (
+      memberType === 'student' &&
+      user.memberType !== 'student' &&
+      user.memberType !== 'teacher'
+    ) {
+      navigate(getPostAuthPath(user), { replace: true })
+      return
+    }
+    if (memberType === 'teacher') {
+      navigate('/student/home', { replace: true })
       return
     }
     if (!user.onboardingCompleted) {

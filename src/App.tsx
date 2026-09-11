@@ -50,11 +50,6 @@ const TeacherOnboardingScreen = lazy(() =>
     default: m.TeacherOnboardingScreen,
   })),
 )
-const TeacherHandoffScreen = lazy(() =>
-  import('./pages/TeacherHandoffScreen').then((m) => ({
-    default: m.TeacherHandoffScreen,
-  })),
-)
 /** 가장 큰 덩어리 — 성 맵과 모든 풀이 화면이 여기 달려 있다 */
 const HomeScreen = lazy(() =>
   import('./pages/HomeScreen').then((m) => ({ default: m.HomeScreen })),
@@ -120,8 +115,11 @@ export function App() {
                 <Route path="/onboarding/student" element={<StudentOnboardingScreen />} />
                 <Route path="/onboarding/teacher" element={<TeacherOnboardingScreen />} />
                 <Route path="/student/home" element={<HomeScreen memberType="student" />} />
-                {/* 앱에는 선생님 화면이 없다 — 온보딩 뒤 선생님 웹으로 안내한다 */}
-                <Route path="/teacher/home" element={<TeacherHandoffScreen />} />
+                {/* 예전 선생님 핸드오프 — 초대코드 홈으로 보낸다 */}
+                <Route
+                  path="/teacher/home"
+                  element={<Navigate to="/student/home" replace />}
+                />
                 {import.meta.env.DEV ? (
                   <Route path="/__boom" element={<CrashProbe />} />
                 ) : null}

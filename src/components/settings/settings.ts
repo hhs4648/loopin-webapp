@@ -17,35 +17,37 @@
  * `?v=26` — 918 전체(홈 인디케이터 포함)를 그리면 이미지가 아래로 붙어 **설정
  * 제목·프로필 상단이 상태바에 잘렸다.** 내비 위(836)만 viewBox로 두고 패널에
  * 1:1로 맞춘다.
+ *
+ * `?v=27` — 시안 상단 상태바 밴드(~54px)를 크롭해 앱이 시계·배터리를 그린 것처럼
+ * 보이지 않게 한다. OS 상태바는 `app-shell` safe-area 패딩 위의 영역에서만 보인다.
  */
-export const SETTINGS_WINDOW_ASSET = '/assets/settings-window.svg?v=26'
+export const SETTINGS_WINDOW_ASSET = '/assets/settings-window.svg?v=27'
 
 /**
- * 표시 영역: 에셋 폭 · 내비 위(836)만. 하단 베이크 내비·홈 인디케이터는 viewBox 밖.
- * React `MainHomeBottomNav`(NAV_H=81)가 그 자리를 담당.
- * canvasH = contentH 이라 이미지가 패널에 꽉 차고 위로 밀리지 않는다.
+ * 표시 영역: 에셋 폭 · 상태바 밴드 아래~내비 위.
+ * React `MainHomeBottomNav`(NAV_H=81)가 하단을 담당.
  */
 export const SETTINGS_SOURCE = {
   canvasW: 401,
   canvasH: 836,
   contentX: 0,
-  contentY: 0,
+  /** Figma 상태바(시계·신호) 밴드 — 표시에서 제외 */
+  contentY: 54,
   contentW: 401,
-  contentH: 836,
+  contentH: 782,
 } as const
 
 /**
  * 설정 본문 패널에 에셋을 올릴 때.
- * 패널 높이 = contentH. 전체 캔버스(canvasH)를 그리되 overflow로 하단을 잘라
- * 좌표 %(contentH)와 픽셀이 맞는다. (aspect-ratio만 쓰면 프레임 393과 SVG 401
- * 비율 차로 내비 잔상이 비치고 계정 글씨·밑줄이 어긋났다.)
+ * 패널 높이 = contentH. 캔버스를 그리되 `contentY`만큼 위로 올려 상태바 밴드를 잘라
+ * 좌표 %(contentH)와 픽셀이 맞는다.
  */
 export function settingsWindowImageStyle() {
-  const { canvasH, contentH } = SETTINGS_SOURCE
+  const { canvasH, contentH, contentY } = SETTINGS_SOURCE
   return {
     position: 'absolute' as const,
     left: 0,
-    top: 0,
+    top: `${(-contentY / contentH) * 100}%`,
     width: '100%',
     height: `${(canvasH / contentH) * 100}%`,
     maxWidth: 'none',
@@ -254,8 +256,20 @@ export const SETTINGS_LINKED_HIT = {
 
 /**
  * 「회원탈퇴」 빨간 버튼 — 시안 y 743.5–797.5.
- * 글씨·아이콘이 베이크돼 있어 투명 히트만 쓴다.
+ * 글씨·아이콘은 별도 에셋(`settings-delete-account.svg`, Figma export `회원탈퇴.svg`).
+ * 에셋 viewBox 381×74 = 버튼 361×54 + 좌우·상하 그림자 패딩 10.
  */
+export const SETTINGS_DELETE_ASSET = '/assets/settings-delete-account.svg?v=1'
+
+/** 그림자 패딩 포함 — 이미지 배치용 */
+export const SETTINGS_DELETE_IMAGE = {
+  x: 10,
+  y: 734,
+  w: 381,
+  h: 74,
+} as const
+
+/** 빨간 카드 본체 — 투명 히트 */
 export const SETTINGS_DELETE_HIT = {
   x: 20,
   y: 744,

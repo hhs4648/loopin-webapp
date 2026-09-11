@@ -1,10 +1,28 @@
-﻿.git
-.cursor
-tmp-castle-align
-tmp-curriculum
-tmp-*.*
-*.png.png
-build-output.txt
-flag-start-raster.png
-agent-transcripts
+# Native / local-only — not needed for Vercel web deploy
+android/
+ios/
+_design-source/
+supabase/.temp/
+tmp-*
+tmp-*/
+tmp-castle-align/
+agent-transcripts/
+
+# Build / tooling
+node_modules/
+dist/
+dist-ssr/
+.vercel/
+*.local
 tsconfig.tsbuildinfo
+
+# Offline TTS mp3s (thousands of files) — web uses Edge Function / shared bucket
+public/assets/audio/
+
+# Secrets / large binaries
+*.p8
+*.aab
+*.apk
+*.jks
+*.keystore
+tts-audio/

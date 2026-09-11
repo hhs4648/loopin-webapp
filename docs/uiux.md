@@ -51,10 +51,11 @@ flowchart TD
 | 스플래시 | `/` | 1.8초 후 `localStorage` auth로 분기. 에셋 `splash-screen.svg`(학습 워드마크) · **가짜 시계·상태 아이콘은 표시하지 않음** |
 | 로그인 | `/login` | 학습 시안 · Apple / 카카오 / 구글 투명 히트 · **심사용 데모 로그인**(로컬·심사 빌드) → 비밀번호 `1234` 후 온보딩 생략·데모 반 입장 · **임시 로그인 (개발용)**은 비밀번호 없이 온보딩으로 감 |
 | 회원 유형 | `/onboarding/member-type` | 학생 / 교사 선택 |
-| 학생 온보딩 | `/onboarding/student` | 약관 → 이름 → 생년월일 → 학년 → 완료(`/student/home`) |
-| 교사 온보딩 | `/onboarding/teacher` | 약관 → 학교명 → 이름 → 완료 |
+| 학생 온보딩 | `/onboarding/student` | 약관 → 생년월일 → 학년 → 완료(`/student/home`). **이름 입력 없음**(소셜 이름 또는 `학생`) |
+| 교사 온보딩 | `/onboarding/teacher` | 약관 → 학교명 → 완료 → `/student/home`. **이름 입력 없음**(소셜 이름 또는 `선생님`) |
 
-> 온보딩에서 입력한 이름·생년월일·학년·학교명은 **UI만** 수집하며, 완료 시 `onboardingCompleted: true`만 저장된다.
+> 이름·생년월일·학년·학교명은 온보딩 완료 시 로컬 auth + `upsertStudentProfile`에 저장된다.
+> 이름은 Sign in with Apple 대응으로 온보딩에서 받지 않고, 설정에서 변경한다.
 
 학생 온보딩은 학년 선택 후 **다음**으로 끝난다. 학습목적 선택(`온보딩_학습목적선택`)
 화면은 **삭제**(2026-08-11)됐다. 완료 시 항상

@@ -53,10 +53,8 @@ export const MAIN_HOME_ASSETS = {
   /** 시작 깃발 — React 오버레이(`flag.svg`). 하늘 크롭 아래에 배치 · 항상 표시 */
   startFlag: '/assets/flag.svg?v=3',
   /** 하단 탭바 */
-  /** 5칸 공통 내비 — 원본 `네비게이션바.svg` */
-  bottomNav: '/assets/nav-bar.svg?v=1',
-  /** 복습 탭 활성 (아이콘·라벨 #333333) */
-  bottomNavReview: '/assets/main-home-bottom-nav-review.svg?v=3',
+  /** 4칸 공통 내비 — 원본 `네비게이션바.svg` */
+  bottomNav: '/assets/nav-bar.svg?v=2',
   /**
    * 완료 별표 — `별표.svg` → `mission-star.svg`.
    * 렌더는 `MissionCheckBadge`가 성 색으로 다시 그림(에셋은 시안 참고).
@@ -908,7 +906,7 @@ export function grassMarkerStyle(cx: number, cy: number) {
 }
 
 /** 하단 탭 — Figma `메인화면(과제 부여 받은후)` 4등분 */
-export type MainHomeNavTabId = 'home' | 'vocab' | 'review' | 'gym' | 'menu'
+export type MainHomeNavTabId = 'home' | 'review' | 'gym' | 'menu'
 
 export type MainHomeNavTab = {
   id: MainHomeNavTabId
@@ -917,12 +915,15 @@ export type MainHomeNavTab = {
 }
 
 /**
- * 하단 내비 5칸 (2026-08-11 · 시안 `nav-bar.svg`).
- * 순서·개수가 시안 슬롯과 1:1이어야 클릭 자리가 맞는다 — 시안은 393을 5등분(78.62)한다.
+ * 하단 내비 4칸 (시안 `nav-bar.svg`).
+ * 순서·개수가 시안 슬롯과 1:1이어야 클릭 자리가 맞는다 — 시안은 394를 4등분(98.5)한다.
+ *
+ * **단어장은 뺐다.** 갈 화면이 없어서 눌러도 「준비 중」 토스트만 떴는데,
+ * 화면에 보이는데 동작하지 않는 탭은 앱을 미완성으로 보이게 한다.
+ * 되살릴 때는 시안 5칸짜리를 다시 받아야 한다 — 지금 에셋은 4칸으로 다시 그렸다.
  */
 export const MAIN_HOME_NAV_TABS: MainHomeNavTab[] = [
   { id: 'home', label: '홈', ariaLabel: '홈' },
-  { id: 'vocab', label: '단어장', ariaLabel: '단어장' },
   { id: 'review', label: '복습하기', ariaLabel: '복습하기' },
   { id: 'gym', label: '헬스장', ariaLabel: '헬스장' },
   { id: 'menu', label: '전체', ariaLabel: '전체' },
@@ -935,16 +936,15 @@ export const MAIN_HOME_NAV_TABS: MainHomeNavTab[] = [
  * 그래서 복습하기·헬스장·전체에 들어가도 홈이 켜진 채였고, 지금 어디인지 알 수가
  * 없었다.
  *
- * 원본에서 칸을 나눠 색만 바꿔 5장을 만들었다(활성 `#333333` · 비활성 `#DCDCDC`).
+ * 원본에서 칸을 나눠 색만 바꿔 만들었다 — 활성 `#333333` · 비활성 `#DCDCDC`.
  * 시안이 새로 오면 같은 이름으로 덮으면 되고, 여기 코드는 손댈 필요가 없다.
  * 원본은 `_design-source/nav-bar.original.svg`.
  */
 const NAV_ASSET_BY_TAB: Record<MainHomeNavTabId, string> = {
-  home: '/assets/nav-bar-home.svg?v=1',
-  vocab: '/assets/nav-bar-vocab.svg?v=1',
-  review: '/assets/nav-bar-review.svg?v=1',
-  gym: '/assets/nav-bar-gym.svg?v=1',
-  menu: '/assets/nav-bar-menu.svg?v=1',
+  home: '/assets/nav-bar-home.svg?v=2',
+  review: '/assets/nav-bar-review.svg?v=2',
+  gym: '/assets/nav-bar-gym.svg?v=2',
+  menu: '/assets/nav-bar-menu.svg?v=2',
 }
 
 export function mainHomeNavAssetFor(activeId: MainHomeNavTabId): string {

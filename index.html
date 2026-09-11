@@ -21,12 +21,12 @@
     <link rel="manifest" href="/manifest.webmanifest" />
 
     <!--
-      iOS는 매니페스트를 거의 안 읽는다 — 홈 화면에서 전체화면으로 열리게 하려면
-      이 두 줄이 따로 필요하다. `black-translucent`는 상태바 뒤까지 화면을 쓰고,
-      `viewport-fit=cover`와 짝이다.
+      iOS 홈화면/전체화면. `default` = 어두운 상태바 아이콘(밝은 화면용).
+      `black-translucent`는 아이콘이 흰색이라 로그인·온보딩 등 흰 화면에서
+      시계·배터리가 안 보였다.
     -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="학습" />
 
     <!--

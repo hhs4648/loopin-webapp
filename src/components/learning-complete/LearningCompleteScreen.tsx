@@ -17,6 +17,7 @@ import {
   LEARNING_COMPLETE_ASSET,
   LEARNING_COMPLETE_BADGE,
   LEARNING_COMPLETE_PRIMARY_BTN,
+  LEARNING_COMPLETE_REVIEW_HINT,
   LEARNING_COMPLETE_SECONDARY_BTN,
   LEARNING_COMPLETE_STATS_CARD,
   LEARNING_COMPLETE_STATS_DIVIDER_INSET,
@@ -230,6 +231,17 @@ export function LearningCompleteScreen({
             </div>
           ))}
         </div>
+      </div>
+
+      {/*
+        구워진 「단어장에서도 복습할 수 있어요」를 덮고 다시 쓴다 —
+        단어장 탭이 없어졌으니 갈 수 있는 곳(복습하기)을 가리켜야 한다.
+      */}
+      <div
+        className="pointer-events-none absolute z-[5] flex items-center justify-center bg-white font-sans text-[13px] font-medium leading-none text-[#A5A9AD]"
+        style={figmaRectStyle(LEARNING_COMPLETE_REVIEW_HINT)}
+      >
+        복습하기에서 다시 풀 수 있어요
       </div>
 
       {onContinue ? (

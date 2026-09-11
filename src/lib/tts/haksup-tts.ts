@@ -30,9 +30,17 @@ function cacheKey(text: string, lang: HaksupTtsLang): string {
 /**
  * **미리 만들어 둔 음성이 있으면 그걸 쓴다.** 없으면 null → 예전처럼 함수를 부른다.
  *
- * 문제은행처럼 내용이 고정된 것은 `scripts/build-tts-audio.mjs`가 배포 전에 뽑아
- * `public/assets/audio/`에 넣어 둔다. 그 파일은 Vercel CDN에서 즉시 오므로
- * 첫 재생 지연(콜드 스타트 2초)이 사라지고, Supabase 호출·egress도 안 쓴다.
+ * 문제은행처럼 내용이 고정된 것은 `scripts/build-tts-audio.mjs`가 미리 뽑아
+ * `scripts/upload-tts-audio.mjs`로 **공유 버킷에 올려 둔다.**
+ *
+ * 예전에는 이 mp3들을 `public/assets/audio/`에 넣어 앱 번들로 날랐다. 두 번 터졌다 —
+ * GitHub 푸시가 막혀 매니페스트만 배포되는 바람에 404가 났고(2026-09-09), 그 잔해가
+ * 릴리스 빌드에 쓸려 들어가 AAB가 110MB가 됐다. 오디오는 코드가 아니라 데이터라
+ * 저장소·번들이 아니라 오브젝트 스토리지에 둔다.
+ *
+ * 매니페스트에 있다는 것이 **버킷에 있다는 보증**이라, 아래 `sharedCacheUrl`과 달리
+ * 존재 확인(HEAD)을 하지 않는다 — 왕복이 한 번 줄어든다. 보증을 지키는 건
+ * 업로드 스크립트다(올린 뒤에 매니페스트를 갱신한다).
  *
  * 파일 이름이 **텍스트의 해시**라, 엑셀에서 문장을 고치면 매니페스트에서 안 잡히고
  * 자동으로 함수 경로를 탄다 — 옛 음성이 잘못 나올 수가 없다.
@@ -41,9 +49,15 @@ function cacheKey(text: string, lang: HaksupTtsLang): string {
  */
 const staticAudio = audioManifest as Record<string, string>
 
+/** 공유 버킷의 공개 주소. Supabase 설정이 없으면 null → 재생은 폴백으로 간다. */
+function bucketUrl(file: string): string | null {
+  const env = getSupabaseEnv()
+  return env ? `${env.url}/storage/v1/object/public/${SHARED_BUCKET}/${file}` : null
+}
+
 function staticAudioUrl(text: string, lang: HaksupTtsLang): string | null {
   const file = staticAudio[`${lang}:${normalizeText(text)}`]
-  return file ? `/assets/audio/${file}` : null
+  return file ? bucketUrl(file) : null
 }
 
 /**
@@ -67,7 +81,7 @@ async function prebuiltByHashUrl(
   const hex = await sha1Hex(`${lang}:${normalizeText(text)}`)
   if (!hex) return null
   const name = `${lang}-${hex.slice(0, 16)}.mp3`
-  return staticAudioFiles.has(name) ? `/assets/audio/${name}` : null
+  return staticAudioFiles.has(name) ? bucketUrl(name) : null
 }
 
 /**

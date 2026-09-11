@@ -2,10 +2,8 @@ import { playTapSfx } from '../exercise/answer-sfx'
 import { useBackNavigation } from '../navigation/BackNavigationProvider'
 
 type SettingsAccountSheetProps = {
-  /** 카카오 / 애플 / 구글 (임시 참여면 「임시 참여」) */
+  /** 카카오 / 애플 / 구글 */
   providerLabel: string
-  /** 선생님이 학생 화면을 보려고 임시로 들어온 상태 — 소셜 계정이 아니다 */
-  temporary?: boolean
   onClose: () => void
 }
 
@@ -15,7 +13,6 @@ type SettingsAccountSheetProps = {
  */
 export function SettingsAccountSheet({
   providerLabel,
-  temporary = false,
   onClose,
 }: SettingsAccountSheetProps) {
   useBackNavigation(onClose)
@@ -49,19 +46,11 @@ export function SettingsAccountSheet({
           <span className="font-bold text-[#0B1220]">현재 로그인</span>
           <span className="font-extrabold text-[#2AA3FF]">{providerLabel}</span>
         </div>
-        {temporary ? (
-          <p className="mb-3 font-sans text-[13px] font-medium leading-relaxed text-[#64748B]">
-            지금은 <b className="font-bold text-[#0B1220]">임시 학생</b>으로 참여 중이에요.
-            로그아웃하면 이 기록은 다시 볼 수 없고, 선생님으로 돌아가려면 원래 계정으로
-            로그인하면 돼요.
-          </p>
-        ) : (
-          <p className="mb-3 font-sans text-[13px] font-medium leading-relaxed text-[#64748B]">
-            처음 가입한 방법({providerLabel})으로 계속 로그인해 주세요. 다른 방법으로
-            로그인하면 <b className="font-bold text-[#0B1220]">다른 계정</b>이 되어 학습
-            기록이 보이지 않아요.
-          </p>
-        )}
+        <p className="mb-3 font-sans text-[13px] font-medium leading-relaxed text-[#64748B]">
+          처음 가입한 방법({providerLabel})으로 계속 로그인해 주세요. 다른 방법으로
+          로그인하면 <b className="font-bold text-[#0B1220]">다른 계정</b>이 되어 학습
+          기록이 보이지 않아요.
+        </p>
 
         <button
           type="button"

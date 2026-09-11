@@ -148,7 +148,7 @@ export function LoginScreen() {
             disabled={demoPending}
             className="absolute left-1/2 top-[6.5%] z-30 -translate-x-1/2 cursor-pointer rounded-full border border-[#2AA3FF]/40 bg-white/90 px-4 py-2 font-sans text-[13px] font-bold text-[#155DFC] backdrop-blur-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2AA3FF] disabled:cursor-wait disabled:opacity-70"
           >
-            {demoPending ? '데모 로그인 중…' : '심사용 데모 로그인'}
+            {demoPending ? '데모 로그인 중… (10~20초)' : '심사용 데모 로그인'}
           </button>
         ) : null}
         {isDevLoginAllowed() ? (
@@ -234,7 +234,9 @@ export function LoginScreen() {
             className="pointer-events-none absolute inset-0 z-50 flex items-end justify-center pb-[4%]"
           >
             <span className="rounded-full bg-black/35 px-4 py-2 font-sans text-[13px] font-semibold text-white">
-              {demoPending ? '데모 계정 준비 중…' : '로그인 창으로 이동 중이에요…'}
+              {demoPending
+                ? '데모 계정 준비 중… 10~20초 걸릴 수 있어요'
+                : '로그인 창으로 이동 중이에요…'}
             </span>
           </div>
         ) : null}

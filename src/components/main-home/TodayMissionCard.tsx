@@ -71,7 +71,7 @@ export function TodayMissionCard({
             className="absolute flex items-center"
             style={cardRectStyle(MISSION_TITLE_RECT)}
           >
-            <p className="truncate text-[23px] font-bold leading-tight text-[#1F242E]">
+            <p className="truncate text-[18px] font-bold leading-tight text-[#1F242E]">
               {assignment.title}
             </p>
           </div>
@@ -189,7 +189,7 @@ export function TodayMissionCard({
             className="absolute flex items-center"
             style={cardRectStyle(MISSION_TITLE_RECT)}
           >
-            <p className="truncate font-['Pretendard',sans-serif] text-[23px] font-bold leading-tight text-[#1F242E]">
+            <p className="truncate font-['Pretendard',sans-serif] text-[18px] font-bold leading-tight text-[#1F242E]">
               오늘의 미션을 모두 완료했어요!
             </p>
           </div>

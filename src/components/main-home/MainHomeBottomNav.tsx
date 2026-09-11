@@ -3,6 +3,9 @@
  * (아이콘/라벨은 SVG 시안 — `activeId`에 따라 홈/복습 활성 에셋 전환)
  *
  * 히트 영역은 탭 칸 전체가 아니라 아이콘·라벨 근처(칸 폭의 ~52%)만.
+ *
+ * OS 하단 내비(3버튼/제스처)와의 겹침은 `app-shell`의
+ * `padding-bottom: env(safe-area-inset-bottom)` 이 담당한다.
  */
 import type { MainHomeNavTabId } from './assignment-home'
 import {

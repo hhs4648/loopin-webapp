@@ -17,7 +17,6 @@ import { MapCastleSprite } from './MapCastleSprite'
 import { ReviewMainWindow } from '../review/ReviewMainWindow'
 import { GymScreen } from '../gym/GymScreen'
 import { GymNewBadge } from '../gym/GymNewBadge'
-import { NavNoticeToast, VOCAB_COMING_SOON } from './NavNoticeToast'
 import {
   castleAssignments,
   pendingWrongReissues,
@@ -336,7 +335,6 @@ export function AssignmentReceivedScreen({
    */
   const [mapScrollFrame, setMapScrollFrame] = useState(0)
   /** 아직 화면이 없는 탭을 눌렀을 때의 안내 */
-  const [navNotice, setNavNotice] = useState<string | null>(null)
   const studyStreak = useStudyStreak()
 
   /**
@@ -418,10 +416,6 @@ export function AssignmentReceivedScreen({
       onCloseGym?.()
       onOpenSettings?.()
       return
-    }
-    if (id === 'vocab') {
-      // 갈 화면이 아직 없다. 무동작이면 눌리지 않는 버튼으로 보이니 이유를 알려 준다.
-      setNavNotice(VOCAB_COMING_SOON)
     }
   }
 
@@ -966,7 +960,6 @@ export function AssignmentReceivedScreen({
 
       </div>
 
-      <NavNoticeToast message={navNotice} onHide={() => setNavNotice(null)} />
     </div>
   )
 }

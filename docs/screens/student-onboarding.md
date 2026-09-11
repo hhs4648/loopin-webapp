@@ -4,16 +4,18 @@
 |------|-----|
 | 경로 | `/onboarding/student` |
 | 구현 | `src/pages/onboarding/StudentOnboardingScreen.tsx` |
-| 플로우 | 약관 → 이름 → 생년월일 → 학년 → 완료(`/student/home` 초대코드) |
+| 플로우 | 약관 → 생년월일 → 학년 → 완료(`/student/home` 초대코드) |
+
+> **2026-09-11:** 온보딩에서 **이름 입력을 받지 않는다**(Guideline 4 / Sign in with Apple).
+> 소셜이 준 이름을 쓰고, 없으면 `학생`. 설정에서 변경 가능.
 
 ## Export 에셋
 
 | 단계 | Figma Export (원본) | 코드 파일명 |
 |------|---------------------|-------------|
 | 1. 약관 | `온보딩_회원가입 1(교사 선택).svg` | `onboarding-teacher-01-terms.svg` (교사와 공유) |
-| 2. 이름 | (공유 에셋) | `onboarding-teacher-02-school.svg` 레이아웃 재사용 가능 |
-| 3. 생년월일 | `온보딩_생년월일_선택전.svg` | `onboarding-student-03-birthdate.svg` |
-| 4. 학년 | `온보딩_학년선택_선택전.svg` | `onboarding-student-04-grade.svg` |
+| 2. 생년월일 | `온보딩_생년월일_선택전.svg` | `onboarding-student-03-birthdate.svg` |
+| 3. 학년 | `온보딩_학년선택_선택전.svg` | `onboarding-student-04-grade.svg` |
 
 공통: `birthdate-dropdown-container.svg`
 
@@ -29,11 +31,12 @@
 | 단계 | 동작 |
 |------|------|
 | 약관 | 체크/라벨로 동의 · `>` 로 전문 보기. `[필수]` 개인정보·이용약관, `[선택]` 마케팅. 필수 2개 동의 후 다음. |
-| 이름 | 텍스트 입력 |
 | 생년월일 | `BirthdatePicker` |
 | 학년 | 학년 카테고리 선택 → **다음**으로 온보딩 완료 → `/student/home`(초대코드부터) |
 
-> **현재:** 이름·생년월일·학년은 온보딩 완료 시 `AuthUser.displayName` + 프로필 캐시(`upsertStudentProfile`)에 저장된다. 설정 창 프로필·닉네임 행에 온보딩 이름이 반영되고, 연동 뱃지/행은 로그인 provider(`kakao`/`apple`/`google` → 카카오·애플·구글)를 쓴다. 설정의 **학년 변경** 행·시트는 온보딩과 같은 **중1·중2·중3** (`SettingsGradeSheet`, 저장값 `중학교 n학년`).  
+> **현재:** 표시 이름은 소셜 `user_metadata`(없으면 `학생`) + 생년월일·학년을 온보딩 완료 시
+> `AuthUser.displayName` + `upsertStudentProfile`에 저장한다. 설정에서 이름·학년을 바꿀 수 있다.
+> 연동 뱃지/행은 로그인 provider(`kakao`/`apple`/`google`). 학년 시트는 **중1·중2·중3**.
 > 학습목적 선택 화면은 제거됨 — 완료 후 항상 학원/학교 메인. 화면 구분은 [INDEX.md 학생 메인 2종](../INDEX.md).
 
 ## 접근성
@@ -51,7 +54,7 @@
 
 | 위치 | 시안(SVG) | 코드 |
 |------|-----------|------|
-| 학년 선택 (step 4) | 제목 "중학교 학년…", 보기 **1·2·3학년** | `GRADE_ROWS` = 1/2/3 → 저장 `중학교 n학년` · 설정 행 표시 **중1·중2·중3** |
+| 학년 선택 (step 3) | 제목 "중학교 학년…", 보기 **1·2·3학년** | `GRADE_ROWS` = 1/2/3 → 저장 `중학교 n학년` · 설정 행 표시 **중1·중2·중3** |
 | 생년월일 년도 필드 | **연도** | placeholder `년도` (미해결) |
 
 > **2026-09-05:** 예전 `초등`/`중등`/`고등`(및 데모 `'middle'`) 저장은 설정에 영문·가짜 중3이 떠

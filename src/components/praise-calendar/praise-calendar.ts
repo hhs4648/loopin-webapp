@@ -1,3 +1,4 @@
+import { isWrongReissue } from '../../features/assignments/wrong-reissue'
 import type { StudentAssignment } from '../../lib/sync/types'
 
 export const FRAME_W = 393
@@ -278,18 +279,24 @@ export function scoreToStatus(
   return score >= passThreshold ? 'pass' : 'regrettable'
 }
 
-/** `lessonDate`(YYYY-MM-DD) + `deadlineTime`(HH:mm / HH:mm:ss / ISO) → 마감 시각 */
+/**
+ * 마감 시각 = 마감일(`deadlineDate`, 없으면 수업일) + `deadlineTime`.
+ * 캘린더 칸은 여전히 `lessonDate`에 붙이고, **이모티콘 발동**만 이 시각으로 판정한다.
+ */
 export function getAssignmentDeadline(
-  assignment: Pick<StudentAssignment, 'lessonDate' | 'deadlineTime'>,
+  assignment: Pick<
+    StudentAssignment,
+    'lessonDate' | 'deadlineDate' | 'deadlineTime'
+  >,
 ): Date | null {
-  const lesson = parseDateKey(assignment.lessonDate)
+  const day = parseDateKey(assignment.deadlineDate ?? assignment.lessonDate)
   const raw = assignment.deadlineTime?.trim() ?? ''
   if (!raw) {
-    if (!lesson) return null
+    if (!day) return null
     return new Date(
-      lesson.getFullYear(),
-      lesson.getMonth(),
-      lesson.getDate(),
+      day.getFullYear(),
+      day.getMonth(),
+      day.getDate(),
       23,
       59,
       59,
@@ -303,14 +310,14 @@ export function getAssignmentDeadline(
     return Number.isNaN(parsed.getTime()) ? null : parsed
   }
 
-  if (!lesson) return null
+  if (!day) return null
 
   const timeMatch = /^(\d{1,2}):(\d{2})(?::(\d{2}))?/.exec(raw)
   if (!timeMatch) {
     return new Date(
-      lesson.getFullYear(),
-      lesson.getMonth(),
-      lesson.getDate(),
+      day.getFullYear(),
+      day.getMonth(),
+      day.getDate(),
       23,
       59,
       59,
@@ -333,9 +340,9 @@ export function getAssignmentDeadline(
   }
 
   return new Date(
-    lesson.getFullYear(),
-    lesson.getMonth(),
-    lesson.getDate(),
+    day.getFullYear(),
+    day.getMonth(),
+    day.getDate(),
     hours,
     minutes,
     seconds,
@@ -344,17 +351,22 @@ export function getAssignmentDeadline(
 }
 
 export function isAssignmentDeadlinePassed(
-  assignment: Pick<StudentAssignment, 'lessonDate' | 'deadlineTime'>,
+  assignment: Pick<
+    StudentAssignment,
+    'lessonDate' | 'deadlineDate' | 'deadlineTime'
+  >,
   now: Date = new Date(),
 ): boolean {
   const deadline = getAssignmentDeadline(assignment)
-  if (!deadline) return true
+  // 마감 시각을 못 구하면 「아직 안 지남」— 미제출 이모티콘을 미리 띄우지 않는다
+  if (!deadline) return false
   return now.getTime() >= deadline.getTime()
 }
 
 /**
- * 과제 1건 → 캘린더 이모티콘.
- * - 완료: 점수 기준 통과/아쉬움
+ * 과제 1건 → 캘린더 이모티콘 발동.
+ * - **완료**했거나 **마감일이 지났을 때만** 이모티콘
+ * - 완료: 점수 기준 통과/아쉬움 (점수 없으면 아쉬움)
  * - 미제출 + 마감 지남: 미제출
  * - 미제출 + 마감 전: null (이모티콘 없음)
  */
@@ -365,15 +377,12 @@ export function resolveAssignmentStatus(
 ): PraiseDayStatus | null {
   const done =
     assignment.status === 'completed' || Boolean(assignment.completedAt)
-  if (!done) {
-    return isAssignmentDeadlinePassed(assignment, now) ? 'incomplete' : null
+  if (done) {
+    const score = assignment.latestScore ?? assignment.firstScore
+    return score == null ? 'regrettable' : scoreToStatus(score, passThreshold)
   }
 
-  const score = assignment.latestScore ?? assignment.firstScore
-  if (score == null) {
-    return isAssignmentDeadlinePassed(assignment, now) ? 'incomplete' : null
-  }
-  return scoreToStatus(score, passThreshold)
+  return isAssignmentDeadlinePassed(assignment, now) ? 'incomplete' : null
 }
 
 export function aggregateDayStatus(
@@ -399,6 +408,9 @@ export function buildDayStatusByDate(
   >()
 
   for (const assignment of assignments) {
+    // 오답 재출제(개인 과제)는 성·칭찬 캘린더 대상이 아님
+    if (isWrongReissue(assignment)) continue
+
     const parsed = parseDateKey(assignment.lessonDate)
     const dateKey = parsed
       ? toDateKey(parsed)
@@ -435,6 +447,7 @@ export function summarizeMonth(
   monthIndex: number,
 ): PraiseMonthSummary {
   const inMonth = assignments.filter((assignment) => {
+    if (isWrongReissue(assignment)) return false
     const date = parseDateKey(assignment.lessonDate)
     return date?.getFullYear() === year && date.getMonth() === monthIndex
   })

@@ -20,15 +20,22 @@ import {
   NAV_H,
   type MainHomeNavTabId,
 } from '../main-home/assignment-home'
-import { BackButtonOverlay } from '../navigation/BackButtonOverlay'
-import { BACK_MASK_SETTINGS } from '../navigation/figma-navigation'
+import { useCurrentBackNavigation } from '../navigation/BackNavigationProvider'
+import {
+  BACK_BUTTON_HIT,
+  BACK_CHEVRON,
+  BACK_CHEVRON_COLOR,
+  BACK_MASK_SETTINGS,
+} from '../navigation/figma-navigation'
 import { SettingsAccountSheet } from './SettingsAccountSheet'
 import { SettingsDeleteSheet } from './SettingsDeleteSheet'
 import { SettingsGradeSheet } from './SettingsGradeSheet'
 import { SettingsNameSheet } from './SettingsNameSheet'
 import {
   SETTINGS_ACCOUNT_VALUE_CLASS,
+  SETTINGS_DELETE_ASSET,
   SETTINGS_DELETE_HIT,
+  SETTINGS_DELETE_IMAGE,
   SETTINGS_DISPLAY_NAME_MAX,
   SETTINGS_DOC_URLS,
   SETTINGS_GRADE_HIT,
@@ -81,6 +88,7 @@ function providerBadgeClass(provider: SocialProvider): string {
 export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindowProps) {
   const bodyBottomPct = (NAV_H / FRAME_H) * 100
   const navigate = useNavigate()
+  const { visible: backVisible, onBack } = useCurrentBackNavigation()
 
   const [openDoc, setOpenDoc] = useState<
     'privacy' | 'terms' | 'marketing' | null
@@ -103,12 +111,7 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
     ),
   )
   const provider: SocialProvider = user?.provider ?? 'kakao'
-  /*
-    선생님이 「학생으로 임시 참여」로 들어온 경우는 소셜 계정이 아니라 익명 세션이다.
-    그대로 두면 연동 계정 자리에 로그인한 적 없는 provider 이름이 뜬다.
-  */
-  const isTemporary = user?.temporary === true
-  const providerLabel = isTemporary ? '임시 참여' : socialProviderLabel(provider)
+  const providerLabel = socialProviderLabel(provider)
   const [gradeValue, setGradeValue] = useState(profile?.grade ?? null)
   const gradeLabel = formatSettingsGradeLabel(gradeValue)
   const selectedGradeId = parseSettingsGradeId(gradeValue)
@@ -237,6 +240,49 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
           style={settingsWindowImageStyle()}
         />
 
+        {/*
+          상태바 밴드를 크롭했으므로 뒤로가기도 설정 패널 좌표로 둔다.
+          (공통 BackButtonOverlay 의 y=56 은 크롭 전 기준이라 어긋난다.)
+        */}
+        {backVisible ? (
+          <>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute z-[99]"
+              style={{
+                ...settingsContentRectStyle(
+                  settingsCanvasToCropRect(BACK_MASK_SETTINGS.rect),
+                ),
+                background: BACK_MASK_SETTINGS.color,
+              }}
+            />
+            <button
+              type="button"
+              aria-label="뒤로가기"
+              className="absolute z-[100] cursor-pointer bg-transparent p-0"
+              style={settingsContentRectStyle(
+                settingsCanvasToCropRect(BACK_BUTTON_HIT),
+              )}
+              onClick={onBack}
+            >
+              <svg
+                aria-hidden
+                viewBox={`0 0 ${BACK_BUTTON_HIT.w} ${BACK_BUTTON_HIT.h}`}
+                className="h-full w-full"
+                fill="none"
+              >
+                <path
+                  d={`M${BACK_BUTTON_HIT.w / 2 + BACK_CHEVRON.w / 2} ${BACK_BUTTON_HIT.h / 2 - BACK_CHEVRON.h / 2}L${BACK_BUTTON_HIT.w / 2 - BACK_CHEVRON.w / 2} ${BACK_BUTTON_HIT.h / 2}L${BACK_BUTTON_HIT.w / 2 + BACK_CHEVRON.w / 2} ${BACK_BUTTON_HIT.h / 2 + BACK_CHEVRON.h / 2}`}
+                  stroke={BACK_CHEVRON_COLOR}
+                  strokeWidth={BACK_CHEVRON.strokeWidth}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </>
+        ) : null}
+
         {/* 베이크 이름·연동 뱃지 — 하늘톤으로 가린 뒤 온보딩/로그인 값 */}
         <div
           className="pointer-events-none absolute z-[11]"
@@ -258,13 +304,7 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
           style={badgeStyle}
           aria-hidden
         >
-          <span
-            className={`${SETTINGS_PROFILE_BADGE_CLASS} ${
-              isTemporary
-                ? 'bg-[#EEF1F5] text-[#5A6472]'
-                : providerBadgeClass(provider)
-            }`}
-          >
+          <span className={`${SETTINGS_PROFILE_BADGE_CLASS} ${providerBadgeClass(provider)}`}>
             {providerLabel}
           </span>
         </div>
@@ -339,7 +379,17 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
               onClick={() => handleActivateSettingsRow(row)}
             />
           ))}
-          {/* 회원탈퇴는 `설정.svg`에 베이크됨 — 투명 히트만 */}
+          {/* 회원탈퇴 — Figma `회원탈퇴.svg` 오버레이 + 투명 히트 */}
+          <img
+            src={SETTINGS_DELETE_ASSET}
+            alt=""
+            aria-hidden
+            draggable={false}
+            className="pointer-events-none absolute z-[11] select-none"
+            style={settingsContentRectStyle(
+              settingsCanvasToCropRect(SETTINGS_DELETE_IMAGE),
+            )}
+          />
           <button
             type="button"
             aria-label="회원탈퇴"
@@ -354,8 +404,6 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
           />
         </div>
       </div>
-
-      <BackButtonOverlay mask={BACK_MASK_SETTINGS} />
 
       <MainHomeBottomNav activeId="menu" onSelect={onSelectNav} />
 
@@ -380,7 +428,6 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
       {accountSheetOpen ? (
         <SettingsAccountSheet
           providerLabel={providerLabel}
-          temporary={isTemporary}
           onClose={() => setAccountSheetOpen(false)}
         />
       ) : null}

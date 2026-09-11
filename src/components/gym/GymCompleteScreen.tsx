@@ -4,7 +4,9 @@ import type { MainHomeNavTabId } from '../main-home/assignment-home'
 import { formatCorrectSummary } from '../grammar-complete/grammar-complete'
 import { gymCompleteHeading } from '../../lib/sync/assignment-title'
 import type { ContentSnapshot } from '../../lib/sync/types'
+import { MainHomeBottomNav } from '../main-home/MainHomeBottomNav'
 import {
+  GYM_BAKED_NAV_COVER,
   GYM_COMPLETE_ASSET,
   GYM_COMPLETE_CTA_HIT,
   GYM_COMPLETE_HEADING_MASK,
@@ -15,7 +17,6 @@ import {
   GYM_EMPTY_STATUS_BAR_H,
   gymRectStyle,
 } from './gym'
-import { GymNavHits } from './GymNavHits'
 
 /**
  * 헬스장 오답 재출제를 다 푼 뒤. 성 맵 종합 완료(`GrammarCompleteScreen`)와 다르다.
@@ -146,7 +147,13 @@ export function GymCompleteScreen({
           />
         ) : null}
 
-        <GymNavHits onSelectNav={onSelectNav} />
+        {/* 구워진 5칸 내비를 지우고 공용 내비를 올린다 (GymScreen과 동일) */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute z-[55] bg-white"
+          style={gymRectStyle(GYM_BAKED_NAV_COVER)}
+        />
+        <MainHomeBottomNav activeId="gym" onSelect={onSelectNav} />
       </div>
     </div>
   )

@@ -71,6 +71,14 @@
   left: var(--app-v-left);
   width: var(--app-vw);
   height: var(--app-vh);
+  box-sizing: border-box;
+  /*
+    OS 상태바·하단 제스처/3버튼 내비와 겹치지 않게 한다.
+    예전엔 프레임이 화면 끝까지 가서 설정 상단에 시계가 「앱이 그린 것처럼」 보였고,
+    하단 탭이 안드로이드 시스템 키와 겹쳤다.
+  */
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -81,7 +89,8 @@
 .app-frame {
   width: min(100%, 540px, calc(var(--app-vh) * 393 / 852));
   aspect-ratio: 393 / 852;
-  max-height: var(--app-vh);
+  /* shell safe-area 패딩 안쪽에 맞춰야 하단 탭이 시스템 키와 안 겹친다 */
+  max-height: 100%;
   position: relative;
   overflow: hidden;
   background: #ffffff;

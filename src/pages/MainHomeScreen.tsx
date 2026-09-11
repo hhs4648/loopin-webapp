@@ -14,10 +14,7 @@ import { AssignmentReceivedScreen } from '../components/main-home/AssignmentRece
 import type { CompletedCastleTarget } from '../components/main-home/AssignmentReceivedScreen'
 import { MainHomeMapStartBackdrop } from '../components/main-home/MainHomeMapStartBackdrop'
 import { MainHomeBottomNav } from '../components/main-home/MainHomeBottomNav'
-import {
-  NavNoticeToast,
-  VOCAB_COMING_SOON,
-} from '../components/main-home/NavNoticeToast'
+import { GymScreen } from '../components/gym/GymScreen'
 import { ReviewMainWindow } from '../components/review/ReviewMainWindow'
 import { SettingsWindow } from '../components/settings/SettingsWindow'
 import { WordMatchScreen } from '../components/word-match/WordMatchScreen'
@@ -287,8 +284,6 @@ export function MainHomeScreen() {
   const [star2LearningCompleted, setStar2LearningCompleted] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [reviewOpen, setReviewOpen] = useState(false)
-  /** 아직 화면이 없는 탭을 눌렀을 때의 안내 (초대코드 화면용) */
-  const [navNotice, setNavNotice] = useState<string | null>(null)
   /** 하단 내비 「헬스장」 — 복습하기와 같은 풀스크린 오버레이 */
   const [gymOpen, setGymOpen] = useState(false)
   /** 완료 성 재도전 중 — 맵 「현재 위치」는 유지하고 해당 성에만 표시 */
@@ -434,19 +429,32 @@ export function MainHomeScreen() {
     if (id === 'home') {
       setReviewOpen(false)
       setSettingsOpen(false)
+      setGymOpen(false)
       return
     }
     if (id === 'review') {
       setSettingsOpen(false)
+      setGymOpen(false)
       setReviewOpen(true)
+      return
+    }
+    if (id === 'gym') {
+      /*
+        아직 반에 안 든 상태라 밀린 오답이 없다 — 헬스장은 빈 상태로 열린다.
+        그래도 **열어야 한다.** 예전에는 이 분기가 없어서 탭을 눌러도 아무 일이
+        일어나지 않았는데, 보이는데 반응 없는 탭은 앱이 미완성으로 보이게 한다.
+      */
+      setReviewOpen(false)
+      setSettingsOpen(false)
+      setGymOpen(true)
       return
     }
     if (id === 'menu') {
       setReviewOpen(false)
+      setGymOpen(false)
       setSettingsOpen(true)
       return
     }
-    if (id === 'vocab') setNavNotice(VOCAB_COMING_SOON)
   }
 
   /** 과제/복습 러너 종료 — 맵으로 복귀, 복습이면 복습 탭 다시 연다 */
@@ -2108,10 +2116,10 @@ export function MainHomeScreen() {
         {!settingsOpen && !reviewOpen && !gymOpen ? (
           <MainHomeBottomNav activeId="home" onSelect={handleInviteNavSelect} />
         ) : null}
-        <NavNoticeToast
-          message={navNotice}
-          onHide={() => setNavNotice(null)}
-        />
+
+        {gymOpen ? (
+          <GymScreen onSelectNav={(id) => handleInviteNavSelect(id)} />
+        ) : null}
 
         {reviewOpen ? (
           <ReviewMainWindow

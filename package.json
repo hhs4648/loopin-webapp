@@ -12,7 +12,8 @@
     "cap:sync": "npm run build && npx cap sync android",
     "cap:open": "npx cap open android",
     "cap:icons": "npx @capacitor/assets generate --android --assetPath assets",
-    "tts:build:local": "node scripts/build-tts-audio.mjs --local"
+    "tts:build:local": "node scripts/build-tts-audio.mjs --local",
+    "tts:upload": "node scripts/upload-tts-audio.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",

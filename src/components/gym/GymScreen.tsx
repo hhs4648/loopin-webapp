@@ -4,6 +4,7 @@ import {
   FRAME_H,
   type MainHomeNavTabId,
 } from '../main-home/assignment-home'
+import { MainHomeBottomNav } from '../main-home/MainHomeBottomNav'
 import type { StudentAssignment } from '../../lib/sync/types'
 import { gymStartHeading } from '../../lib/sync/assignment-title'
 import {
@@ -13,6 +14,7 @@ import {
 import { estimateMinutesForQuestionIds } from '../../features/review/review-stats'
 import {
   GYM_ASSET,
+  GYM_BAKED_NAV_COVER,
   GYM_EMPTY_ASSET,
   GYM_START_ASSET,
   GYM_CHARACTER_HIT,
@@ -29,7 +31,6 @@ import {
   GYM_START_TITLE_MASK,
   gymRectStyle,
 } from './gym'
-import { GymNavHits } from './GymNavHits'
 
 /**
  * 헬스장 — 하단 내비 「헬스장」 탭으로 들어온다.
@@ -200,7 +201,16 @@ export function GymScreen({
         </>
       ) : null}
 
-      <GymNavHits onSelectNav={onSelectNav} />
+      {/*
+        구워진 하단 내비를 지우고 다른 화면과 같은 내비를 올린다.
+        (그림에는 단어장 칸이 남아 있어 그대로 두면 없는 탭이 보인다)
+      */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute z-[55] bg-white"
+        style={gymRectStyle(GYM_BAKED_NAV_COVER)}
+      />
+      <MainHomeBottomNav activeId="gym" onSelect={onSelectNav} />
     </div>
   )
 }

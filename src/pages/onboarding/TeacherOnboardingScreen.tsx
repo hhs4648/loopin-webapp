@@ -1,15 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { OnboardingFigmaFrame } from '../../components/onboarding/OnboardingFigmaFrame'
 import { useBackNavigation } from '../../components/navigation/BackNavigationProvider'
 import {
   INPUT_FIELD,
-  NAME_MAX_LENGTH,
-  NAME_MIN_LENGTH,
   NEXT_BTN,
   NextStepButton,
   TermsStep,
-  sanitizeNameInput,
   sanitizeSchoolNameInput,
   type TermId,
   type TermState,
@@ -20,38 +17,50 @@ import {
   getStoredAuth,
   resetMemberType,
 } from '../../lib/auth'
+import { resolveOnboardingDisplayName } from '../../lib/sync/social-display-name'
+import { upsertStudentProfile } from '../../lib/sync/student-api'
 
-const TEACHER_ONBOARDING_ASSETS = [
-  '/assets/onboarding-teacher-01-terms.svg?v=2',
-  '/assets/onboarding-teacher-02-school.svg?v=2',
-  '/assets/onboarding-teacher-03-name.svg?v=2',
-  '/assets/onboarding-teacher-04-complete.svg?v=3',
-] as const
+const ASSETS = {
+  terms: '/assets/onboarding-teacher-01-terms.svg?v=2',
+  /** 파일명과 달리 「학교명을 적어주세요」 화면 (`onboarding-teacher-03-name.svg`) */
+  school: '/assets/onboarding-teacher-03-name.svg?v=2',
+  complete: '/assets/onboarding-teacher-04-complete.svg?v=3',
+} as const
+
+type TeacherStep = keyof typeof ASSETS
 
 /**
- * Figma 393×852 — step 4 상단/하단 버튼.
+ * Figma 393×852 — step complete 상단/하단 버튼.
  * 시안의 두 버튼은 하단 CTA와 **같은 크기**(x=30 w=333 h=60 r=16)이고 y만 다르다.
- * (`onboarding-teacher-04-complete.svg`: y=665 / y=741)
  */
 const INVITE_BTN = NEXT_BTN.replace('top-[86.97%]', 'top-[78.05%]')
 const HOME_BTN = NEXT_BTN
 
+/**
+ * 선생님 온보딩 — 학년·이름 입력 없음.
+ * 이름은 소셜 값 → 없으면 `선생님`(Guideline 4). 설정에서 변경 가능.
+ */
 export function TeacherOnboardingScreen() {
   const navigate = useNavigate()
-  const [step, setStep] = useState(0)
+
+  const steps = useMemo(
+    (): TeacherStep[] => ['terms', 'school', 'complete'],
+    [],
+  )
+
+  const [stepIndex, setStepIndex] = useState(0)
   const [terms, setTerms] = useState<TermState>({
     service: false,
     privacy: false,
     marketing: false,
   })
-  // step 1 = 이름(`onboarding-teacher-02-school.svg` — 파일명과 달리 "이름을 적어주세요" 화면)
-  // step 2 = 학교명(`onboarding-teacher-03-name.svg` — 파일명과 달리 "학교명을 적어주세요" 화면)
-  const [teacherName, setTeacherName] = useState('')
   const [schoolName, setSchoolName] = useState('')
 
+  const step = steps[stepIndex] ?? 'terms'
+
   useBackNavigation(() => {
-    if (step > 0) {
-      setStep((current) => current - 1)
+    if (stepIndex > 0) {
+      setStepIndex((current) => current - 1)
       return
     }
 
@@ -78,15 +87,12 @@ export function TeacherOnboardingScreen() {
   const requiredTermsAccepted = terms.service && terms.privacy
   const allTermsChecked = Object.values(terms).every(Boolean)
 
-  // 이름 화면 SVG에 "2 ~ 5자 이내여야 하고 특수문자는 허용되지 않아요"가 그려져 있음
   const canProceed =
-    step === 0
+    step === 'terms'
       ? requiredTermsAccepted
-      : step === 1
-        ? teacherName.trim().length >= NAME_MIN_LENGTH
-        : step === 2
-          ? schoolName.trim().length > 0
-          : false
+      : step === 'school'
+        ? schoolName.trim().length > 0
+        : false
 
   const toggleTerm = (id: TermId) => {
     setTerms((prev) => ({ ...prev, [id]: !prev[id] }))
@@ -103,7 +109,7 @@ export function TeacherOnboardingScreen() {
 
   const goNext = () => {
     if (!canProceed) return
-    setStep((prev) => prev + 1)
+    setStepIndex((prev) => prev + 1)
   }
 
   const finishOnboarding = () => {
@@ -112,22 +118,30 @@ export function TeacherOnboardingScreen() {
       navigate('/login', { replace: true })
       return
     }
-    completeOnboarding(user, {
-      displayName: teacherName,
-      schoolName,
-    })
-    navigate('/teacher/home', { replace: true })
-  }
+    const displayName = resolveOnboardingDisplayName(user.displayName, '선생님')
 
-  const asset = TEACHER_ONBOARDING_ASSETS[step]
+    void (async () => {
+      // 초대코드 가입 RPC는 profiles.role = student만 받는다.
+      // 앱에서 과제를 풀려면 학생 프로필로 올려야 한다.
+      await upsertStudentProfile({ displayName })
+      completeOnboarding(user, {
+        displayName,
+        schoolName,
+      })
+      navigate('/student/home', {
+        replace: true,
+        state: { forceInviteStep: true },
+      })
+    })()
+  }
 
   return (
     <OnboardingFigmaFrame
-      src={asset}
-      alt={`선생님 회원가입 ${step + 1}단계`}
+      src={ASSETS[step]}
+      alt={`선생님 회원가입 ${stepIndex + 1}단계`}
       bgClassName="bg-[#fefefe]"
     >
-      {step === 0 && (
+      {step === 'terms' && (
         <TermsStep
           terms={terms}
           onToggleTerm={toggleTerm}
@@ -136,22 +150,7 @@ export function TeacherOnboardingScreen() {
         />
       )}
 
-      {step === 1 && (
-        <>
-          <input
-            type="text"
-            aria-label="이름"
-            placeholder="이름을 입력해주세요"
-            value={teacherName}
-            maxLength={NAME_MAX_LENGTH}
-            onChange={(e) => setTeacherName(sanitizeNameInput(e.target.value))}
-            className={INPUT_FIELD}
-          />
-          <NextStepButton enabled={canProceed} onClick={goNext} />
-        </>
-      )}
-
-      {step === 2 && (
+      {step === 'school' && (
         <>
           <input
             type="text"
@@ -167,7 +166,7 @@ export function TeacherOnboardingScreen() {
         </>
       )}
 
-      {step === 3 && (
+      {step === 'complete' && (
         <>
           <button
             type="button"

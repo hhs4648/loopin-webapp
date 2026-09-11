@@ -77,6 +77,8 @@ setup, we provide direct demo access:
   2. On the sign-in screen, tap the button at the top: "심사용 데모 로그인"
      (= "Demo login").
   3. Enter password: 1234
+  4. Wait about 10–20 seconds while the demo account is prepared
+     (please do not force-quit during this step).
 
 This signs you straight into a student account that is already enrolled in a
 demo class with assignments, so no social sign-in and no invite code are
@@ -167,6 +169,7 @@ Apple이 요구한 그대로, **끊지 말고 한 번에** 찍는다.
 
 1. 홈 화면에서 **앱을 새로 실행** (이미 로그인돼 있으면 먼저 로그아웃하거나 재설치)
 2. 로그인 화면에서 **「심사용 데모 로그인」** 탭 → 비밀번호 **1234** 입력 → 확인
+   (데모 계정 준비에 **10~20초** 걸릴 수 있음 — 끊지 말고 기다린다)
 3. 과제 맵(성 화면)이 뜨는 것까지 보여 준다 — *"앱이 정상 동작한다"*를 같이 증명하는 구간이다
 4. 하단 내비 맨 오른쪽 **「전체」** 탭 → 설정 진입
 5. 설정을 **맨 아래까지 스크롤** → 빨간 **「회원탈퇴」** 글자가 보이는 상태에서 1~2초 멈춘다

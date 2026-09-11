@@ -1,15 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { OnboardingFigmaFrame } from '../../components/onboarding/OnboardingFigmaFrame'
 import { useBackNavigation } from '../../components/navigation/BackNavigationProvider'
 import { BirthdatePicker } from '../../components/onboarding/BirthdatePicker'
 import {
   CircleCheckbox,
-  INPUT_FIELD,
-  NAME_MAX_LENGTH,
-  NAME_MIN_LENGTH,
   NextStepButton,
-  sanitizeNameInput,
   TermsStep,
   type TermId,
   type TermState,
@@ -20,23 +16,24 @@ import {
   getStoredAuth,
   resetMemberType,
 } from '../../lib/auth'
+import { resolveOnboardingDisplayName } from '../../lib/sync/social-display-name'
 import {
   SETTINGS_GRADE_OPTIONS,
   type SettingsMiddleGradeId,
 } from '../../components/settings/settings'
 import { upsertStudentProfile } from '../../lib/sync/student-api'
 
-const STUDENT_ONBOARDING_ASSETS = [
-  '/assets/onboarding-teacher-01-terms.svg?v=2',
-  '/assets/onboarding-teacher-02-school.svg?v=2',
-  '/assets/onboarding-student-03-birthdate.svg?v=2',
-  '/assets/onboarding-student-04-grade.svg?v=2',
-] as const
+const ASSETS = {
+  terms: '/assets/onboarding-teacher-01-terms.svg?v=2',
+  birthdate: '/assets/onboarding-student-03-birthdate.svg?v=2',
+  grade: '/assets/onboarding-student-04-grade.svg?v=2',
+} as const
+
+type StudentStep = keyof typeof ASSETS
 
 /**
  * 시안(`onboarding-student-04-grade.svg`) 문구: 1학년 / 2학년 / 3학년.
  * 저장값은 설정 「학년 변경」과 동일하게 `중학교 n학년` (`SETTINGS_GRADE_OPTIONS`).
- * (예전 elementary/middle/high → 초등/중등/고등 저장은 설정과 어긋나서 폐기)
  */
 const GRADE_ROWS: ReadonlyArray<{
   id: SettingsMiddleGradeId
@@ -49,23 +46,36 @@ const GRADE_ROWS: ReadonlyArray<{
   { id: '3', cx: 32, cy: 392, label: '3학년' },
 ]
 
+/**
+ * 학생 온보딩.
+ *
+ * 이름은 받지 않는다(Guideline 4). 소셜이 준 값 → 없으면 `학생`.
+ * 나중에 설정에서 바꿀 수 있다.
+ */
 export function StudentOnboardingScreen() {
   const navigate = useNavigate()
-  const [step, setStep] = useState(0)
+
+  const steps = useMemo(
+    (): StudentStep[] => ['terms', 'birthdate', 'grade'],
+    [],
+  )
+
+  const [stepIndex, setStepIndex] = useState(0)
   const [terms, setTerms] = useState<TermState>({
     service: false,
     privacy: false,
     marketing: false,
   })
-  const [studentName, setStudentName] = useState('')
   const [birthYear, setBirthYear] = useState('')
   const [birthMonth, setBirthMonth] = useState('')
   const [birthDay, setBirthDay] = useState('')
   const [grade, setGrade] = useState<SettingsMiddleGradeId | null>(null)
 
+  const step = steps[stepIndex] ?? 'terms'
+
   useBackNavigation(() => {
-    if (step > 0) {
-      setStep((current) => current - 1)
+    if (stepIndex > 0) {
+      setStepIndex((current) => current - 1)
       return
     }
 
@@ -93,15 +103,13 @@ export function StudentOnboardingScreen() {
     birthYear.length > 0 && birthMonth.length > 0 && birthDay.length > 0
 
   const canProceed =
-    step === 0
-      ? TERM_ROWS_REQUIRED(terms)
-      : step === 1
-        ? studentName.trim().length >= NAME_MIN_LENGTH
-        : step === 2
-          ? birthdateComplete
-          : step === 3
-            ? grade !== null
-            : false
+    step === 'terms'
+      ? terms.service && terms.privacy
+      : step === 'birthdate'
+        ? birthdateComplete
+        : step === 'grade'
+          ? grade !== null
+          : false
 
   const toggleTerm = (id: TermId) => {
     setTerms((prev) => ({ ...prev, [id]: !prev[id] }))
@@ -119,12 +127,11 @@ export function StudentOnboardingScreen() {
 
   const goNext = () => {
     if (!canProceed) return
-    // 학년(마지막 단계) → 온보딩 완료. 학습목적 선택 화면은 제거됨(2026-08-11)
-    if (step === 3) {
+    if (stepIndex >= steps.length - 1) {
       finishOnboarding()
       return
     }
-    setStep((prev) => prev + 1)
+    setStepIndex((prev) => prev + 1)
   }
 
   const finishOnboarding = () => {
@@ -141,16 +148,15 @@ export function StudentOnboardingScreen() {
       (option) => option.id === grade,
     )?.value
 
+    const displayName = resolveOnboardingDisplayName(user.displayName, '학생')
+
     void (async () => {
       await upsertStudentProfile({
-        displayName: studentName.trim() || '학생',
+        displayName,
         grade: gradeLabel,
         birthdate,
       })
-      completeOnboarding(user, {
-        displayName: studentName.trim() || '학생',
-      })
-      // 학습목적 분기 없음 — 학원/학교 메인(초대코드)으로 통일
+      completeOnboarding(user, { displayName })
       navigate('/student/home', {
         replace: true,
         state: { forceInviteStep: true },
@@ -158,15 +164,13 @@ export function StudentOnboardingScreen() {
     })()
   }
 
-  const asset = STUDENT_ONBOARDING_ASSETS[step]
-
   return (
     <OnboardingFigmaFrame
-      src={asset}
-      alt={`학생 회원가입 ${step + 1}단계`}
+      src={ASSETS[step]}
+      alt={`학생 회원가입 ${stepIndex + 1}단계`}
       bgClassName="bg-[#fefefe]"
     >
-      {step === 0 && (
+      {step === 'terms' && (
         <TermsStep
           terms={terms}
           onToggleTerm={toggleTerm}
@@ -175,22 +179,7 @@ export function StudentOnboardingScreen() {
         />
       )}
 
-      {step === 1 && (
-        <>
-          <input
-            type="text"
-            aria-label="이름"
-            placeholder="이름을 입력해주세요"
-            value={studentName}
-            maxLength={NAME_MAX_LENGTH}
-            onChange={(e) => setStudentName(sanitizeNameInput(e.target.value))}
-            className={INPUT_FIELD}
-          />
-          <NextStepButton enabled={canProceed} onClick={goNext} />
-        </>
-      )}
-
-      {step === 2 && (
+      {step === 'birthdate' && (
         <>
           <BirthdatePicker
             birthYear={birthYear}
@@ -204,7 +193,7 @@ export function StudentOnboardingScreen() {
         </>
       )}
 
-      {step === 3 && (
+      {step === 'grade' && (
         <>
           {GRADE_ROWS.map((row) => (
             <CircleCheckbox
@@ -221,8 +210,4 @@ export function StudentOnboardingScreen() {
       )}
     </OnboardingFigmaFrame>
   )
-}
-
-function TERM_ROWS_REQUIRED(terms: TermState): boolean {
-  return terms.service && terms.privacy
 }
