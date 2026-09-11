@@ -54,7 +54,7 @@ export const MAIN_HOME_ASSETS = {
   startFlag: '/assets/flag.svg?v=3',
   /** 하단 탭바 */
   /** 4칸 공통 내비 — 원본 `네비게이션바.svg` */
-  bottomNav: '/assets/nav-bar.svg?v=2',
+  bottomNav: '/assets/nav-bar.svg?v=4',
   /**
    * 완료 별표 — `별표.svg` → `mission-star.svg`.
    * 렌더는 `MissionCheckBadge`가 성 색으로 다시 그림(에셋은 시안 참고).
@@ -941,10 +941,10 @@ export const MAIN_HOME_NAV_TABS: MainHomeNavTab[] = [
  * 원본은 `_design-source/nav-bar.original.svg`.
  */
 const NAV_ASSET_BY_TAB: Record<MainHomeNavTabId, string> = {
-  home: '/assets/nav-bar-home.svg?v=2',
-  review: '/assets/nav-bar-review.svg?v=2',
-  gym: '/assets/nav-bar-gym.svg?v=2',
-  menu: '/assets/nav-bar-menu.svg?v=2',
+  home: '/assets/nav-bar-home.svg?v=4',
+  review: '/assets/nav-bar-review.svg?v=4',
+  gym: '/assets/nav-bar-gym.svg?v=4',
+  menu: '/assets/nav-bar-menu.svg?v=4',
 }
 
 export function mainHomeNavAssetFor(activeId: MainHomeNavTabId): string {

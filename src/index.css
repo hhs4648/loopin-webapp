@@ -87,9 +87,22 @@
 }
 
 .app-frame {
-  width: min(100%, 540px, calc(var(--app-vh) * 393 / 852));
+  /*
+    폭은 **safe-area를 뺀 가용 높이** 기준으로 잡는다.
+    예전엔 `var(--app-vh)`(패딩 전 전체 높이)로 폭을 키운 뒤 `max-height: 100%`만
+    잘라 써서, 세로가 넘친 만큼 `overflow: hidden`에 **하단 내비가 통째로 잘렸다**.
+  */
+  width: min(
+    100%,
+    540px,
+    calc(
+      (
+          var(--app-vh) - env(safe-area-inset-top, 0px) -
+            env(safe-area-inset-bottom, 0px)
+        ) * 393 / 852
+    )
+  );
   aspect-ratio: 393 / 852;
-  /* shell safe-area 패딩 안쪽에 맞춰야 하단 탭이 시스템 키와 안 겹친다 */
   max-height: 100%;
   position: relative;
   overflow: hidden;
