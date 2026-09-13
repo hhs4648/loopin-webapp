@@ -97,6 +97,19 @@ export const CALENDAR_CARD = { x: 20, y: 299, w: 353, h: 331.9 }
 /** 카드 테두리 — 새 시안(`?v=3`)에서 달성·달력·범례 카드가 모두 이 색 1px */
 export const CARD_BORDER_COLOR = '#EEF1F5'
 
+/**
+ * 범례(통과·아쉬움·미제출) 얼굴 — SVG `pattern` 임베드가 흐려서
+ * React PNG(`PRAISE_STATUS_FACE_ASSETS`)로 덮어 그린다. 시안 실측.
+ */
+export const LEGEND_FACE_RECTS: Record<
+  PraiseDayStatus,
+  { x: number; y: number; w: number; h: number }
+> = {
+  pass: { x: 75, y: 663.9, w: 29.85, h: 29.85 },
+  regrettable: { x: 161, y: 663.9, w: 29.85, h: 29.85 },
+  incomplete: { x: 248.84, y: 664.36, w: 29.62, h: 28.93 },
+}
+
 /** 그리드 하단 여백 — Today 라벨(`-bottom-3`)·카드 라운드 */
 export const GRID_BOTTOM_INSET = 16
 

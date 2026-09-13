@@ -29,14 +29,14 @@ const STREAK_FETCH_LIMIT = 500
 /**
  * 「N일 연속 학습 중」용 학습 시각 목록.
  *
- * **`fetchReviewAnswers`와 달리 쿼리 한 번이고 반(class)에 매이지 않는다.** 메인 화면은 앱을 켜면
- * 바로 뜨는 화면이라 3연쇄 조회를 얹을 수 없다.
- * "공부를 했는가"는 어느 반이냐와 무관하므로 `attempts`를 학생 기준으로 바로 훑는다.
+ * **`fetchReviewAnswers`와 달리 쿼리 부담을 낮추고 반(class)에 매이지 않는다.** 메인 화면은
+ * 앱을 켜면 바로 뜨는 화면이라 무거운 3연쇄 조회를 얹을 수 없다.
+ * "공부를 했는가"는 어느 반이냐와 무관하므로 `attempts`(+ 그 답안)를 학생 기준으로 훑는다.
  *
- * `started_at`과 `updated_at`을 **둘 다** 센다. `started_at`만 보면 어제 시작한 과제를 오늘
- * 이어서 풀었을 때 오늘이 빠진다. 다만 `updated_at`은 마지막 수정 시각 하나뿐이라, 사흘에 걸쳐
- * 이어 푼 과제의 **중간 날**은 여전히 복원할 수 없다 — 답안별 시각을 봐야 정확해지는데
- * 그건 조회가 3배가 된다. 살아 있는 스트릭 판정에는 마지막 활동일이면 충분하다고 보고 감수한다.
+ * 시각 출처 (셋 다 합침):
+ * - `attempts.started_at` / `updated_at`
+ * - `answers.created_at` — **요일 동그라미의 실제 근거.** 답안만 쌓이고 attempt
+ *   `updated_at`이 안 바뀌던 날도 그날이 켜지도록.
  */
 export async function fetchStudyTimestamps(): Promise<string[]> {
   if (!isSyncEnabled()) return []
@@ -48,26 +48,48 @@ export async function fetchStudyTimestamps(): Promise<string[]> {
     Date.now() - STREAK_LOOKBACK_DAYS * 24 * 60 * 60 * 1000,
   ).toISOString()
 
-  const { data, error } = await supabase
+  /*
+    날짜 필터를 started_at에만 걸면, 예전에 시작한 과제를 오늘 이어서 푼 행이
+    통째로 빠진다. updated_at도 같이 보고, 답안 created_at으로 요일을 보정한다.
+  */
+  const { data: attemptRows, error } = await supabase
     .from('attempts')
-    .select('started_at, updated_at')
+    .select('id, started_at, updated_at')
     .eq('student_id', userId)
-    .gte('started_at', since)
-    .order('started_at', { ascending: false })
+    .or(`started_at.gte.${since},updated_at.gte.${since}`)
+    .order('updated_at', { ascending: false })
     .limit(STREAK_FETCH_LIMIT)
 
-  if (error || !data?.length) {
-    if (error) {
-      console.warn('[sync] fetch study streak failed', error.message)
-    }
+  if (error) {
+    console.warn('[sync] fetch study streak failed', error.message)
     return []
   }
+  if (!attemptRows?.length) return []
 
   const timestamps: string[] = []
-  for (const row of data) {
+  const attemptIds: string[] = []
+  for (const row of attemptRows) {
+    attemptIds.push(String(row.id))
     if (row.started_at) timestamps.push(String(row.started_at))
     if (row.updated_at) timestamps.push(String(row.updated_at))
   }
+
+  const { data: answerRows, error: answerError } = await supabase
+    .from('answers')
+    .select('created_at')
+    .in('attempt_id', attemptIds)
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+    .limit(STREAK_FETCH_LIMIT)
+
+  if (answerError) {
+    console.warn('[sync] fetch study answer times failed', answerError.message)
+  } else {
+    for (const row of answerRows ?? []) {
+      if (row.created_at) timestamps.push(String(row.created_at))
+    }
+  }
+
   return timestamps
 }
 

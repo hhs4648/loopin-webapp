@@ -5,6 +5,7 @@ import { formatCorrectSummary } from '../grammar-complete/grammar-complete'
 import { gymCompleteHeading } from '../../lib/sync/assignment-title'
 import type { ContentSnapshot } from '../../lib/sync/types'
 import { MainHomeBottomNav } from '../main-home/MainHomeBottomNav'
+import { PhoneCanvas } from '../PhoneCanvas'
 import {
   GYM_BAKED_NAV_COVER,
   GYM_COMPLETE_ASSET,
@@ -56,12 +57,16 @@ export function GymCompleteScreen({
 
   return (
     <div
-      className="flex min-h-full w-full justify-center bg-white"
+      className="flex h-full min-h-full w-full justify-center bg-white"
       role="dialog"
       aria-modal="true"
       aria-label={`${heading} · ${summary}`}
     >
-      <div className="relative isolate aspect-[393/852] w-full max-w-[540px] self-center overflow-hidden">
+      <PhoneCanvas
+        className="isolate"
+        topBleedClassName="bg-white"
+        bottomBleedClassName="bg-white"
+      >
         <img
           src={asset}
           alt=""
@@ -154,7 +159,7 @@ export function GymCompleteScreen({
           style={gymRectStyle(GYM_BAKED_NAV_COVER)}
         />
         <MainHomeBottomNav activeId="gym" onSelect={onSelectNav} />
-      </div>
+      </PhoneCanvas>
     </div>
   )
 }

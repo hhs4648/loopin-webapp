@@ -291,30 +291,33 @@ function buildBodyCSections(snapshot: ContentSnapshot): AssignmentSection[] {
     : []
 }
 
+/**
+ * 유형1(이지선다) — **유형2(OX)와 완전히 별개인 유형**이다. 3지선다는 여기 안 쓴다.
+ *
+ * 보기는 `twoChoices`(정답이 앞). 빈칸 자리는 O/X로 갈린다:
+ * **O는 맞는 문장이라 정답이 문장에 그대로 있고, X는 틀린 문장이라 「틀린 부분」이 있다.**
+ * 그래서 X 문항은 틀린 자리를 비우고 정답을 고르게 한다.
+ */
 function buildGrammarType1Sections(snapshot: ContentSnapshot): AssignmentSection[] {
   if (!snapshot.problemTypes.grammar.includes('선택형 문제')) return []
 
   const twoOption: GrammarType1Question[] = []
 
   for (const grammar of snapshot.grammar) {
-    const choices = parseGrammarChoices(grammar.choices)
-    const target = grammar.wrongPart?.trim()
-    if (
-      choices.length < 2 ||
-      !target ||
-      target === '-' ||
-      !grammar.english.includes(target)
-    ) {
-      continue
-    }
-
-    // 3지선다(선택지 3개+)는 OX 정답 X 교정에서만 출제.
-    // 여기서 grammar-type-2 섹션을 따로 만들면 X 교정 UI가 한 번 더 나와 "B유형이 따로" 보인다.
+    const choices = parseGrammarChoices(grammar.twoChoices)
+    // 2026-09 이전 스냅샷에는 `twoChoices`가 없다 — 없으면 만들지 않는다.
     if (choices.length !== 2) continue
 
-    const parts = splitAtFirst(grammar.english, target)
-    if (!parts) continue
     const correct = choices[0]!
+    const ox = grammar.ox?.trim().toUpperCase()
+    const target = ox === 'X' ? grammar.wrongPart?.trim() : correct
+    if (!target || target === '-') continue
+
+    const english = stripBrackets(grammar.english)
+    const blank =
+      blankFromBrackets(grammar.english) ?? findBlank(english, target)
+    if (!blank) continue
+
     const options = shuffle(choices).map((label, index) => ({
       id: `${grammar.id}:opt:${index}:${label}`,
       label,
@@ -325,8 +328,8 @@ function buildGrammarType1Sections(snapshot: ContentSnapshot): AssignmentSection
     twoOption.push({
       id: `${grammar.id}:choice`,
       maskPassage: true,
-      passageBefore: parts.before.trimEnd(),
-      passageAfter: parts.after.trimStart(),
+      passageBefore: blank.before.trimEnd(),
+      passageAfter: blank.after.trimStart(),
       options,
       correctOptionId: correctOption.id,
     })
@@ -343,20 +346,43 @@ function buildGrammarType1Sections(snapshot: ContentSnapshot): AssignmentSection
     : []
 }
 
+type Blank = { before: string; matched: string; after: string }
+
 /**
- * target이 처음 나오는 위치에서만 앞뒤로 나눈다.
- * String.split(target)은 target이 두 번 이상 나오면 세 번째 조각부터 버려져
- * 학생에게 뒷부분이 잘린 문장이 보인다.
+ * 문장에 `[ ]`로 자리가 찍혀 있으면 그걸 따른다 — 단어 예문 빈칸과 같은 표기.
+ * 같은 표현이 문장에 두 번 나와 규칙으로는 못 가리는 문항을 이걸로 해결한다
+ * (`She gave me not only advice but also [gave] money.`).
  */
-function splitAtFirst(
-  text: string,
-  target: string,
-): { before: string; after: string } | null {
-  const index = text.indexOf(target)
-  if (index < 0) return null
+function blankFromBrackets(english: string): Blank | null {
+  const hits = [...english.matchAll(/\[([^\]]+)\]/g)]
+  if (hits.length !== 1) return null
+  const hit = hits[0]!
+  const at = hit.index
   return {
-    before: text.slice(0, index),
-    after: text.slice(index + target.length),
+    before: stripBrackets(english.slice(0, at)),
+    matched: hit[1]!.trim(),
+    after: stripBrackets(english.slice(at + hit[0].length)),
+  }
+}
+
+/**
+ * 문장에서 빈칸 자리를 찾는다 — **단어 경계**로만 본다.
+ * `indexOf`를 쓰면 `What a exciting game`의 `a`가 `Wh[a]t`에 걸린다.
+ * 대소문자는 무시한다(`nothing exciting` ↔ 문장 첫 단어 `Nothing exciting`).
+ * 같은 표현이 두 번 나오면 어느 쪽이 문제의 자리인지 못 가리므로 만들지 않는다 —
+ * 틀린 문제를 보여주느니 안 내는 게 낫다. 그런 문항은 문장에 `[ ]`를 찍어 주면 된다.
+ */
+function findBlank(english: string, target: string): Blank | null {
+  const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const hits = [
+    ...english.matchAll(new RegExp(`(?<![A-Za-z])${escaped}(?![A-Za-z])`, 'gi')),
+  ]
+  if (hits.length !== 1) return null
+  const at = hits[0]!.index
+  return {
+    before: english.slice(0, at),
+    matched: english.slice(at, at + target.length),
+    after: english.slice(at + target.length),
   }
 }
 
@@ -373,12 +399,10 @@ function buildOxXCorrection(grammar: ProblemGrammarSnapshot) {
   const english = stripBrackets(grammar.english)
   if (!target || target === '-') return undefined
 
-  const targetIndex = english.toLowerCase().indexOf(target.toLowerCase())
-  if (targetIndex < 0) return undefined
+  const blank = blankFromBrackets(grammar.english) ?? findBlank(english, target)
+  if (!blank) return undefined
 
-  const matchedPart = english.slice(targetIndex, targetIndex + target.length)
-  const before = english.slice(0, targetIndex)
-  const after = english.slice(targetIndex + target.length)
+  const { before, matched: matchedPart, after } = blank
 
   const choices = parseGrammarChoices(grammar.choices)
   // 3지선다 — 선택지 3개 미만이면 교정 문항을 만들지 않음

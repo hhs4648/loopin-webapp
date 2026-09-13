@@ -9,6 +9,7 @@ import {
   BakedProgressBarMask,
 } from './exercise/ExerciseProgressBar'
 import { ComboOverlay } from './exercise/ComboOverlay'
+import { PhoneCanvas } from './PhoneCanvas'
 
 interface FigmaAssetFrameProps {
   src: string
@@ -30,7 +31,7 @@ interface FigmaAssetFrameProps {
   children?: ReactNode
 }
 
-/** Figma Export 프레임(393×852) 표시용 공통 컨테이너 */
+/** Figma Export 프레임 표시용 공통 컨테이너 — 부모(app-frame)를 꽉 채운다 */
 export function FigmaAssetFrame({
   src,
   alt,
@@ -46,12 +47,12 @@ export function FigmaAssetFrame({
   children,
 }: FigmaAssetFrameProps) {
   return (
-    <div className={`flex min-h-full w-full justify-center ${bgClassName}`}>
-      <div className="@container relative aspect-[393/852] w-full max-w-[540px] self-center">
+    <div className={`flex h-full min-h-full w-full justify-center ${bgClassName}`}>
+      <PhoneCanvas topBleedClassName={bgClassName} bottomBleedClassName={bgClassName}>
         <img
           src={src}
           alt={alt}
-          className="pointer-events-none absolute inset-0 z-0 h-full w-full select-none"
+          className="pointer-events-none absolute inset-0 z-0 h-full w-full select-none object-fill"
           draggable={false}
         />
         {backButton !== false ? (
@@ -71,7 +72,7 @@ export function FigmaAssetFrame({
           설정 창처럼 러너 밖에서 이 컨테이너를 쓰는 화면에는 나타나지 않는다.
         */}
         <ComboOverlay />
-      </div>
+      </PhoneCanvas>
     </div>
   )
 }

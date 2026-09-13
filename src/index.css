@@ -55,12 +55,9 @@
 /*
   화면 크기 대응.
 
-  시안이 **393×852 고정 비율**이라, 폭에만 맞춰 늘리면 세로가 짧은 기기에서 아래가
-  잘렸다. 아이폰 SE(375×667)에서는 높이가 813로 계산돼 하단 내비가 통째로 화면 밖으로
-  나갔다. 요즘 폰(19.5:9 이상)은 괜찮지만 16:9 화면은 다 그렇다.
-
-  그래서 **폭과 높이 중 작은 쪽에 맞춘다.** 짧은 화면에서는 프레임이 조금 좁아지고
-  좌우에 여백이 생기지만, 잘려서 못 누르는 것보다 낫다. 태블릿 상한 540px도 그대로다.
+  시안은 393×852. 실기기는 edge-to-edge로 채우되, **비율은 유지**한다
+  (`PhoneCanvas`: 가로 맞춤 스테이지 + 남는 세로를 상·하 블리드·내비 연장).
+  OS 상태바는 SystemBars로 위에 겹치고, 셸에 safe-area 패딩은 두지 않는다.
 
   높이는 `100dvh`가 아니라 `--app-vh`(visualViewport)다. 카카오 인앱처럼 주소창·툴바가
   얹힌 웹뷰에서는 dvh가 실제보다 커서 아래가 잘렸다.
@@ -72,46 +69,67 @@
   width: var(--app-vw);
   height: var(--app-vh);
   box-sizing: border-box;
-  /*
-    OS 상태바·하단 제스처/3버튼 내비와 겹치지 않게 한다.
-    예전엔 프레임이 화면 끝까지 가서 설정 상단에 시계가 「앱이 그린 것처럼」 보였고,
-    하단 탭이 안드로이드 시스템 키와 겹쳤다.
-  */
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  /* 프레임 밖 여백 — 초록 맵과 파란 화면 어디에 붙어도 튀지 않는 중립색 */
-  background: #eef1f5;
+  background: #ffffff;
 }
 
 .app-frame {
-  /*
-    폭은 **safe-area를 뺀 가용 높이** 기준으로 잡는다.
-    예전엔 `var(--app-vh)`(패딩 전 전체 높이)로 폭을 키운 뒤 `max-height: 100%`만
-    잘라 써서, 세로가 넘친 만큼 `overflow: hidden`에 **하단 내비가 통째로 잘렸다**.
-  */
-  width: min(
-    100%,
-    540px,
-    calc(
-      (
-          var(--app-vh) - env(safe-area-inset-top, 0px) -
-            env(safe-area-inset-bottom, 0px)
-        ) * 393 / 852
-    )
-  );
-  aspect-ratio: 393 / 852;
+  width: min(100%, 540px);
+  height: 100%;
   max-height: 100%;
   position: relative;
   overflow: hidden;
   background: #ffffff;
-  container-type: inline-size;
+  container-type: size;
   container-name: app;
   /* 키보드가 열려도 스케일은 유지하고, 포커스 입력칸이 보이게만 올림.
    * transition 있으면 높이 측정이 바뀔 때마다 올렸다 내렸다 보인다 → 없음. */
   transform: translateY(calc(-1 * var(--keyboard-shift, 0px)));
+}
+
+/*
+  시안 좌표(%)가 붙는 화면 캔버스.
+  `PhoneCanvas`가 393×852 스테이지 + 상·하 블리드로 채운다.
+  (예전 height:100% object-fill은 긴 폰에서 세로만 늘어 내비·캐릭터가 어긋났다.)
+*/
+.app-phone-canvas {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  max-width: 540px;
+  overflow: hidden;
+  /* PhoneCanvas가 측정 후 덮어쓴다 */
+  --phone-bleed-top: 0px;
+  --phone-bleed-bottom: 0px;
+  --phone-stage-w: 100%;
+  --phone-stage-h: 100%;
+}
+
+.app-phone-top-bleed,
+.app-phone-bottom-bleed {
+  flex: 0 0 auto;
+  width: 100%;
+  pointer-events: none;
+  position: relative;
+  z-index: 0;
+}
+
+.app-phone-stage {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  max-width: 100%;
+  /*
+    내비는 시안 높이 + 하단 블리드로 아래로 연장한다.
+    stage에 overflow:hidden이면 연장이 잘리므로 두지 않는다.
+    바깥 `.app-phone-canvas`가 프레임 밖으로 안 나가게 자른다.
+  */
+  overflow: visible;
 }
 
 .screen {

@@ -55,7 +55,14 @@ export type ProblemGrammarSnapshot = {
   korean: string
   ox?: string
   wrongPart?: string
+  /** OX 교정(유형2-a)용 3지선다 — `/`로 나뉘고 첫 항목이 정답 */
   choices?: string
+  /**
+   * 유형1(이지선다)용 보기 2개 — `choices`와 같은 규칙(`/` 구분·첫 항목이 정답).
+   * 빈칸 자리는 따로 오지 않는다: **O면 정답 보기, X면 `wrongPart`** 가 문장에 있다.
+   * **2026-09 이전에 만든 과제 스냅샷에는 없다** — 없으면 유형1을 만들지 않는다.
+   */
+  twoChoices?: string
   explanation?: string
   /**
    * 문법 개념 대분류/소분류 (예: `관계대명사` / `관계대명사 what`).

@@ -21,14 +21,11 @@ import {
 import { isSyncEnabled } from './sync/supabase-client'
 
 /**
- * App Store 심사용 데모 입구.
- * 로컬 `npm run dev`에서도 켜서 비밀번호·온보딩 스킵 흐름을 그대로 확인한다.
- * 스토어 빌드는 `VITE_APP_REVIEW_DEMO=true`일 때만 들어간다.
+ * 심사용 데모 입구 — **로컬 `npm run dev`에서만** 켠다.
+ * 스토어/프리뷰 빌드에는 절대 넣지 않는다. (출시 후 데모 로그인 제거)
  */
 export function isAppReviewDemoAllowed(): boolean {
-  return (
-    import.meta.env.DEV || import.meta.env.VITE_APP_REVIEW_DEMO === 'true'
-  )
+  return import.meta.env.DEV
 }
 
 export type AppReviewDemoLoginResult =

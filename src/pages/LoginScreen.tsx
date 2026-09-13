@@ -15,6 +15,7 @@ import {
   performAppReviewDemoLogin,
   verifyAppReviewDemoPassword,
 } from '../lib/app-review-demo'
+import { PhoneCanvas } from '../components/PhoneCanvas'
 
 const LOGIN_ASSET = '/assets/login-screen.svg?v=7'
 
@@ -124,15 +125,15 @@ export function LoginScreen() {
 
   return (
     <div
-      className="flex min-h-full w-full justify-center bg-white"
+      className="flex h-full min-h-full w-full justify-center bg-white"
       data-node-id="2917:6018"
       data-name="로그인화면"
     >
-      <div className="relative aspect-[393/852] w-full max-w-[540px] self-center">
+      <PhoneCanvas topBleedClassName="bg-white" bottomBleedClassName="bg-white">
         <img
           src={LOGIN_ASSET}
           alt="학습 로그인"
-          className="absolute inset-0 h-full w-full"
+          className="absolute inset-0 h-full w-full object-fill"
           draggable={false}
         />
 
@@ -275,7 +276,7 @@ export function LoginScreen() {
             </span>
           </div>
         ) : null}
-      </div>
+      </PhoneCanvas>
     </div>
   )
 }

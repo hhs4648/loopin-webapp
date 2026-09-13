@@ -184,7 +184,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (!error) return this.props.children
 
     return (
-      <div className="flex min-h-full w-full justify-center bg-[#2AA3FF]">
+      <div className="flex h-full min-h-full w-full justify-center bg-[#2AA3FF]">
         <div className="flex w-full max-w-[540px] flex-col items-center justify-center gap-7 px-8 py-16 text-center">
           <div
             aria-hidden

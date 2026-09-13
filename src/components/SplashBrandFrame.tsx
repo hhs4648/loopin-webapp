@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { PhoneCanvas } from './PhoneCanvas'
 
 /** Figma `플래시화면` — 원본 `_design-source/플래시화면.svg` */
 export const SPLASH_ASSET = '/assets/splash-screen.svg?v=1'
@@ -12,12 +13,12 @@ const SPLASH_FRAME_H = 852
  */
 export function SplashBrandFrame({ children }: { children?: ReactNode }) {
   return (
-    <div className="flex min-h-full w-full justify-center bg-white">
-      <div className="relative aspect-[393/852] w-full max-w-[540px] self-center">
+    <div className="flex h-full min-h-full w-full justify-center bg-white">
+      <PhoneCanvas topBleedClassName="bg-white" bottomBleedClassName="bg-white">
         <img
           src={SPLASH_ASSET}
           alt="학습"
-          className="pointer-events-none absolute inset-0 h-full w-full select-none"
+          className="pointer-events-none absolute inset-0 h-full w-full select-none object-fill"
           draggable={false}
         />
         {/* 시안 베이크 시계·신호·배터리 — 표시하지 않음 */}
@@ -27,7 +28,7 @@ export function SplashBrandFrame({ children }: { children?: ReactNode }) {
           aria-hidden
         />
         {children}
-      </div>
+      </PhoneCanvas>
     </div>
   )
 }

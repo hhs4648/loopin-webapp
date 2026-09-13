@@ -588,14 +588,22 @@ export async function recordAnswer(event: AnswerEvent): Promise<AttemptProgress 
   }
 
   /*
+    스트릭·월~일 동그라미는 attempts.updated_at / answers.created_at을 본다.
+    집계 트리거가 updated_at을 안 만질 수 있어, 답안을 남긴 날을 확실히 찍으려면
+    여기서 손대 둔다(점수는 트리거가 덮어씀).
+  */
+  const { error: touchError } = await supabase
+    .from('attempts')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('id', event.attemptId)
+  if (touchError) {
+    console.warn('[sync] touch attempt updated_at failed', touchError.message)
+  }
+
+  /*
     **집계는 서버가 한다** (마이그레이션 012).
     답안이 들어오면 트리거가 `attempts`의 푼 문항 수·정답 수·진행률·점수를 답안 표에서
     다시 계산한다. 그래서 여기서는 다시 읽기만 한다.
-
-    예전에는 앱이 직접 세어 `update`로 올렸다. 두 가지가 문제였다 —
-    같은 계산이 앱과 서버 두 곳에 생겨 어긋날 수 있었고(48/50 같은 값이 그렇게 나왔다),
-    무엇보다 학생이 그 `update`로 **점수를 그냥 100으로 써 넣을 수 있었다.**
-    이제 앱이 뭘 보내든 트리거가 덮어쓰므로 올릴 이유가 없다.
   */
   const { data: attempt, error } = await supabase
     .from('attempts')

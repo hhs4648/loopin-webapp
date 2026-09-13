@@ -3,6 +3,7 @@ import { BackButtonOverlay } from '../navigation/BackButtonOverlay'
 import { ComboStreakBadge } from './ComboStreakBadge'
 import { BACK_MASK_COMPLETE } from '../navigation/figma-navigation'
 import { useBackNavigation } from '../navigation/BackNavigationProvider'
+import { PhoneCanvas } from '../PhoneCanvas'
 import {
   assignmentCompleteAssetForScore,
   COMPLETE_BOTTOM_NAV_COVER,
@@ -60,8 +61,12 @@ export function GrammarCompleteScreen({
   }, Boolean(onHome))
 
   return (
-    <div className="flex min-h-full w-full justify-center bg-[#E2F7FF]">
-      <div className="relative isolate aspect-[393/852] w-full max-w-[540px] self-center overflow-hidden">
+    <div className="flex h-full min-h-full w-full justify-center bg-[#E2F7FF]">
+      <PhoneCanvas
+        className="isolate"
+        topBleedClassName="bg-[#E2F7FF]"
+        bottomBleedClassName="bg-[#E2F7FF]"
+      >
         <img
           src={asset}
           alt="과제 완료"
@@ -176,7 +181,7 @@ export function GrammarCompleteScreen({
             재도전
           </button>
         </div>
-      </div>
+      </PhoneCanvas>
     </div>
   )
 }

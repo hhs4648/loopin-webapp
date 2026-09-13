@@ -97,6 +97,7 @@ import {
 } from '../lib/castle-retry-session'
 import { DEFAULT_PASS_SCORE_THRESHOLD, resolveCalendarStartMonth } from '../components/praise-calendar/praise-calendar'
 import { SplashBrandFrame } from '../components/SplashBrandFrame'
+import { PhoneCanvas } from '../components/PhoneCanvas'
 
 const ASSETS = {
   /** 초대 UI 오버레이(딤·입력·CTA) — 맵 배경은 `MainHomeMapStartBackdrop` */
@@ -2055,12 +2056,13 @@ export function MainHomeScreen() {
 
   return (
     <div
-      className="flex min-h-full w-full justify-center"
+      className="flex h-full min-h-full w-full justify-center"
       style={{ background: MAIN_HOME_SKY }}
     >
-      <div
-        className="relative aspect-[393/852] w-full max-w-[540px] self-center overflow-hidden"
+      <PhoneCanvas
         style={{ background: MAIN_HOME_SKY }}
+        topBleedClassName="bg-[#C5EBFE]"
+        bottomBleedClassName="bg-[#F4F6FA]"
       >
         <MainHomeMapStartBackdrop />
         <img
@@ -2068,7 +2070,7 @@ export function MainHomeScreen() {
           alt=""
           aria-hidden
           draggable={false}
-          className="pointer-events-none absolute inset-0 z-10 h-full w-full select-none"
+          className="pointer-events-none absolute inset-0 z-10 h-full w-full select-none object-fill"
         />
         <PraiseCalendarButton
           surface="dimmed"
@@ -2134,7 +2136,7 @@ export function MainHomeScreen() {
             onSelectNav={(id) => handleInviteNavSelect(id)}
           />
         ) : null}
-      </div>
+      </PhoneCanvas>
     </div>
   )
 }

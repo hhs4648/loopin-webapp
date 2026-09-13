@@ -38,8 +38,12 @@ export const STREAK_CALENDAR_BAKED_NAV_COVER = {
  * 숫자·별이 그림이라 학생이 며칠을 이었든 늘 「15일」이 보였다. 실데이터로 바꾸려면
  * 구운 것을 덮고 다시 그려야 한다(시안 위에 겹쳐 그리면 글자가 두 겹이 된다).
  * 카드 배경은 순백이라 흰색 덮개로 지운다.
+ *
+ * 오른쪽 위 마스코트는 SVG `pattern` rect(x≈312, y≈66, w≈74, h≈93)로 카드 위에
+ * 걸쳐 있다. 덮개를 카드 가로 전체(w=345)로 잡으면 z-index 때문에 캐릭터 하반신이
+ * 잘리므로, 캐릭터 왼쪽(x 312 미만)까지만 덮는다 — 별·문구 bbox는 x≈270 이내라 충분하다.
  */
-export const STREAK_HERO_COVER = { x: 24, y: 138, w: 345, h: 108 } as const
+export const STREAK_HERO_COVER = { x: 24, y: 138, w: 280, h: 108 } as const
 
 /** 덮개 안에서 별을 놓을 자리 (프레임 393×852 기준) */
 export const STREAK_HERO_STAR = { x: 163, y: 143, w: 62, h: 58 } as const

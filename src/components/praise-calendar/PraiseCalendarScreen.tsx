@@ -15,6 +15,7 @@ import {
   formatYearMonthKo,
   getCellLayout,
   monthCursorValue,
+  LEGEND_FACE_RECTS,
   MONTH_NEXT_BTN,
   MONTH_PREV_BTN,
   MONTH_TITLE_MASK,
@@ -320,7 +321,7 @@ export function PraiseCalendarScreen({
         />
       </div>
 
-      {/* 달력 카드 본문 — 범례·탭은 SVG 유지 */}
+      {/* 달력 카드 본문 — 탭은 SVG, 범례 얼굴은 아래 PNG로 덮음 */}
       <div
         aria-hidden
         className="pointer-events-none absolute z-[2] box-border rounded-[24px] border bg-white"
@@ -359,6 +360,29 @@ export function PraiseCalendarScreen({
             style={cellRectStyle(col, row, cellLayout)}
             faceSize={cellLayout.faceSize}
           />
+        )
+      })}
+
+      {/*
+        범례 얼굴 — SVG pattern 임베드가 흐려서 흰 덮개 후 선명 PNG로 교체.
+        라벨(통과·아쉬움·미제출) 글자는 SVG 유지.
+      */}
+      {(Object.keys(LEGEND_FACE_RECTS) as PraiseDayStatus[]).map((status) => {
+        const rect = LEGEND_FACE_RECTS[status]
+        const meta = STATUS_META[status]
+        return (
+          <div
+            key={status}
+            className="pointer-events-none absolute z-[4] overflow-hidden rounded-[8px] bg-white"
+            style={figmaRectStyle(rect)}
+            aria-hidden
+          >
+            <StatusFaceImg
+              status={status}
+              alt={meta.label}
+              className="h-full w-full"
+            />
+          </div>
         )
       })}
 

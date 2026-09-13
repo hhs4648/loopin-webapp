@@ -70,6 +70,7 @@ import {
   type MapCastle,
 } from './assignment-home'
 import type { StudentAssignment } from '../../lib/sync/types'
+import { PhoneCanvas } from '../PhoneCanvas'
 
 /** 완료된 성 탭 → 과제 완료 화면(점수·재도전/틀린문제만) */
 export type CompletedCastleTarget =
@@ -575,12 +576,14 @@ export function AssignmentReceivedScreen({
 
   return (
     <div
-      className="flex min-h-full w-full justify-center"
+      className="flex h-full min-h-full w-full justify-center"
       style={{ background: MAIN_HOME_SKY }}
     >
-      <div
-        className="relative aspect-[393/852] w-full max-w-[540px] self-center overflow-hidden"
+      <PhoneCanvas
+        className="isolate"
         style={{ background: MAIN_HOME_SKY }}
+        topBleedClassName="bg-[#C5EBFE]"
+        bottomBleedClassName="bg-[#F4F6FA]"
       >
         {/* 고정 하늘 — 스크롤/드래그 없음 */}
         <div
@@ -958,7 +961,7 @@ export function AssignmentReceivedScreen({
           />
         ) : null}
 
-      </div>
+      </PhoneCanvas>
 
     </div>
   )

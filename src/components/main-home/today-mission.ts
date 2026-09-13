@@ -25,11 +25,15 @@ export const MISSION_CARD_RECT = {
   w: 352,
   h: 116,
 }
-export const MISSION_BADGE_RECT = { x: 40 + CARD_X_OFFSET, y: 36 + CARD_Y_OFFSET, w: 76, h: 22 }
-export const MISSION_TITLE_RECT = { x: 40 + CARD_X_OFFSET, y: 66 + CARD_Y_OFFSET, w: 220, h: 24 }
-export const MISSION_SUBTITLE_RECT = { x: 40 + CARD_X_OFFSET, y: 94 + CARD_Y_OFFSET, w: 220, h: 18 }
-export const MISSION_PROGRESS_TRACK_RECT = { x: 40 + CARD_X_OFFSET, y: 116 + CARD_Y_OFFSET, w: 180, h: 6 }
-export const MISSION_BUTTON_RECT = { x: 268 + CARD_X_OFFSET, y: 48 + CARD_Y_OFFSET, w: 90, h: 56 }
+export const MISSION_BADGE_RECT = { x: 40 + CARD_X_OFFSET, y: 36 + CARD_Y_OFFSET, w: 72, h: 18 }
+export const MISSION_TITLE_RECT = { x: 40 + CARD_X_OFFSET, y: 62 + CARD_Y_OFFSET, w: 230, h: 22 }
+export const MISSION_SUBTITLE_RECT = { x: 40 + CARD_X_OFFSET, y: 88 + CARD_Y_OFFSET, w: 230, h: 16 }
+export const MISSION_PROGRESS_TRACK_RECT = { x: 40 + CARD_X_OFFSET, y: 112 + CARD_Y_OFFSET, w: 188, h: 6 }
+/**
+ * CTA — 시안은 「시작하기」 짧은 카피 기준(90×56)이었다. 「이어서 학습하기」는 두 줄+화살표가
+ * 되어 카드 오른쪽을 잡아먹어서, 살짝 작고 타이트한 박스로 맞춘다(2026-09-13).
+ */
+export const MISSION_BUTTON_RECT = { x: 278 + CARD_X_OFFSET, y: 52 + CARD_Y_OFFSET, w: 78, h: 48 }
 
 /**
  * @deprecated 렌더에 쓰지 않는다 — 고정 하늘 높이는 `assignment-home.ts`의 `SKY_FIXED_H`다.

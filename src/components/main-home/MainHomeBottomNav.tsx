@@ -4,8 +4,8 @@
  *
  * 히트 영역은 탭 칸 전체가 아니라 아이콘·라벨 근처(칸 폭의 ~52%)만.
  *
- * OS 하단 내비(3버튼/제스처)와의 겹침은 `app-shell`의
- * `padding-bottom: env(safe-area-inset-bottom)` 이 담당한다.
+ * 높이는 시안 `NAV_H` + `PhoneCanvas` 하단 블리드 + `safe-area-inset-bottom`.
+ * 긴 폰에서 스테이지 비율을 지키면 남는 세로가 블리드로 오고, 내비가 같이 커진다.
  */
 import type { MainHomeNavTabId } from './assignment-home'
 import {
@@ -30,39 +30,44 @@ export function MainHomeBottomNav({
 
   return (
     <div
-      className="absolute inset-x-0 bottom-0 z-[60] overflow-hidden bg-[#F4F6FA]"
-      style={{ height: `${(NAV_H / FRAME_H) * 100}%` }}
+      className="absolute inset-x-0 z-[60] overflow-hidden bg-[#F4F6FA]"
+      style={{
+        bottom: 'calc(-1 * var(--phone-bleed-bottom, 0px))',
+        height: `calc(${(NAV_H / FRAME_H) * 100}% + var(--phone-bleed-bottom, 0px) + env(safe-area-inset-bottom, 0px))`,
+      }}
     >
-      <img
-        src={asset}
-        alt=""
-        aria-hidden
-        draggable={false}
-        className="pointer-events-none absolute inset-0 h-full w-full max-w-none select-none object-fill"
-      />
+      <div className="absolute inset-x-0 top-0 bottom-[env(safe-area-inset-bottom,0px)]">
+        <img
+          src={asset}
+          alt=""
+          aria-hidden
+          draggable={false}
+          className="pointer-events-none absolute inset-0 h-full w-full max-w-none select-none object-fill"
+        />
 
-      <nav aria-label="메인 메뉴" className="pointer-events-none absolute inset-0 z-10">
-        {MAIN_HOME_NAV_TABS.map((tab, index) => {
-          const active = tab.id === activeId
-          const slotCenterPct = ((index + 0.5) / tabCount) * 100
-          const hitWidthPct = (TAB_HIT_WIDTH_RATIO / tabCount) * 100
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              aria-label={tab.ariaLabel}
-              aria-current={active ? 'page' : undefined}
-              className="pointer-events-auto absolute top-0 bottom-0 bg-transparent"
-              style={{
-                left: `${slotCenterPct}%`,
-                width: `${hitWidthPct}%`,
-                transform: 'translateX(-50%)',
-              }}
-              onClick={() => onSelect?.(tab.id)}
-            />
-          )
-        })}
-      </nav>
+        <nav aria-label="메인 메뉴" className="pointer-events-none absolute inset-0 z-10">
+          {MAIN_HOME_NAV_TABS.map((tab, index) => {
+            const active = tab.id === activeId
+            const slotCenterPct = ((index + 0.5) / tabCount) * 100
+            const hitWidthPct = (TAB_HIT_WIDTH_RATIO / tabCount) * 100
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                aria-label={tab.ariaLabel}
+                aria-current={active ? 'page' : undefined}
+                className="pointer-events-auto absolute top-0 bottom-0 bg-transparent"
+                style={{
+                  left: `${slotCenterPct}%`,
+                  width: `${hitWidthPct}%`,
+                  transform: 'translateX(-50%)',
+                }}
+                onClick={() => onSelect?.(tab.id)}
+              />
+            )
+          })}
+        </nav>
+      </div>
     </div>
   )
 }

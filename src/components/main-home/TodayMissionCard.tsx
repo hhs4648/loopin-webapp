@@ -59,10 +59,10 @@ export function TodayMissionCard({
       {assignment ? (
         <>
           <div
-            className="absolute flex items-center justify-center whitespace-nowrap rounded-full bg-[#4F91EB] px-3"
+            className="absolute flex items-center justify-center whitespace-nowrap rounded-full bg-[#4F91EB] px-2"
             style={{ ...cardRectStyle(MISSION_BADGE_RECT), width: 'auto' }}
           >
-            <p className="whitespace-nowrap text-[14px] font-semibold leading-none text-white">
+            <p className="whitespace-nowrap text-[11px] font-semibold leading-none text-white">
               {isRetrying ? '재도전 중' : started ? '현재 학습 중' : '오늘의 미션'}
             </p>
           </div>
@@ -71,7 +71,7 @@ export function TodayMissionCard({
             className="absolute flex items-center"
             style={cardRectStyle(MISSION_TITLE_RECT)}
           >
-            <p className="truncate text-[18px] font-bold leading-tight text-[#1F242E]">
+            <p className="truncate text-[16px] font-bold leading-tight text-[#1F242E]">
               {assignment.title}
             </p>
           </div>
@@ -80,7 +80,7 @@ export function TodayMissionCard({
             className="absolute flex items-center"
             style={cardRectStyle(MISSION_SUBTITLE_RECT)}
           >
-            <p className="truncate text-[16px] font-normal leading-none text-[#6B7382]">
+            <p className="truncate text-[13px] font-normal leading-none text-[#6B7382]">
               {remainingCount > 0
                 ? `약 ${remainingMinutes}분 소요`
                 : '오늘의 미션을 모두 풀었어요!'}
@@ -88,12 +88,12 @@ export function TodayMissionCard({
           </div>
 
           <div
-            className="absolute flex items-center gap-2"
+            className="absolute flex items-center gap-1.5"
             style={{
               ...cardRectStyle({
                 x: MISSION_PROGRESS_TRACK_RECT.x,
                 y: MISSION_PROGRESS_TRACK_RECT.y - 4,
-                w: MISSION_PROGRESS_TRACK_RECT.w + 48,
+                w: MISSION_PROGRESS_TRACK_RECT.w + 44,
                 h: MISSION_PROGRESS_TRACK_RECT.h + 8,
               }),
             }}
@@ -106,7 +106,7 @@ export function TodayMissionCard({
                 />
               )}
             </div>
-            <span className="shrink-0 text-[13px] font-semibold leading-none tabular-nums text-[#4F91EB]">
+            <span className="shrink-0 text-[12px] font-semibold leading-none tabular-nums text-[#4F91EB]">
               {percentLabel}
             </span>
           </div>
@@ -114,15 +114,22 @@ export function TodayMissionCard({
           <button
             type="button"
             onClick={() => onOpen(assignment)}
-            className="pointer-events-auto absolute flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[12px] bg-[#4F91EB] px-2 text-center text-[15px] font-semibold leading-none text-white active:opacity-90"
+            className="pointer-events-auto absolute flex cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] bg-[#4F91EB] px-1.5 text-center text-[12px] font-semibold leading-snug text-white active:opacity-90"
             style={cardRectStyle(MISSION_BUTTON_RECT)}
+            aria-label={started ? '이어서 학습하기' : '시작하기'}
           >
-            <span>{started ? '이어서 학습하기' : '시작하기'}</span>
+            {/*
+              「이어서 학습하기」는 좁은 CTA에 두 줄이 된다. 줄마다 균형 잡히게 끊고
+              화살표는 바로 아래에 붙여 덩어리감을 줄인다.
+            */}
+            <span className={started ? 'max-w-[4.5em]' : undefined}>
+              {started ? '이어서 학습하기' : '시작하기'}
+            </span>
             <svg
               aria-hidden
               className="shrink-0"
-              width="28"
-              height="10"
+              width="20"
+              height="8"
               viewBox="0 0 28 10"
               fill="none"
             >
@@ -177,10 +184,10 @@ export function TodayMissionCard({
       ) : (
         <>
           <div
-            className="absolute flex items-center justify-center whitespace-nowrap rounded-full bg-gradient-to-r from-[#5BA3F5] to-[#4F91EB] px-3 shadow-[0_2px_6px_rgba(79,145,235,0.28)]"
+            className="absolute flex items-center justify-center whitespace-nowrap rounded-full bg-gradient-to-r from-[#5BA3F5] to-[#4F91EB] px-2 shadow-[0_2px_6px_rgba(79,145,235,0.28)]"
             style={{ ...cardRectStyle(MISSION_BADGE_RECT), width: 'auto' }}
           >
-            <p className="whitespace-nowrap font-['Pretendard',sans-serif] text-[14px] font-semibold leading-none text-white">
+            <p className="whitespace-nowrap font-['Pretendard',sans-serif] text-[11px] font-semibold leading-none text-white">
               오늘 완료
             </p>
           </div>
@@ -189,7 +196,7 @@ export function TodayMissionCard({
             className="absolute flex items-center"
             style={cardRectStyle(MISSION_TITLE_RECT)}
           >
-            <p className="truncate font-['Pretendard',sans-serif] text-[18px] font-bold leading-tight text-[#1F242E]">
+            <p className="truncate font-['Pretendard',sans-serif] text-[16px] font-bold leading-tight text-[#1F242E]">
               오늘의 미션을 모두 완료했어요!
             </p>
           </div>
@@ -198,18 +205,18 @@ export function TodayMissionCard({
             className="absolute flex items-center"
             style={cardRectStyle(MISSION_SUBTITLE_RECT)}
           >
-            <p className="truncate font-['Pretendard',sans-serif] text-[16px] font-normal leading-none text-[#6B7382]">
+            <p className="truncate font-['Pretendard',sans-serif] text-[13px] font-normal leading-none text-[#6B7382]">
               수고했어요, 내일도 함께 해요
             </p>
           </div>
 
           <div
-            className="absolute flex items-center gap-2"
+            className="absolute flex items-center gap-1.5"
             style={{
               ...cardRectStyle({
                 x: MISSION_PROGRESS_TRACK_RECT.x,
                 y: MISSION_PROGRESS_TRACK_RECT.y - 4,
-                w: MISSION_PROGRESS_TRACK_RECT.w + 48,
+                w: MISSION_PROGRESS_TRACK_RECT.w + 44,
                 h: MISSION_PROGRESS_TRACK_RECT.h + 8,
               }),
             }}
@@ -217,7 +224,7 @@ export function TodayMissionCard({
             <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-[#D9E3F7]">
               <div className="h-full w-full rounded-full bg-gradient-to-r from-[#5BA3F5] to-[#4F91EB]" />
             </div>
-            <span className="shrink-0 text-[13px] font-semibold leading-none tabular-nums text-[#4F91EB]">
+            <span className="shrink-0 text-[12px] font-semibold leading-none tabular-nums text-[#4F91EB]">
               100%
             </span>
           </div>

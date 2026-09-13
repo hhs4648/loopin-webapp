@@ -99,8 +99,9 @@ export function ReviewStreakCard({ streak }: { streak: StudyStreakWithWeek }) {
         {week.map((cell, index) => {
           const cx = DOT.firstCx + DOT.gap * index
           const on = cell.studied
+          const future = cell.isFuture
           return (
-            <g key={cell.label}>
+            <g key={cell.label} opacity={future && !on ? 0.4 : 1}>
               <circle
                 cx={cx}
                 cy={DOT.cy}
@@ -108,6 +109,7 @@ export function ReviewStreakCard({ streak }: { streak: StudyStreakWithWeek }) {
                 fill={on ? DOT_ON : 'white'}
                 stroke={on ? undefined : DOT_ON}
                 strokeWidth={on ? undefined : 1.5}
+                strokeDasharray={future && !on ? '2 2' : undefined}
               />
               {/* 오늘 칸은 링을 하나 더 둘러 어디까지 왔는지 보이게 */}
               {cell.isToday ? (

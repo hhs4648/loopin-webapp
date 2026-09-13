@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { MAIN_HOME_SKY_GRADIENT } from '../main-home/assignment-home'
+import { PhoneCanvas } from '../PhoneCanvas'
 import { STREAK_BADGE_HOME_CENTER } from '../review/StudyStreakBadge'
 import {
   isStreakDay1,
@@ -153,126 +154,131 @@ export function StreakCelebrationScreen({
 
   return (
     <div
-      className="flex min-h-full w-full justify-center"
+      className="flex h-full min-h-full w-full justify-center"
       style={{ background: MAIN_HOME_SKY_GRADIENT }}
     >
-      <button
-        type="button"
-        onClick={finish}
-        aria-label={
-          day1
-            ? '학습 시작 · 1일째 · 눌러서 계속하기'
-            : `${celebration.days}일 연속 학습 · 눌러서 계속하기`
-        }
-        className="relative aspect-[393/852] w-full max-w-[540px] cursor-pointer self-center overflow-hidden border-0 p-0 text-left"
+      <PhoneCanvas
         style={{ background: MAIN_HOME_SKY_GRADIENT }}
+        topBleedClassName="bg-[#C5EBFE]"
+        bottomBleedClassName="bg-[#C5EBFE]"
       >
-        {/* 색종이 — 장식이라 스크린리더에서 숨긴다 */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-          {CONFETTI.map((piece, index) => (
-            <span
-              key={index}
-              className="streak-anim absolute top-0 block rounded-[2px]"
-              style={{
-                left: `${piece.left}%`,
-                width: piece.w,
-                height: piece.h,
-                background: piece.color,
-                opacity: 0,
-                animation: `streak-confetti-fall ${piece.duration}ms ease-in ${
-                  piece.delay + STREAK_BADGE_LAND_MS
-                }ms both`,
-              }}
-            />
-          ))}
-        </div>
+        <button
+          type="button"
+          onClick={finish}
+          aria-label={
+            day1
+              ? '학습 시작 · 1일째 · 눌러서 계속하기'
+              : `${celebration.days}일 연속 학습 · 눌러서 계속하기`
+          }
+          className="absolute inset-0 z-10 cursor-pointer border-0 bg-transparent p-0 text-left"
+        >
+          {/* 색종이 — 장식이라 스크린리더에서 숨긴다 */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+            {CONFETTI.map((piece, index) => (
+              <span
+                key={index}
+                className="streak-anim absolute top-0 block rounded-[2px]"
+                style={{
+                  left: `${piece.left}%`,
+                  width: piece.w,
+                  height: piece.h,
+                  background: piece.color,
+                  opacity: 0,
+                  animation: `streak-confetti-fall ${piece.duration}ms ease-in ${
+                    piece.delay + STREAK_BADGE_LAND_MS
+                  }ms both`,
+                }}
+              />
+            ))}
+          </div>
 
-        <div className="absolute inset-x-0 top-[22%] flex flex-col items-center px-6">
-          <div
-            className="relative flex items-center justify-center"
-            style={{
-              width: `${(BADGE_BOX.w / 393) * 100}%`,
-              aspectRatio: `${BADGE_BOX.w} / ${BADGE_BOX.h}`,
-            }}
-          >
-            {/* 뒤 글로우 */}
-            <span
-              aria-hidden
-              className="streak-anim absolute inset-[-18%] rounded-full"
-              style={{
-                background:
-                  'radial-gradient(circle, rgba(255,201,45,0.40) 0%, rgba(255,201,45,0) 68%)',
-                animation: `streak-glow-pulse 2200ms ease-in-out ${STREAK_BADGE_LAND_MS}ms infinite`,
-              }}
-            />
-            {/* 착지 링 — 별이 앉는 순간 한 번 퍼진다 */}
-            <span
-              aria-hidden
-              className="streak-anim absolute inset-[-6%] rounded-full border-2 border-[#FFC92D]"
-              style={{
-                opacity: 0,
-                animation: `streak-land-ring 620ms ease-out ${
-                  STREAK_BADGE_LAND_MS - 180
-                }ms both`,
-              }}
-            />
-
-            {/* 날아와 앉기 → 앉은 뒤 아주 작게 숨쉬기 */}
+          <div className="absolute inset-x-0 top-[22%] flex flex-col items-center px-6">
             <div
-              className="streak-anim absolute inset-0"
+              className="relative flex items-center justify-center"
               style={{
-                ['--streak-from-x' as string]: `${fromX}px`,
-                ['--streak-from-y' as string]: `${fromY}px`,
-                animation: `streak-badge-fly-in ${STREAK_BADGE_LAND_MS}ms cubic-bezier(0.22,1,0.36,1) both`,
+                width: `${(BADGE_BOX.w / 393) * 100}%`,
+                aspectRatio: `${BADGE_BOX.w} / ${BADGE_BOX.h}`,
               }}
             >
-              <div
-                className="streak-anim h-full w-full"
+              {/* 뒤 글로우 */}
+              <span
+                aria-hidden
+                className="streak-anim absolute inset-[-18%] rounded-full"
                 style={{
-                  animation: `streak-badge-settle 2600ms ease-in-out ${STREAK_BADGE_LAND_MS}ms infinite`,
+                  background:
+                    'radial-gradient(circle, rgba(255,201,45,0.40) 0%, rgba(255,201,45,0) 68%)',
+                  animation: `streak-glow-pulse 2200ms ease-in-out ${STREAK_BADGE_LAND_MS}ms infinite`,
+                }}
+              />
+              {/* 착지 링 — 별이 앉는 순간 한 번 퍼진다 */}
+              <span
+                aria-hidden
+                className="streak-anim absolute inset-[-6%] rounded-full border-2 border-[#FFC92D]"
+                style={{
+                  opacity: 0,
+                  animation: `streak-land-ring 620ms ease-out ${
+                    STREAK_BADGE_LAND_MS - 180
+                  }ms both`,
+                }}
+              />
+
+              {/* 날아와 앉기 → 앉은 뒤 아주 작게 숨쉬기 */}
+              <div
+                className="streak-anim absolute inset-0"
+                style={{
+                  ['--streak-from-x' as string]: `${fromX}px`,
+                  ['--streak-from-y' as string]: `${fromY}px`,
+                  animation: `streak-badge-fly-in ${STREAK_BADGE_LAND_MS}ms cubic-bezier(0.22,1,0.36,1) both`,
                 }}
               >
-                <StudyStreakBadgeArt
-                  days={shownDays}
-                  className="h-full w-full"
-                  numberStyle={
-                    numberChanged
-                      ? { animation: 'streak-number-pop 460ms cubic-bezier(0.34,1.56,0.64,1) both' }
-                      : undefined
-                  }
-                />
+                <div
+                  className="streak-anim h-full w-full"
+                  style={{
+                    animation: `streak-badge-settle 2600ms ease-in-out ${STREAK_BADGE_LAND_MS}ms infinite`,
+                  }}
+                >
+                  <StudyStreakBadgeArt
+                    days={shownDays}
+                    className="h-full w-full"
+                    numberStyle={
+                      numberChanged
+                        ? { animation: 'streak-number-pop 460ms cubic-bezier(0.34,1.56,0.64,1) both' }
+                        : undefined
+                    }
+                  />
+                </div>
               </div>
+            </div>
+
+            <p
+              className="streak-anim mt-6 text-[14px] leading-none font-medium text-[#6B7382]"
+              style={{
+                animation: `streak-rise-in 320ms ease-out ${STREAK_BADGE_LAND_MS + 140}ms both`,
+              }}
+            >
+              이번 주 {studiedThisWeek}일 공부했어요
+            </p>
+
+            <div
+              className="streak-anim mt-5 w-full rounded-[18px] bg-white/75 px-4 py-4 shadow-[0_2px_14px_rgba(46,90,130,0.10)] backdrop-blur-[2px]"
+              style={{
+                animation: `streak-rise-in 340ms ease-out ${STREAK_BADGE_LAND_MS + 100}ms both`,
+              }}
+            >
+              <WeekStrip week={celebration.week} />
             </div>
           </div>
 
           <p
-            className="streak-anim mt-6 text-[14px] leading-none font-medium text-[#6B7382]"
+            className="streak-anim absolute inset-x-0 bottom-[9%] text-center text-[14px] font-medium text-[#7C8698]"
             style={{
-              animation: `streak-rise-in 320ms ease-out ${STREAK_BADGE_LAND_MS + 140}ms both`,
+              animation: `streak-rise-in 300ms ease-out ${STREAK_TAP_BLOCK_MS}ms both`,
             }}
           >
-            이번 주 {studiedThisWeek}일 공부했어요
+            화면을 탭하세요
           </p>
-
-          <div
-            className="streak-anim mt-5 w-full rounded-[18px] bg-white/75 px-4 py-4 shadow-[0_2px_14px_rgba(46,90,130,0.10)] backdrop-blur-[2px]"
-            style={{
-              animation: `streak-rise-in 340ms ease-out ${STREAK_BADGE_LAND_MS + 100}ms both`,
-            }}
-          >
-            <WeekStrip week={celebration.week} />
-          </div>
-        </div>
-
-        <p
-          className="streak-anim absolute inset-x-0 bottom-[9%] text-center text-[14px] font-medium text-[#7C8698]"
-          style={{
-            animation: `streak-rise-in 300ms ease-out ${STREAK_TAP_BLOCK_MS}ms both`,
-          }}
-        >
-          화면을 탭하세요
-        </p>
-      </button>
+        </button>
+      </PhoneCanvas>
     </div>
   )
 }

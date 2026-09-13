@@ -48,12 +48,11 @@ const ICON_FILL: Record<'default' | 'dimmed', string> = {
 /**
  * 글자·별 크기 (393 기준).
  *
- * 예전에는 글씨가 **고정 18px**이었다. 알약 상자는 프레임에 비례해 줄어드는데 글씨만
- * 그대로라, 아이폰 SE(프레임 308)에서 **상자를 8px 넘쳤다.** `framePx`로 같이 줄인다.
- * 크기도 18 → 15로 낮췄다 — 맵에서 혼자 크게 도드라져 파트 카드와 부딪혔다.
+ * 알약 상자는 프레임에 비례해 줄고, 글씨도 `framePx`로 같이 줄인다.
+ * 맵에서 크게 도드라지지 않게 12px 기준으로 둔다.
  */
-const LABEL_PX = 15
-const ICON_PX = 17
+const LABEL_PX = 12
+const ICON_PX = 14
 
 const BASE_CLASS =
   "pointer-events-auto absolute z-[11] flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[14px] border font-['Pretendard',sans-serif] font-semibold leading-none"

@@ -4,6 +4,7 @@ import {
   onboardingHeaderMaskStyle,
 } from './onboarding-chrome'
 import { OnboardingChrome } from './OnboardingChrome'
+import { PhoneCanvas } from '../PhoneCanvas'
 
 type OnboardingFigmaFrameProps = {
   src: string
@@ -26,12 +27,12 @@ export function OnboardingFigmaFrame({
   children,
 }: OnboardingFigmaFrameProps) {
   return (
-    <div className={`flex min-h-full w-full justify-center ${bgClassName}`}>
-      <div className="relative aspect-[393/852] w-full max-w-[540px] self-center">
+    <div className={`flex h-full min-h-full w-full justify-center ${bgClassName}`}>
+      <PhoneCanvas topBleedClassName={bgClassName} bottomBleedClassName={bgClassName}>
         <img
           src={src}
           alt={alt}
-          className="pointer-events-none absolute inset-0 h-full w-full select-none"
+          className="pointer-events-none absolute inset-0 h-full w-full select-none object-fill"
           draggable={false}
         />
         <div
@@ -41,7 +42,7 @@ export function OnboardingFigmaFrame({
         />
         <OnboardingChrome />
         {children}
-      </div>
+      </PhoneCanvas>
     </div>
   )
 }
@@ -57,11 +58,11 @@ export function OnboardingPhoneShell({
   children,
 }: OnboardingPhoneShellProps) {
   return (
-    <div className={`flex min-h-full w-full justify-center ${bgClassName}`}>
-      <div className="relative aspect-[393/852] w-full max-w-[540px] self-center overflow-hidden">
+    <div className={`flex h-full min-h-full w-full justify-center ${bgClassName}`}>
+      <PhoneCanvas topBleedClassName={bgClassName} bottomBleedClassName={bgClassName}>
         <OnboardingChrome />
         <div className="absolute inset-0 flex flex-col">{children}</div>
-      </div>
+      </PhoneCanvas>
     </div>
   )
 }
