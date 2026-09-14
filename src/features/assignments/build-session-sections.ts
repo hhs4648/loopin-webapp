@@ -90,7 +90,8 @@ function extractCloze(example: string | undefined) {
  * 다른 단어를 끌어와 채우고(`fillMatchPage` in word-match.ts), 3지선다·예문 빈칸은
  * **그 세트의 단어만** 낸다. 채움 단어까지 다시 물으면 같은 단어를 두 번 푸는 꼴이 된다.
  */
-const WORD_SET_SIZE = MATCH_PAGE_SIZE
+/** 한 세트에 담는 문항 수. 짝맞추기 화면이 4짝이라 그 숫자를 그대로 쓴다. */
+const SET_SIZE = MATCH_PAGE_SIZE
 
 function isWordListenMatchType(label: string) {
   return (
@@ -142,8 +143,8 @@ function buildWordSections(snapshot: ContentSnapshot): AssignmentSection[] {
   const listenPool = words.map((word) => toPair(word, 'listen'))
 
   const sections: AssignmentSection[] = []
-  for (let start = 0, set = 0; start < words.length; start += WORD_SET_SIZE, set += 1) {
-    const group = words.slice(start, start + WORD_SET_SIZE)
+  for (let start = 0, set = 0; start < words.length; start += SET_SIZE, set += 1) {
+    const group = words.slice(start, start + SET_SIZE)
 
     if (wantMatch) {
       sections.push({
@@ -215,144 +216,107 @@ function buildWordSections(snapshot: ContentSnapshot): AssignmentSection[] {
   return sections
 }
 
-function buildBodyASections(snapshot: ContentSnapshot): AssignmentSection[] {
-  if (!snapshot.problemTypes.sentences.includes('번역 배열')) return []
-
-  const questions: BodyTextAQuestion[] = []
-  for (const sentence of snapshot.sentences) {
-    const segments = refineSparseChunks(
-      splitChunks(sentence.chunksKo, sentence.korean),
-      { lang: 'ko' },
-    )
-    if (segments.length < 2) continue
-    questions.push({
-      id: `${sentence.id}:translate`,
-      exampleEn: stripBrackets(sentence.english),
-      exampleKo: stripBrackets(sentence.korean),
-      segments,
-    })
-  }
-
-  return questions.length
-    ? [{ kind: 'body-text-a', id: 'body-text-a', questions: shuffle(questions) }]
-    : []
-}
-
-function buildBodyBSections(snapshot: ContentSnapshot): AssignmentSection[] {
-  if (!snapshot.problemTypes.sentences.includes('청크배열')) return []
-
-  const questions: BodyTextBQuestion[] = []
-  for (const sentence of snapshot.sentences) {
-    const segments = refineSparseChunks(
-      splitChunks(sentence.chunksEn, sentence.english),
-      { lang: 'en' },
-    )
-      .map(normalizeBodyTextBChunk)
-      .filter(Boolean)
-    if (segments.length < 2) continue
-    questions.push({
-      id: `${sentence.id}:chunk`,
-      promptKo: stripBrackets(sentence.korean),
-      exampleEn: stripBrackets(sentence.english),
-      segments,
-    })
-  }
-
-  return questions.length
-    ? [{ kind: 'body-text-b', id: 'body-text-b', questions: shuffle(questions) }]
-    : []
-}
-
-function buildBodyCSections(snapshot: ContentSnapshot): AssignmentSection[] {
-  if (!snapshot.problemTypes.sentences.includes('영작')) return []
-
-  const questions: BodyTextCQuestion[] = []
-  for (const sentence of snapshot.sentences) {
-    // 한글 지문·영어 정답이 없으면 문제로 만들지 않는다 (빈 문제를 내느니 안 내는 게 낫다).
-    // 교사측 content-snapshot.ts에서 korean이 빈 문자열로 넘어올 수 있다.
-    const promptKo = stripBrackets(sentence.korean)
-    const exampleEn = stripBrackets(sentence.english)
-    if (!promptKo || !exampleEn) continue
-
-    const keywords = sentence.hint
-      ? sentence.hint
-          .split(/[,/]/)
-          .map((part) => part.trim())
-          .filter(Boolean)
-          .slice(0, 3)
-      : splitChunks(sentence.chunksEn, sentence.english).slice(0, 3)
-    const fallbackKeyword = exampleEn.split(/\s+/).filter(Boolean)[0]
-    const resolvedKeywords =
-      keywords.length > 0 ? keywords : fallbackKeyword ? [fallbackKeyword] : []
-    if (resolvedKeywords.length === 0) continue
-
-    questions.push({
-      id: `${sentence.id}:write`,
-      promptKo,
-      keywords: resolvedKeywords,
-      exampleEn,
-    })
-  }
-
-  return questions.length
-    ? [{ kind: 'body-text-c', id: 'body-text-c', questions: shuffle(questions) }]
-    : []
-}
-
 /**
- * 유형1(이지선다) — **유형2(OX)와 완전히 별개인 유형**이다. 3지선다는 여기 안 쓴다.
+ * 본문도 **문장 4개씩 한 세트**로 묶어 켜진 유형을 다 돌고 다음 세트로 넘어간다.
+ * 단어와 같은 이유다 — 번역 배열만 10문장 내리 푸는 것보다 같은 문장을 여러 방식으로
+ * 연달아 만나는 편이 남는다. 세트 순서는 A(번역 배열) → B(청크배열) → C(영작).
  *
- * 보기는 `twoChoices`(정답이 앞). 빈칸 자리는 O/X로 갈린다:
- * **O는 맞는 문장이라 정답이 문장에 그대로 있고, X는 틀린 문장이라 「틀린 부분」이 있다.**
- * 그래서 X 문항은 틀린 자리를 비우고 정답을 고르게 한다.
+ * 문장마다 만들 수 있는 유형이 다르다(A는 한글 청크, B는 영어 청크, C는 한글·영어가
+ * 다 있어야 한다). 못 만드는 유형은 그 세트에서 조용히 빠진다 — 빈 문제를 내지 않는다.
  */
-function buildGrammarType1Sections(snapshot: ContentSnapshot): AssignmentSection[] {
-  if (!snapshot.problemTypes.grammar.includes('선택형 문제')) return []
+function makeBodyAQuestion(
+  sentence: ContentSnapshot['sentences'][number],
+): BodyTextAQuestion | null {
+  const segments = refineSparseChunks(
+    splitChunks(sentence.chunksKo, sentence.korean),
+    { lang: 'ko' },
+  )
+  if (segments.length < 2) return null
+  return {
+    id: `${sentence.id}:translate`,
+    exampleEn: stripBrackets(sentence.english),
+    exampleKo: stripBrackets(sentence.korean),
+    segments,
+  }
+}
 
-  const twoOption: GrammarType1Question[] = []
+function makeBodyBQuestion(
+  sentence: ContentSnapshot['sentences'][number],
+): BodyTextBQuestion | null {
+  const segments = refineSparseChunks(
+    splitChunks(sentence.chunksEn, sentence.english),
+    { lang: 'en' },
+  )
+    .map(normalizeBodyTextBChunk)
+    .filter(Boolean)
+  if (segments.length < 2) return null
+  return {
+    id: `${sentence.id}:chunk`,
+    promptKo: stripBrackets(sentence.korean),
+    exampleEn: stripBrackets(sentence.english),
+    segments,
+  }
+}
 
-  for (const grammar of snapshot.grammar) {
-    const choices = parseGrammarChoices(grammar.twoChoices)
-    // 2026-09 이전 스냅샷에는 `twoChoices`가 없다 — 없으면 만들지 않는다.
-    if (choices.length !== 2) continue
+function makeBodyCQuestion(
+  sentence: ContentSnapshot['sentences'][number],
+): BodyTextCQuestion | null {
+  // 한글 지문·영어 정답이 없으면 문제로 만들지 않는다 (빈 문제를 내느니 안 내는 게 낫다).
+  // 교사측 content-snapshot.ts에서 korean이 빈 문자열로 넘어올 수 있다.
+  const promptKo = stripBrackets(sentence.korean)
+  const exampleEn = stripBrackets(sentence.english)
+  if (!promptKo || !exampleEn) return null
 
-    const correct = choices[0]!
-    const ox = grammar.ox?.trim().toUpperCase()
-    const target = ox === 'X' ? grammar.wrongPart?.trim() : correct
-    if (!target || target === '-') continue
+  const keywords = sentence.hint
+    ? sentence.hint
+        .split(/[,/]/)
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .slice(0, 3)
+    : splitChunks(sentence.chunksEn, sentence.english).slice(0, 3)
+  const fallbackKeyword = exampleEn.split(/\s+/).filter(Boolean)[0]
+  const resolvedKeywords =
+    keywords.length > 0 ? keywords : fallbackKeyword ? [fallbackKeyword] : []
+  if (resolvedKeywords.length === 0) return null
 
-    const english = stripBrackets(grammar.english)
-    const blank =
-      blankFromBrackets(grammar.english) ??
-      findBlank(english, target, grammar.blankNth)
-    if (!blank) continue
+  return { id: `${sentence.id}:write`, promptKo, keywords: resolvedKeywords, exampleEn }
+}
 
-    const options = shuffle(choices).map((label, index) => ({
-      id: `${grammar.id}:opt:${index}:${label}`,
-      label,
-    }))
-    const correctOption = options.find((option) => option.label === correct)
-    if (!correctOption) continue
+function buildBodySections(snapshot: ContentSnapshot): AssignmentSection[] {
+  const types = snapshot.problemTypes.sentences
+  const wantA = types.includes('번역 배열')
+  const wantB = types.includes('청크배열')
+  const wantC = types.includes('영작')
+  if (!wantA && !wantB && !wantC) return []
 
-    twoOption.push({
-      id: `${grammar.id}:choice`,
-      maskPassage: true,
-      passageBefore: blank.before.trimEnd(),
-      passageAfter: blank.after.trimStart(),
-      options,
-      correctOptionId: correctOption.id,
-    })
+  /* 문장 순서도 한 번만 섞는다 — 유형마다 섞으면 세트가 성립하지 않는다 */
+  const sentences = shuffle(snapshot.sentences)
+  const sections: AssignmentSection[] = []
+
+  for (let start = 0, set = 0; start < sentences.length; start += SET_SIZE, set += 1) {
+    const group = sentences.slice(start, start + SET_SIZE)
+
+    if (wantA) {
+      const questions = group.map(makeBodyAQuestion).filter((q) => q !== null)
+      if (questions.length) {
+        sections.push({ kind: 'body-text-a', id: `body-text-a:${set}`, questions: shuffle(questions) })
+      }
+    }
+    if (wantB) {
+      const questions = group.map(makeBodyBQuestion).filter((q) => q !== null)
+      if (questions.length) {
+        sections.push({ kind: 'body-text-b', id: `body-text-b:${set}`, questions: shuffle(questions) })
+      }
+    }
+    if (wantC) {
+      const questions = group.map(makeBodyCQuestion).filter((q) => q !== null)
+      if (questions.length) {
+        sections.push({ kind: 'body-text-c', id: `body-text-c:${set}`, questions: shuffle(questions) })
+      }
+    }
   }
 
-  return twoOption.length
-    ? [
-        {
-          kind: 'grammar-type-1',
-          id: 'grammar-type-1',
-          questions: shuffle(twoOption),
-        },
-      ]
-    : []
+  return sections
 }
 
 type Blank = { before: string; matched: string; after: string }
@@ -438,48 +402,110 @@ function buildOxXCorrection(grammar: ProblemGrammarSnapshot) {
   }
 }
 
-function buildGrammarOxSections(snapshot: ContentSnapshot): AssignmentSection[] {
-  if (!snapshot.problemTypes.grammar.includes('OX문제')) return []
+/**
+ * 문법도 **문항 4개씩 한 세트**로 묶어 유형1 → 유형2 순서로 돈다.
+ *
+ * 두 유형은 서로 별개다 — 유형1은 이지선다(`twoChoices`), 유형2는 O/X 퀴즈이고
+ * 정답이 X인 문항에만 3지선다 교정(2-a)이 이어진다. 한 문항이 두 유형에 다 쓰이므로
+ * 같은 문장을 두 방식으로 연달아 만나게 된다.
+ */
+function makeGrammarType1Question(
+  grammar: ProblemGrammarSnapshot,
+): GrammarType1Question | null {
+  const choices = parseGrammarChoices(grammar.twoChoices)
+  // 2026-09 이전 스냅샷에는 `twoChoices`가 없다 — 없으면 만들지 않는다.
+  if (choices.length !== 2) return null
 
-  const questions: GrammarType2Question[] = []
-  for (const grammar of snapshot.grammar) {
-    const ox = grammar.ox?.trim().toUpperCase()
-    if (ox !== 'O' && ox !== 'X') continue
+  const correct = choices[0]!
+  const ox = grammar.ox?.trim().toUpperCase()
+  const target = ox === 'X' ? grammar.wrongPart?.trim() : correct
+  if (!target || target === '-') return null
 
-    const correctOptionId = ox === 'O' ? 'o' : 'x'
-    questions.push({
-      kind: 'ox',
-      id: `${grammar.id}:ox`,
-      maskPassage: true,
-      passageLines: [stripBrackets(grammar.english)],
-      correctOptionId,
-      xCorrection:
-        correctOptionId === 'x' ? buildOxXCorrection(grammar) : undefined,
-    })
+  const english = stripBrackets(grammar.english)
+  const blank =
+    blankFromBrackets(grammar.english) ??
+    findBlank(english, target, grammar.blankNth)
+  if (!blank) return null
+
+  const options = shuffle(choices).map((label, index) => ({
+    id: `${grammar.id}:opt:${index}:${label}`,
+    label,
+  }))
+  const correctOption = options.find((option) => option.label === correct)
+  if (!correctOption) return null
+
+  return {
+    id: `${grammar.id}:choice`,
+    maskPassage: true,
+    passageBefore: blank.before.trimEnd(),
+    passageAfter: blank.after.trimStart(),
+    options,
+    correctOptionId: correctOption.id,
   }
-
-  return questions.length
-    ? [
-        {
-          kind: 'grammar-type-2',
-          id: 'grammar-type-2-ox',
-          questions: shuffle(questions),
-        },
-      ]
-    : []
 }
 
-/** Convert teacher content snapshot into ordered existing Figma UI sections. */
+function makeGrammarOxQuestion(
+  grammar: ProblemGrammarSnapshot,
+): GrammarType2Question | null {
+  const ox = grammar.ox?.trim().toUpperCase()
+  if (ox !== 'O' && ox !== 'X') return null
+
+  const correctOptionId = ox === 'O' ? 'o' : 'x'
+  return {
+    kind: 'ox',
+    id: `${grammar.id}:ox`,
+    maskPassage: true,
+    passageLines: [stripBrackets(grammar.english)],
+    correctOptionId,
+    xCorrection: correctOptionId === 'x' ? buildOxXCorrection(grammar) : undefined,
+  }
+}
+
+function buildGrammarSections(snapshot: ContentSnapshot): AssignmentSection[] {
+  const types = snapshot.problemTypes.grammar
+  const wantType1 = types.includes('선택형 문제')
+  const wantOx = types.includes('OX문제')
+  if (!wantType1 && !wantOx) return []
+
+  /* 문항 순서도 한 번만 섞는다 — 유형마다 섞으면 세트가 성립하지 않는다 */
+  const items = shuffle(snapshot.grammar)
+  const sections: AssignmentSection[] = []
+
+  for (let start = 0, set = 0; start < items.length; start += SET_SIZE, set += 1) {
+    const group = items.slice(start, start + SET_SIZE)
+
+    if (wantType1) {
+      const questions = group.map(makeGrammarType1Question).filter((q) => q !== null)
+      if (questions.length) {
+        sections.push({
+          kind: 'grammar-type-1',
+          id: `grammar-type-1:${set}`,
+          questions: shuffle(questions),
+        })
+      }
+    }
+    if (wantOx) {
+      const questions = group.map(makeGrammarOxQuestion).filter((q) => q !== null)
+      if (questions.length) {
+        sections.push({
+          kind: 'grammar-type-2',
+          id: `grammar-type-2-ox:${set}`,
+          questions: shuffle(questions),
+        })
+      }
+    }
+  }
+
+  return sections
+}
+
 export function buildAssignmentSections(
   snapshot: ContentSnapshot,
 ): AssignmentSection[] {
   return [
     ...buildWordSections(snapshot),
-    ...buildBodyASections(snapshot),
-    ...buildBodyBSections(snapshot),
-    ...buildBodyCSections(snapshot),
-    ...buildGrammarOxSections(snapshot),
-    ...buildGrammarType1Sections(snapshot),
+    ...buildBodySections(snapshot),
+    ...buildGrammarSections(snapshot),
   ]
 }
 
