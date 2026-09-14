@@ -32,6 +32,7 @@ export function GymCompleteScreen({
   perfect,
   snapshot,
   className,
+  assignmentTitle,
   correctCount,
   totalCount,
   wrongCount,
@@ -44,6 +45,8 @@ export function GymCompleteScreen({
   snapshot: ContentSnapshot
   /** 반 이름 — 시작 카드와 같은 `반 · 단원` 제목용 */
   className?: string
+  /** 맵/미션에 쓴 표시 제목 — 사용자 지정 `학년 외부지문N` 유지용 */
+  assignmentTitle?: string
   correctCount: number
   totalCount: number
   wrongCount: number
@@ -55,7 +58,7 @@ export function GymCompleteScreen({
   onDone?: () => void
 }) {
   const asset = perfect ? GYM_COMPLETE_PERFECT_ASSET : GYM_COMPLETE_ASSET
-  const heading = gymCompleteHeading(snapshot, { className })
+  const heading = gymCompleteHeading(snapshot, { className, assignmentTitle })
   const summary = formatCorrectSummary(correctCount, totalCount)
 
   return (

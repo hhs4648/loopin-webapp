@@ -1,6 +1,6 @@
 import { getSupabase, hasStoredAuthToken, isSyncEnabled } from './supabase-client'
 import { DEFAULT_PASS_SCORE_THRESHOLD } from '../../components/praise-calendar/praise-calendar'
-import { displayAssignmentTitle } from './assignment-title'
+import { displayAssignmentTitle, isCustomExternalSnapshot } from './assignment-title'
 import type {
   AnswerEvent,
   AttemptProgress,
@@ -456,6 +456,7 @@ export async function fetchStudentAssignments(
     attemptsByAssignment.set(a.assignmentId, list)
   }
 
+  let externalPassageIndex = 0
   return rows.map((row, index) => {
     const snapshot = (row.content_snapshot ?? {
       version: 1,
@@ -494,12 +495,21 @@ export async function fetchStudentAssignments(
             : 100
           : latestProgress
 
+    const isWrongReissueRow =
+      typeof row.target_student_id === 'string' && !!row.target_student_id
+    const customExternal =
+      !isWrongReissueRow && isCustomExternalSnapshot(snapshot)
+    const passageIndex = customExternal ? ++externalPassageIndex : undefined
+
     return {
       assignmentId: row.id as string,
       classId: row.class_id as string,
       ...(className ? { className } : {}),
       order: Number(row.sort_order ?? index),
-      title: displayAssignmentTitle(snapshot, { className }),
+      title: displayAssignmentTitle(snapshot, {
+        className,
+        ...(passageIndex != null ? { externalPassageIndex: passageIndex } : {}),
+      }),
       status,
       progressPercent,
       lessonDate: String(row.lesson_date),

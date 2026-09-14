@@ -155,6 +155,7 @@ export function GymScreen({
             <p className="line-clamp-2 text-[22px] font-bold leading-tight text-white">
               {gymStartHeading(next.contentSnapshot, {
                 className: next.className,
+                assignmentTitle: next.title,
               })}
             </p>
           </div>

@@ -598,7 +598,7 @@ export function AssignmentReceivedScreen({
           하늘·풀맵은 **문서 흐름으로 쌓아** 같이 스크롤한다.
           (한 박스 absolute+% 높이는 Android WebView에서 하늘이 안 움직이거나
            부모 하늘색만 남는 경우가 있었다.)
-          뷰포트 고정: 오늘의 미션 · 칭찬 캘린더 · 하단 내비만.
+          뷰포트 고정: 학습 시작(연속 학습) 배지 · 오늘의 미션 · 칭찬 캘린더 · 하단 내비.
         */}
         <div
           ref={scrollRef}
@@ -616,25 +616,13 @@ export function AssignmentReceivedScreen({
         >
           {/* 하늘 밴드 — 맵 위 블록. 스크롤과 함께 화면 밖으로 나간다 */}
           <div
+            aria-hidden
             className="relative w-full shrink-0"
             style={{
               aspectRatio: `393 / ${SKY_FIXED_H}`,
               background: MAIN_HOME_SKY_GRADIENT,
             }}
-          >
-            <StudyStreakBadge
-              streak={studyStreak}
-              contentFrameH={SKY_FIXED_H}
-              onClick={
-                onOpenStreakCalendar
-                  ? () => {
-                      playTapSfx()
-                      onOpenStreakCalendar()
-                    }
-                  : undefined
-              }
-            />
-          </div>
+          />
 
           {/* 풀맵 */}
           <div
@@ -860,8 +848,20 @@ export function AssignmentReceivedScreen({
 
         <div className="pointer-events-none absolute inset-0 z-10">
           {/*
-            오늘의 미션 카드만 뷰포트 고정. 맵·하늘·연속 학습 배지는 스크롤된다.
+            뷰포트 고정: 학습 시작(연속 학습) 배지 · 오늘의 미션.
+            맵·하늘만 스크롤된다.
           */}
+          <StudyStreakBadge
+            streak={studyStreak}
+            onClick={
+              onOpenStreakCalendar
+                ? () => {
+                    playTapSfx()
+                    onOpenStreakCalendar()
+                  }
+                : undefined
+            }
+          />
           <TodayMissionCard
             assignments={serverList}
             retryingAssignmentId={retryingAssignmentId}

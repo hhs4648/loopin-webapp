@@ -71,14 +71,14 @@
 | 뷰포트 | 393×852, `overflow-y-auto` |
 | 전체 지도 | `학원학교 학생용 메인화면.svg` → `main-home-academy-map.svg` (360×2623 → 프레임 393×≈2863). **성은 배경에 포함.** React 성/체크 오버레이 없음(투명 히트만). 미션 카드·칭찬 캘린더·하단 내비는 오버레이 |
 | 반복 구간 (4성~) | **제거됨.** bridge/segment 타일 없음 — LONG 단일 배경 + `MAP_CASTLE_SLOTS` 슬롯 |
-| 고정 하늘 | **제거.** 하늘은 풀맵 **위 블록**으로 쌓여 같이 스크롤(absolute+% 높이 방식은 Android에서 하늘이 고정처럼 보이던 문제가 있어 문서 흐름으로 바꿈). 연속 학습 배지도 하늘과 함께 움직임 |
+| 고정 하늘 | **제거.** 하늘은 풀맵 **위 블록**으로 쌓여 같이 스크롤(absolute+% 높이 방식은 Android에서 하늘이 고정처럼 보이던 문제가 있어 문서 흐름으로 바꿈) |
 | 맵 배경 | **벡터**(2026-08-08 전환). `MainHomeMapCanvas`(풀밭 그라데이션 + 길 타일 반복) + `MainHomeMapDecor`(나무·공룡) + 성/자물쇠 오버레이. 아래 「벡터 맵」 절 참고 |
-| 뷰포트 고정 UI | **오늘의 미션 카드** + **칭찬 캘린더 버튼** + 하단 내비만 고정. 하늘·풀·성은 스크롤 |
+| 뷰포트 고정 UI | **학습 시작(연속 학습) 배지** + **오늘의 미션 카드** + **칭찬 캘린더 버튼** + 하단 내비. 하늘·풀·성은 스크롤 |
 | 반·과제 선택 | **제거됨.** 상단 `SessionRoundDropdown` / `ClassRoundPillLabel` 코드 삭제 (2026-08). SVG에 구워진 알약이 보일 수 있으나 React 인터랙션 없음 |
 | 오늘의 미션 카드 | SVG에 flatten된 자리 위에 `TodayMissionCard`(React)로 덮어 렌더 (**뷰포트 고정**) — 아래 "오늘의 미션 카드" 절 참고 |
-| 「N일 연속 학습 중」 알약 | 스크롤 하늘 밴드 안(x12 y65). `StudyStreakBadge` + `useStudyStreak` — [screens/review.md](./review.md)의 「스트릭」 절. 맵과 함께 스크롤 |
+| 「N일 연속 학습 중」 / 학습 시작 배지 | **뷰포트 고정** (x12 y65). `StudyStreakBadge` + `useStudyStreak` — [screens/review.md](./review.md)의 「스트릭」 절 |
 | 칭찬 캘린더 | **뷰포트 고정** (`PraiseCalendarButton` + `PRAISE_CALENDAR_FIXED_RECT`). 맵 드래그/스크롤에 움직이지 않음 |
-| 연속 학습 배지 | 고정 헤더 안 (12, 65). `StudyStreakBadge` — **탭 → `streak-calendar`**. `streak.days < 1`이면 미표시. 부모 `pointer-events-none`이라 버튼에 `pointer-events-auto` |
+| 연속 학습 배지 | **뷰포트 고정** (12, 65). `StudyStreakBadge` — **탭 → `streak-calendar`**. `streak.days < 1`이면 미표시. 부모 `pointer-events-none`이라 버튼에 `pointer-events-auto` |
 | 시작 위치 캐릭터 | LONG 원본에 포함된 경우 에셋 그대로. React `MapCharacter` 오버레이는 미사용 |
 | 성 위 환호 마스코트 | **제거함.** `CastleCompleteMascot` 미렌더 |
 | 하단 네비게이션 | **뷰포트 고정** `MainHomeBottomNav` + `main-home-bottom-nav.svg`. **홈** → `/student/home` 맵 · **복습노트** → 복습하기 오버레이([screens/review.md](./review.md)) · **단어장·메뉴** → 설정 창 |
@@ -297,7 +297,7 @@ flatten되어 있던 "1회차 · 오늘의 미션" 자리를 흰 카드로 완�
 | 항목 | 값 |
 |------|-----|
 | 배지 | `progressPercent === 0` → "오늘의 미션" / 그 외 → "현재 학습 중" |
-| 제목 | `assignment.title` — 반 이름·단원 (`displayAssignmentTitle`, 예: `중3-1반 · 5단원`). 반 이름 없으면 예전처럼 교재·단원 |
+| 제목 | `assignment.title` — 단원 출제: 반 이름·단원 (`displayAssignmentTitle`, 예: `중3-1반 · 5단원`). **사용자 지정(직접 출제·단원 없음):** `학년 외부지문N` (예: `중3 외부지문1`, 같은 반 sort 순). 반 이름 없고 단원 출제면 교재·단원 |
 | 부제 | `약 n분 소요`만 (`getRemainingMinutes`, 문제당 10초). 「n문제 남음」 미표시 |
 | 진행률 | 트랙 + 채움 바 + 우측 `n%` 라벨 |
 | 진행률 바 | 트랙 `#D9E3F7` · 채움 `#4F91EB`, 폭 = `assignment.progressPercent` |
@@ -457,7 +457,7 @@ for i in 0 .. assignmentCount-1:
 
 - **여러 개 쌓이면 먼저 낸 것부터** 푼다(사용자 지정). 캐릭터 → 시작 화면 → 「지금 시작하기」로 대기열의 첫 번째 오답을 연다.
 - **대기열이 있으면** 캐릭터(283.6² @ 39,257) 탭 → `gym-start.svg`. 파란 카드 「지금 시작하기」(353×294 @ 20,138)에서 오답 풀이 시작. `<`는 캐릭터 화면으로 돌아간다.
-- **시작 카드 제목:** 단원 출제면 `반 이름 · 단원`(`gymStartHeading`, 예: `중3-1반 · 5단원`). 반 이름 없으면 예전처럼 `textbook · unit`. 직접 출제(단원 없음)면 선생님이 붙인 과제 이름, 그것도 없으면 「선생님이 만든 문제」. 복습 탭 「기타」는 쓰지 않음.
+- **시작 카드 제목:** 단원 출제면 `반 이름 · 단원`(`gymStartHeading`, 예: `중3-1반 · 5단원`). 반 이름 없으면 예전처럼 `textbook · unit`. **사용자 지정(직접 출제)** 은 맵과 같이 `학년 외부지문N`(예: `중3 외부지문1`). 그것도 못 만들면 「선생님이 만든 문제」. 복습 탭 「기타」는 쓰지 않음.
 - **시작 카드 지표:** 「틀린 문항」은 오답 재출제 스냅샷에서 실제로 만들어지는 문항 수(`listSectionQuestionIds`). 「예상 시간」은 복습 탭과 같은 형식별 초 합계(`estimateMinutesForQuestionIds` · `SECONDS_BY_SUFFIX`), 문항이 있으면 최소 1분. 오늘의 미션 10초/문항과는 다르다.
 - **대기열이 비면** `헬스장_빈상태.svg` → `gym-empty.svg`. 가짜 시계는 흰 덮개로 가리고, 「홈으로 가기」(329×56 @ 32,672)는 학원/학교 메인으로 보낸다. 캐릭터 히트는 두지 않는다.
 - 이 화면은 **선생님이 오답만 다시 출제했을 때** 풀러 들어오는 자리. 다 풀면 성 맵 종합 완료가 아니라 **헬스장 완료**(`GymCompleteScreen`). 이번 풀이에 오답이 하나라도 있으면 `gym-complete.svg`, 백점이면 `gym-complete-perfect.svg`. 제목은 `{단원} 연습 완료!`(단원 없으면 시작 카드 제목), 요약은 `{N}문제 중 {M}개 정답`. 오답이 있으면 파란 CTA는 **이번 헬스장에서 틀린 문항만** 다시 푼다(연습·점수 미반영). 「다음에 풀게요, 홈으로 가기」와 백점 CTA·내비 홈은 메인, 내비 헬스장은 헬스장으로.

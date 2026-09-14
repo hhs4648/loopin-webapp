@@ -1621,6 +1621,7 @@ export function MainHomeScreen() {
           perfect={gymWrongCount === 0}
           snapshot={completedCastleSource.assignment.contentSnapshot}
           className={completedCastleSource.assignment.className}
+          assignmentTitle={completedCastleSource.assignment.title}
           correctCount={gymCorrectCount}
           totalCount={gymTotalCount}
           wrongCount={gymWrongCount}
