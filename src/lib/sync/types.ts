@@ -63,6 +63,8 @@ export type ProblemGrammarSnapshot = {
    * **2026-09 이전에 만든 과제 스냅샷에는 없다** — 없으면 유형1을 만들지 않는다.
    */
   twoChoices?: string
+  /** 빈칸 자리가 문장에 두 번 이상 나올 때 몇 번째인지(1부터). 한 번뿐이면 없다. */
+  blankNth?: number
   explanation?: string
   /**
    * 문법 개념 대분류/소분류 (예: `관계대명사` / `관계대명사 what`).

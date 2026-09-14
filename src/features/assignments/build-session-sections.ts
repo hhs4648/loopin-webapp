@@ -74,42 +74,23 @@ function extractCloze(example: string | undefined) {
   }
 }
 
-function chunkPages<T>(items: T[], size: number): T[][] {
-  if (items.length === 0) return []
-  const pages: T[][] = []
-  for (let index = 0; index < items.length; index += size) {
-    pages.push(items.slice(index, index + size))
-  }
-  return pages
-}
-
 /**
- * 마지막 페이지가 4짝보다 적게 나오면, WordMatchScreen이 같은 과제(fillPool)에서
- * 랜덤으로 짝을 더 뽑아 4짝을 채운다. 데모 단어는 사용하지 않는다.
- * @see fillMatchPage / pickNextPage in word-match.ts
+ * 단어는 **4개씩 한 세트**로 묶어, 그 세트로 켜진 유형을 다 돌고 다음 세트로 넘어간다.
+ *
+ *   [1~4단어] 짝맞추기 → TTS → 3지선다 → 예문 빈칸
+ *   [5~8단어] 짝맞추기 → TTS → 3지선다 → 예문 빈칸 …
+ *
+ * 유형별로 전부 몰아서 내면(예전 방식) 20단어 과제에서 짝맞추기만 5판을 내리 풀게 된다.
+ * 같은 4단어를 네 방식으로 연달아 만나야 그 자리에서 외워진다.
+ *
+ * **단어 순서는 맨 앞에서 한 번만 섞는다** — 유형마다 따로 섞으면 짝맞추기 1판과
+ * TTS 1판의 단어가 달라져 세트가 성립하지 않는다. 세트 안에서 문제 순서만 다시 섞는다.
+ *
+ * 마지막 세트가 4개가 안 될 때: 짝맞추기·TTS는 화면이 4짝을 요구하므로 `fillPool`에서
+ * 다른 단어를 끌어와 채우고(`fillMatchPage` in word-match.ts), 3지선다·예문 빈칸은
+ * **그 세트의 단어만** 낸다. 채움 단어까지 다시 물으면 같은 단어를 두 번 푸는 꼴이 된다.
  */
-
-function buildWordMatchSections(snapshot: ContentSnapshot): AssignmentSection[] {
-  if (!snapshot.problemTypes.words.includes('짝맞추기')) return []
-
-  const pairs: WordMatchPair[] = shuffle(
-    snapshot.words
-      .filter((word) => word.english.trim() && word.korean.trim())
-      .map((word) => ({
-        id: `${word.id}:match`,
-        english: word.english.trim(),
-        korean: word.korean.trim(),
-      })),
-  )
-
-  // pairs = 이번 페이지 필수 짝만 (채움은 WordMatchScreen이 fillPool로 처리)
-  return chunkPages(pairs, MATCH_PAGE_SIZE).map((page, index) => ({
-    kind: 'word-match' as const,
-    id: `word-match:${index}`,
-    pairs: page,
-    fillPool: pairs,
-  }))
-}
+const WORD_SET_SIZE = MATCH_PAGE_SIZE
 
 function isWordListenMatchType(label: string) {
   return (
@@ -119,29 +100,6 @@ function isWordListenMatchType(label: string) {
     label.includes('음성 짝맞추기') ||
     label.includes('TTS 뜻 짝맞추기')
   )
-}
-
-function buildWordListenMatchSections(
-  snapshot: ContentSnapshot,
-): AssignmentSection[] {
-  if (!snapshot.problemTypes.words.some(isWordListenMatchType)) return []
-
-  const pairs: WordMatchPair[] = shuffle(
-    snapshot.words
-      .filter((word) => word.english.trim() && word.korean.trim())
-      .map((word) => ({
-        id: `${word.id}:listen`,
-        english: word.english.trim(),
-        korean: word.korean.trim(),
-      })),
-  )
-
-  return chunkPages(pairs, MATCH_PAGE_SIZE).map((page, index) => ({
-    kind: 'word-listen-match' as const,
-    id: `word-listen-match:${index}`,
-    pairs: page,
-    fillPool: pairs,
-  }))
 }
 
 /** 정답을 1·2·3번 중 균등 위치에 두고 오답 2개 채움 */
@@ -161,50 +119,100 @@ function buildThreeChoices(
   return options
 }
 
-function buildWordQuizSections(snapshot: ContentSnapshot): AssignmentSection[] {
-  if (!snapshot.problemTypes.words.includes('3지선다')) return []
+function buildWordSections(snapshot: ContentSnapshot): AssignmentSection[] {
+  const types = snapshot.problemTypes.words
+  const wantMatch = types.includes('짝맞추기')
+  const wantListen = types.some(isWordListenMatchType)
+  const wantQuiz = types.includes('3지선다')
+  const wantSpell = types.includes('예문 빈칸')
+  if (!wantMatch && !wantListen && !wantQuiz && !wantSpell) return []
 
-  const questions: WordQuizQuestion[] = []
-  for (const word of snapshot.words) {
-    const distractors = snapshot.words
-      .filter((other) => other.id !== word.id && other.korean.trim())
-      .map((other) => other.korean.trim())
-    const options = buildThreeChoices(word.korean, distractors)
-    if (!options) continue
-    questions.push({
-      id: `${word.id}:choice`,
-      word: word.english,
-      correctAnswer: word.korean,
-      options,
-    })
+  const words = shuffle(
+    snapshot.words.filter((word) => word.english.trim() && word.korean.trim()),
+  )
+  if (!words.length) return []
+
+  const toPair = (word: (typeof words)[number], suffix: string): WordMatchPair => ({
+    id: `${word.id}:${suffix}`,
+    english: word.english.trim(),
+    korean: word.korean.trim(),
+  })
+  /* 채움용 풀은 과제 전체 — 마지막 세트가 4짝이 안 될 때만 쓰인다 */
+  const matchPool = words.map((word) => toPair(word, 'match'))
+  const listenPool = words.map((word) => toPair(word, 'listen'))
+
+  const sections: AssignmentSection[] = []
+  for (let start = 0, set = 0; start < words.length; start += WORD_SET_SIZE, set += 1) {
+    const group = words.slice(start, start + WORD_SET_SIZE)
+
+    if (wantMatch) {
+      sections.push({
+        kind: 'word-match',
+        id: `word-match:${set}`,
+        pairs: shuffle(group.map((word) => toPair(word, 'match'))),
+        fillPool: matchPool,
+      })
+    }
+
+    if (wantListen) {
+      sections.push({
+        kind: 'word-listen-match',
+        id: `word-listen-match:${set}`,
+        pairs: shuffle(group.map((word) => toPair(word, 'listen'))),
+        fillPool: listenPool,
+      })
+    }
+
+    if (wantQuiz) {
+      const questions: WordQuizQuestion[] = []
+      for (const word of group) {
+        /* 오답 보기는 과제 전체에서 뽑는다 — 세트 안에서만 뽑으면 3개뿐이라 늘 같은 얼굴이 된다 */
+        const distractors = snapshot.words
+          .filter((other) => other.id !== word.id && other.korean.trim())
+          .map((other) => other.korean.trim())
+        const options = buildThreeChoices(word.korean, distractors)
+        if (!options) continue
+        questions.push({
+          id: `${word.id}:choice`,
+          word: word.english,
+          correctAnswer: word.korean,
+          options,
+        })
+      }
+      if (questions.length) {
+        sections.push({
+          kind: 'word-quiz',
+          id: `word-quiz:${set}`,
+          questions: shuffle(questions),
+        })
+      }
+    }
+
+    if (wantSpell) {
+      const questions: WordSpellQuestion[] = []
+      for (const word of group) {
+        const cloze = extractCloze(word.exampleEn)
+        if (!cloze) continue
+        questions.push({
+          id: `${word.id}:spell`,
+          korean: word.exampleKo || word.korean,
+          englishBefore: cloze.englishBefore,
+          englishAfter: cloze.englishAfter,
+          answer: cloze.answer,
+          answerHint: `${cloze.answer}(${word.korean})`,
+        })
+      }
+      if (questions.length) {
+        sections.push({
+          kind: 'word-spell',
+          id: `word-spell:${set}`,
+          questions: shuffle(questions),
+        })
+      }
+    }
   }
 
-  const shuffledQuestions = shuffle(questions)
-  return shuffledQuestions.length
-    ? [{ kind: 'word-quiz', id: 'word-quiz', questions: shuffledQuestions }]
-    : []
-}
-
-function buildWordSpellSections(snapshot: ContentSnapshot): AssignmentSection[] {
-  if (!snapshot.problemTypes.words.includes('예문 빈칸')) return []
-
-  const questions: WordSpellQuestion[] = []
-  for (const word of snapshot.words) {
-    const cloze = extractCloze(word.exampleEn)
-    if (!cloze) continue
-    questions.push({
-      id: `${word.id}:spell`,
-      korean: word.exampleKo || word.korean,
-      englishBefore: cloze.englishBefore,
-      englishAfter: cloze.englishAfter,
-      answer: cloze.answer,
-      answerHint: `${cloze.answer}(${word.korean})`,
-    })
-  }
-
-  return questions.length
-    ? [{ kind: 'word-spell', id: 'word-spell', questions: shuffle(questions) }]
-    : []
+  return sections
 }
 
 function buildBodyASections(snapshot: ContentSnapshot): AssignmentSection[] {
@@ -315,7 +323,8 @@ function buildGrammarType1Sections(snapshot: ContentSnapshot): AssignmentSection
 
     const english = stripBrackets(grammar.english)
     const blank =
-      blankFromBrackets(grammar.english) ?? findBlank(english, target)
+      blankFromBrackets(grammar.english) ??
+      findBlank(english, target, grammar.blankNth)
     if (!blank) continue
 
     const options = shuffle(choices).map((label, index) => ({
@@ -372,13 +381,15 @@ function blankFromBrackets(english: string): Blank | null {
  * 같은 표현이 두 번 나오면 어느 쪽이 문제의 자리인지 못 가리므로 만들지 않는다 —
  * 틀린 문제를 보여주느니 안 내는 게 낫다. 그런 문항은 문장에 `[ ]`를 찍어 주면 된다.
  */
-function findBlank(english: string, target: string): Blank | null {
+function findBlank(english: string, target: string, nth?: number): Blank | null {
   const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const hits = [
     ...english.matchAll(new RegExp(`(?<![A-Za-z])${escaped}(?![A-Za-z])`, 'gi')),
   ]
-  if (hits.length !== 1) return null
-  const at = hits[0]!.index
+  /* 두 번 이상 나오면 `blankNth`가 짚어 준 자리만 쓴다 — 없으면 만들지 않는다 */
+  const hit = hits.length === 1 ? hits[0] : nth ? hits[nth - 1] : undefined
+  if (!hit) return null
+  const at = hit.index
   return {
     before: english.slice(0, at),
     matched: english.slice(at, at + target.length),
@@ -399,7 +410,9 @@ function buildOxXCorrection(grammar: ProblemGrammarSnapshot) {
   const english = stripBrackets(grammar.english)
   if (!target || target === '-') return undefined
 
-  const blank = blankFromBrackets(grammar.english) ?? findBlank(english, target)
+  const blank =
+    blankFromBrackets(grammar.english) ??
+    findBlank(english, target, grammar.blankNth)
   if (!blank) return undefined
 
   const { before, matched: matchedPart, after } = blank
@@ -461,10 +474,7 @@ export function buildAssignmentSections(
   snapshot: ContentSnapshot,
 ): AssignmentSection[] {
   return [
-    ...buildWordMatchSections(snapshot),
-    ...buildWordListenMatchSections(snapshot),
-    ...buildWordQuizSections(snapshot),
-    ...buildWordSpellSections(snapshot),
+    ...buildWordSections(snapshot),
     ...buildBodyASections(snapshot),
     ...buildBodyBSections(snapshot),
     ...buildBodyCSections(snapshot),
