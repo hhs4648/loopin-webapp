@@ -125,6 +125,11 @@ export type StudentAssignment = {
    */
   targetStudentId?: string
   latestAttemptId?: string
+  /**
+   * 마지막 attempt의 `updated_at`(없으면 `started_at`).
+   * 맵「진행중」·현재 위치는 여러 in_progress 중 **이 시각이 가장 최근인 성**만 고른다.
+   */
+  latestActivityAt?: string
   latestScore?: number | null
   firstScore?: number | null
   /** 마지막 완료 회차의 최고 연속 정답 — 완료된 성을 다시 열 때 배지 복원용 */

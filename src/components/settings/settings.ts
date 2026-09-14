@@ -32,8 +32,11 @@
  * React만 그림. 덮개 박스 제거 → 네모·애플 뱃지 번짐 해소.
  *
  * `?v=33` — 이름+연동뱃지 한 줄 flex. 글자 잘림(가로선) 방지용 행 높이·overflow 정리.
+ *
+ * `?v=34` — 설정 화면 **모든** 베이크 글씨를 SVG에서 숨기고 React만 그림.
+ * 흰/색 덮개 박스 없음 → 이중글자·뜬 네모·흐림 해소.
  */
-export const SETTINGS_WINDOW_ASSET = '/assets/settings-window.svg?v=33'
+export const SETTINGS_WINDOW_ASSET = '/assets/settings-window.svg?v=34'
 
 /**
  * 표시 영역: 에셋 폭 · 상태바 밴드 아래~내비 위.
@@ -122,6 +125,10 @@ export function openSettingsContactMail(): void {
 /** 온보딩·설정에 보이는 이름 최대 글자 수 (`NAME_MAX_LENGTH`와 동일) */
 export const SETTINGS_DISPLAY_NAME_MAX = 5
 
+/** 선명도 공통 — Pretendard 명시 + antialiased (덮개 박스 금지) */
+const SETTINGS_TEXT_SHARP =
+  "font-['Pretendard',sans-serif] antialiased [text-rendering:geometricPrecision] [text-shadow:none]"
+
 /**
  * 프로필 이름+연동뱃지 한 줄 — SVG에서 숨기고 React flex로만 그린다.
  * (이름·뱃지를 따로 절대좌표 두면 짧은 이름에 큰 틈 / 긴 이름에 겹침이 난다.)
@@ -147,11 +154,11 @@ export const SETTINGS_PROFILE_BADGE = {
 
 /** 프로필 이름 타이포 */
 export const SETTINGS_PROFILE_NAME_CLASS =
-  'shrink-0 font-sans text-[20px] font-extrabold leading-none tracking-[-0.04em] text-[#0B1220]'
+  `shrink-0 text-[20px] font-extrabold leading-none tracking-[-0.04em] text-[#0B1220] ${SETTINGS_TEXT_SHARP}`
 
 /** 연동 뱃지 타이포 — 그림자·outline 없이 납작하게 (잔상·번짐처럼 안 보이게) */
 export const SETTINGS_PROFILE_BADGE_CLASS =
-  'inline-flex h-[22px] shrink-0 items-center justify-center rounded-full px-2.5 text-[11px] font-bold leading-none [text-shadow:none] [-webkit-font-smoothing:antialiased]'
+  `inline-flex h-[22px] shrink-0 items-center justify-center rounded-full px-2.5 text-[11px] font-bold leading-none ${SETTINGS_TEXT_SHARP}`
 
 /**
  * 계정 1줄 행 — 쉐브론 세로 중심 (401×836 시안).
@@ -197,13 +204,31 @@ export const SETTINGS_GRADE_VALUE = {
 
 /**
  * 계정 행 우측 값 타이포 — 닉네임·연동·학년 동일.
- * 흐린 회색 medium → 또렷한 slate + semibold (베이크 라벨과 대비).
+ * 덮개(bg) 없이 카드 흰 배경 위에만 올림. 짙은 slate로 흐림 체감 줄임.
  */
 export const SETTINGS_ACCOUNT_VALUE_CLASS =
-  'truncate font-sans text-[17px] font-semibold leading-none tracking-[-0.02em] text-[#334155]'
+  `truncate text-[17px] font-semibold leading-none tracking-[-0.02em] text-[#1E293B] ${SETTINGS_TEXT_SHARP}`
 
 export const SETTINGS_TAGLINE_CLASS =
-  "truncate font-sans text-[13px] font-medium leading-none tracking-[-0.02em] text-[#8B95A1]"
+  `truncate text-[13px] font-semibold leading-none tracking-[-0.02em] text-[#64748B] ${SETTINGS_TEXT_SHARP}`
+
+export const SETTINGS_PAGE_TITLE_CLASS =
+  `text-[20px] font-bold leading-none tracking-[-0.03em] text-[#0F1724] ${SETTINGS_TEXT_SHARP}`
+
+export const SETTINGS_SECTION_TITLE_CLASS =
+  `text-[14px] font-bold leading-none tracking-[-0.02em] text-[#0F1724] ${SETTINGS_TEXT_SHARP}`
+
+export const SETTINGS_ROW_LABEL_CLASS =
+  `truncate text-[17px] font-semibold leading-none tracking-[-0.02em] text-[#0F1724] ${SETTINGS_TEXT_SHARP}`
+
+export const SETTINGS_EMAIL_CLASS =
+  `truncate text-[15px] font-semibold leading-none tracking-[-0.02em] text-[#2AA3FF] ${SETTINGS_TEXT_SHARP}`
+
+export const SETTINGS_LOGOUT_LABEL_CLASS =
+  `text-[17px] font-semibold leading-none tracking-[-0.02em] text-[#E11D48] ${SETTINGS_TEXT_SHARP}`
+
+export const SETTINGS_DELETE_LABEL_CLASS =
+  `text-[17px] font-semibold leading-none tracking-[-0.02em] text-white ${SETTINGS_TEXT_SHARP}`
 
 /**
  * 프로필 아이콘 — SVG pattern 숨긴 뒤 분리 에셋.
@@ -229,6 +254,87 @@ export const SETTINGS_PROFILE_TAGLINE = {
 
 export const SETTINGS_PROFILE_TAGLINE_TEXT =
   '매일 꾸준히, 오늘도 학습 루프 중'
+
+/** 페이지 제목 「설정」 */
+export const SETTINGS_PAGE_TITLE = {
+  x: 150,
+  y: 74,
+  w: 100,
+  h: 28,
+} as const
+
+/** 섹션 제목 「계정」 */
+export const SETTINGS_SECTION_ACCOUNT = {
+  x: 36,
+  y: 252,
+  w: 72,
+  h: 22,
+} as const
+
+/** 섹션 제목 「이용 안내」 */
+export const SETTINGS_SECTION_GUIDE = {
+  x: 36,
+  y: 452,
+  w: 100,
+  h: 22,
+} as const
+
+const ROW_LABEL_X = 40
+const ROW_LABEL_W = 150
+
+function rowLabelRect(centerY: number) {
+  return {
+    x: ROW_LABEL_X,
+    y: centerY - ACCOUNT_LINE_H / 2,
+    w: ROW_LABEL_W,
+    h: ACCOUNT_LINE_H,
+  }
+}
+
+/** 계정 카드 왼쪽 라벨 (닉네임·연동·학년) */
+export const SETTINGS_ACCOUNT_LABELS = [
+  { text: '닉네임', canvas: rowLabelRect(ACCOUNT_NICK_CY) },
+  { text: '연동 계정', canvas: rowLabelRect(ACCOUNT_LINK_CY) },
+  { text: '학년 변경', canvas: rowLabelRect(ACCOUNT_GRADE_CY) },
+] as const
+
+const GUIDE_PRIVACY_CY = 510
+const GUIDE_TERMS_CY = 561
+const GUIDE_INQUIRY_CY = 619.5
+
+/** 이용 안내 왼쪽 라벨 */
+export const SETTINGS_GUIDE_LABELS = [
+  { text: '개인정보 처리방침', canvas: rowLabelRect(GUIDE_PRIVACY_CY) },
+  { text: '이용약관', canvas: rowLabelRect(GUIDE_TERMS_CY) },
+  { text: '문의 사항', canvas: rowLabelRect(GUIDE_INQUIRY_CY) },
+] as const
+
+/** 문의 행 우측 이메일 */
+export const SETTINGS_INQUIRY_EMAIL = {
+  x: 180,
+  y: GUIDE_INQUIRY_CY - 14,
+  w: 170,
+  h: 28,
+} as const
+
+/** 로그아웃 버튼 글자 */
+export const SETTINGS_LOGOUT_LABEL = {
+  x: 88,
+  y: 692,
+  w: 120,
+  h: 28,
+} as const
+
+/**
+ * 회원탈퇴 글자 — SVG 빨간 카드 위 React만 (별도 베이크 에셋 오버레이 제거).
+ * 아이콘(좌)·쉐브론(우)은 시안 SVG 유지.
+ */
+export const SETTINGS_DELETE_LABEL = {
+  x: 88,
+  y: 757,
+  w: 140,
+  h: 28,
+} as const
 
 /** 학년을 아직 고르지 않았을 때 — 온보딩 선택을 가짜 중3으로 채우지 않는다 */
 export const SETTINGS_DEFAULT_GRADE_LABEL = ''
@@ -280,12 +386,11 @@ export const SETTINGS_LINKED_HIT = {
 
 /**
  * 「회원탈퇴」 빨간 버튼 — 시안 y 743.5–797.5.
- * 글씨·아이콘은 별도 에셋(`settings-delete-account.svg`, Figma export `회원탈퇴.svg`).
- * 에셋 viewBox 381×74 = 버튼 361×54 + 좌우·상하 그림자 패딩 10.
+ * 글씨는 React(`SETTINGS_DELETE_LABEL`). 카드·아이콘·쉐브론은 SVG.
  */
 export const SETTINGS_DELETE_ASSET = '/assets/settings-delete-account.svg?v=1'
 
-/** 그림자 패딩 포함 — 이미지 배치용 */
+/** @deprecated — 베이크 에셋 오버레이 대신 SVG 카드 + React 글자 */
 export const SETTINGS_DELETE_IMAGE = {
   x: 10,
   y: 734,

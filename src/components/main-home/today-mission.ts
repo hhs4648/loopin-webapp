@@ -46,6 +46,7 @@ const SECONDS_PER_QUESTION = 10
 /**
  * "오늘의 미션"으로 고를 과제.
  * - 재도전 중이면 그 과제를 우선 (완료 status여도 카드에 남겨야 함)
+ * - `in_progress`가 있으면 **가장 최근에 들어간** 성
  * - 그다음 미완료 중 order가 가장 빠른 것
  */
 export function pickPrimaryAssignment(
@@ -63,6 +64,19 @@ export function pickPrimaryAssignment(
     (a) => a.status !== 'completed' && !isWrongReissue(a),
   )
   if (pending.length === 0) return null
+
+  const inProgress = pending.filter((a) => a.status === 'in_progress')
+  if (inProgress.length > 0) {
+    return [...inProgress].sort((a, b) => {
+      const aMs = a.latestActivityAt ? Date.parse(a.latestActivityAt) : NaN
+      const bMs = b.latestActivityAt ? Date.parse(b.latestActivityAt) : NaN
+      const aActivity = Number.isFinite(aMs) ? aMs : -Infinity
+      const bActivity = Number.isFinite(bMs) ? bMs : -Infinity
+      if (bActivity !== aActivity) return bActivity - aActivity
+      return a.order - b.order
+    })[0]!
+  }
+
   return [...pending].sort((a, b) => a.order - b.order)[0]!
 }
 

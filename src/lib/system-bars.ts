@@ -1,4 +1,4 @@
-import { SystemBars, SystemBarsStyle } from '@capacitor/core'
+import { SystemBars, SystemBarType, SystemBarsStyle } from '@capacitor/core'
 import { isNativeApp } from './native'
 
 /**
@@ -11,13 +11,21 @@ import { isNativeApp } from './native'
  * - `SystemBarsStyle.Light` → **어두운** 아이콘 (흰·밝은 배경용)
  * - `SystemBarsStyle.Dark` → **밝은** 아이콘 (파란·어두운 배경용)
  *
+ * **내비(제스처/3버튼)는 숨긴다.** `SystemBars.show()` 기본은 둘 다 켜서
+ * 하단 흰 띠·제스처 바가 다시 뜨고, Android 15 WebView 패딩과 겹치면
+ * 위·아래가 꽉 안 찬 것처럼 보인다.
+ *
  * 가짜 시계 SVG는 그리지 않는다 — 폰 OS 상태바만 쓴다.
  */
 export async function ensureNativeSystemBarsVisible(): Promise<void> {
   if (!isNativeApp()) return
   try {
-    await SystemBars.show()
-    await SystemBars.setStyle({ style: SystemBarsStyle.Light })
+    await SystemBars.show({ bar: SystemBarType.StatusBar })
+    await SystemBars.hide({ bar: SystemBarType.NavigationBar })
+    await SystemBars.setStyle({
+      style: SystemBarsStyle.Light,
+      bar: SystemBarType.StatusBar,
+    })
   } catch (error) {
     // iOS 일부 버전에서 SystemBars 미구현일 수 있음 — 상태바 자체는 OS가 그림
     console.warn('[system-bars] sync failed', error)

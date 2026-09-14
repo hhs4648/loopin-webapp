@@ -10,6 +10,9 @@
  * **safe-area를 높이로 더하지 않는다.** 시안 393×852·NAV_H(81)에 홈 인디케이터
  * 여백이 이미 들어 있다. `env(safe-area-inset-bottom)`을 또 더하면 탭이 공중에
  * 뜬 것처럼 보인다(TestFlight iPhone).
+ *
+ * 에셋은 394×82. 컨테이너(393×81 비율)에 `object-fill` 하면 세로로 찌그러진다 →
+ * `object-cover object-top` 으로 비율을 유지한다.
  */
 import type { MainHomeNavTabId } from './assignment-home'
 import {
@@ -45,7 +48,7 @@ export function MainHomeBottomNav({
         alt=""
         aria-hidden
         draggable={false}
-        className="pointer-events-none absolute inset-0 h-full w-full max-w-none select-none object-fill"
+        className="pointer-events-none absolute inset-0 h-full w-full max-w-none select-none object-cover object-top"
       />
 
       <nav aria-label="메인 메뉴" className="pointer-events-none absolute inset-0 z-10">

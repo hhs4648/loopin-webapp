@@ -17,11 +17,14 @@ const config: CapacitorConfig = {
     SystemBars: {
       // LIGHT = 어두운 아이콘 (흰 화면에서 보이게).
       // 콘텐츠는 상태바 뒤까지 그리고, OS 아이콘만 맨 앞에 둔다.
-      // 웹뷰를 상태바 높이만큼 줄이지 않는다(레터박스 원인).
+      //
+      // insetsHandling `disable`: Android 15+에서 Capacitor가 WebView 부모에
+      // 시스템바 padding을 넣어 위·아래 레터박스가 생기던 것을 막는다.
+      // (메인 레이아웃은 PhoneCanvas cover라 safe-area 패딩에 의존하지 않음.
+      //  내비 숨김은 MainActivity + system-bars.ts 가 담당.)
       style: 'LIGHT',
       hidden: false,
-      // --safe-area-inset-* 만 CSS로 전달. 패딩으로 웹뷰를 줄이지 않음(viewport-fit=cover).
-      insetsHandling: 'css',
+      insetsHandling: 'disable',
     },
   },
 }

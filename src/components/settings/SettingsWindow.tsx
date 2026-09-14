@@ -32,20 +32,29 @@ import { SettingsDeleteSheet } from './SettingsDeleteSheet'
 import { SettingsGradeSheet } from './SettingsGradeSheet'
 import { SettingsNameSheet } from './SettingsNameSheet'
 import {
+  SETTINGS_ACCOUNT_LABELS,
   SETTINGS_ACCOUNT_VALUE_CLASS,
-  SETTINGS_DELETE_ASSET,
+  SETTINGS_CONTACT_EMAIL,
   SETTINGS_DELETE_HIT,
-  SETTINGS_DELETE_IMAGE,
+  SETTINGS_DELETE_LABEL,
+  SETTINGS_DELETE_LABEL_CLASS,
   SETTINGS_DISPLAY_NAME_MAX,
   SETTINGS_DOC_URLS,
+  SETTINGS_EMAIL_CLASS,
   SETTINGS_GRADE_HIT,
   SETTINGS_GRADE_OPTIONS,
   SETTINGS_GRADE_VALUE,
+  SETTINGS_GUIDE_LABELS,
+  SETTINGS_INQUIRY_EMAIL,
   SETTINGS_LINKED_HIT,
   SETTINGS_LINKED_VALUE,
   SETTINGS_LIST_ROWS,
+  SETTINGS_LOGOUT_LABEL,
+  SETTINGS_LOGOUT_LABEL_CLASS,
   SETTINGS_NICKNAME_HIT,
   SETTINGS_NICKNAME_VALUE,
+  SETTINGS_PAGE_TITLE,
+  SETTINGS_PAGE_TITLE_CLASS,
   SETTINGS_PROFILE_BADGE_CLASS,
   SETTINGS_PROFILE_EMOJI,
   SETTINGS_PROFILE_EMOJI_ASSET,
@@ -53,6 +62,10 @@ import {
   SETTINGS_PROFILE_NAME_ROW,
   SETTINGS_PROFILE_TAGLINE,
   SETTINGS_PROFILE_TAGLINE_TEXT,
+  SETTINGS_ROW_LABEL_CLASS,
+  SETTINGS_SECTION_ACCOUNT,
+  SETTINGS_SECTION_GUIDE,
+  SETTINGS_SECTION_TITLE_CLASS,
   SETTINGS_TAGLINE_CLASS,
   SETTINGS_WINDOW_ASSET,
   formatSettingsGradeLabel,
@@ -85,8 +98,8 @@ function providerBadgeClass(provider: SocialProvider): string {
 
 /**
  * Figma `설정 창` 오버레이.
- * 이름·연동·학년 값·프로필 아이콘 = React. 정적 라벨은 시안 SVG 유지
- * (흰 박스 덮개로 다시 그리면 카드 위에 뜬 사각형이 보인다).
+ * **모든 글씨 = React.** SVG는 카드·구분선·아이콘·쉐브론만.
+ * 덮개 박스(bg-white 등) 금지 — 이중글자·뜬 네모의 원인.
  * 하단=`MainHomeBottomNav`.
  */
 export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindowProps) {
@@ -282,8 +295,7 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
         ) : null}
 
         {/*
-          프로필 — SVG 베이크(이름·카카오 뱃지·태그라인·이모티콘)는 숨김.
-          덮개 박스 없이 React만 올린다.
+          프로필 — SVG 베이크 숨김. 덮개 박스 없이 React만.
         */}
         <div
           className="pointer-events-none absolute z-[12]"
@@ -321,28 +333,99 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
           </span>
         </div>
 
-        {/*
-          정적 라벨(설정·계정·행 이름·로그아웃 등)은 SVG에 맡긴다.
-          React+흰 덮개로 다시 그리면 카드 위에 이상한 박스가 생긴다.
-        */}
-
-        {/* 계정 행 우측 값 — 닉네임·연동·학년. `>` 왼쪽만 쓰고 넘치면 자른다. */}
+        {/* 제목·섹션·행 라벨 — 덮개 없이 React만 */}
         <div
-          className="pointer-events-none absolute z-[12] flex items-center justify-end overflow-hidden bg-white"
+          className="pointer-events-none absolute z-[12] flex items-center justify-center"
+          style={settingsContentRectStyle(
+            settingsCanvasToCropRect(SETTINGS_PAGE_TITLE),
+          )}
+          aria-hidden
+        >
+          <span className={SETTINGS_PAGE_TITLE_CLASS}>설정</span>
+        </div>
+        <div
+          className="pointer-events-none absolute z-[12] flex items-center"
+          style={settingsContentRectStyle(
+            settingsCanvasToCropRect(SETTINGS_SECTION_ACCOUNT),
+          )}
+          aria-hidden
+        >
+          <span className={SETTINGS_SECTION_TITLE_CLASS}>계정</span>
+        </div>
+        <div
+          className="pointer-events-none absolute z-[12] flex items-center"
+          style={settingsContentRectStyle(
+            settingsCanvasToCropRect(SETTINGS_SECTION_GUIDE),
+          )}
+          aria-hidden
+        >
+          <span className={SETTINGS_SECTION_TITLE_CLASS}>이용 안내</span>
+        </div>
+        {SETTINGS_ACCOUNT_LABELS.map((row) => (
+          <div
+            key={row.text}
+            className="pointer-events-none absolute z-[12] flex items-center overflow-hidden"
+            style={settingsContentRectStyle(settingsCanvasToCropRect(row.canvas))}
+            aria-hidden
+          >
+            <span className={SETTINGS_ROW_LABEL_CLASS}>{row.text}</span>
+          </div>
+        ))}
+        {SETTINGS_GUIDE_LABELS.map((row) => (
+          <div
+            key={row.text}
+            className="pointer-events-none absolute z-[12] flex items-center overflow-hidden"
+            style={settingsContentRectStyle(settingsCanvasToCropRect(row.canvas))}
+            aria-hidden
+          >
+            <span className={SETTINGS_ROW_LABEL_CLASS}>{row.text}</span>
+          </div>
+        ))}
+        <div
+          className="pointer-events-none absolute z-[12] flex items-center justify-end overflow-hidden"
+          style={settingsContentRectStyle(
+            settingsCanvasToCropRect(SETTINGS_INQUIRY_EMAIL),
+          )}
+          aria-hidden
+        >
+          <span className={SETTINGS_EMAIL_CLASS}>{SETTINGS_CONTACT_EMAIL}</span>
+        </div>
+        <div
+          className="pointer-events-none absolute z-[12] flex items-center overflow-hidden"
+          style={settingsContentRectStyle(
+            settingsCanvasToCropRect(SETTINGS_LOGOUT_LABEL),
+          )}
+          aria-hidden
+        >
+          <span className={SETTINGS_LOGOUT_LABEL_CLASS}>로그아웃</span>
+        </div>
+        <div
+          className="pointer-events-none absolute z-[12] flex items-center overflow-hidden"
+          style={settingsContentRectStyle(
+            settingsCanvasToCropRect(SETTINGS_DELETE_LABEL),
+          )}
+          aria-hidden
+        >
+          <span className={SETTINGS_DELETE_LABEL_CLASS}>회원탈퇴</span>
+        </div>
+
+        {/* 계정 행 우측 값 — 덮개 없이 */}
+        <div
+          className="pointer-events-none absolute z-[12] flex items-center justify-end overflow-hidden"
           style={nickStyle}
           aria-hidden
         >
           <span className={SETTINGS_ACCOUNT_VALUE_CLASS}>{displayName}</span>
         </div>
         <div
-          className="pointer-events-none absolute z-[12] flex items-center justify-end overflow-hidden bg-white"
+          className="pointer-events-none absolute z-[12] flex items-center justify-end overflow-hidden"
           style={linkedStyle}
           aria-hidden
         >
           <span className={SETTINGS_ACCOUNT_VALUE_CLASS}>{providerLabel}</span>
         </div>
         <div
-          className="pointer-events-none absolute z-[12] flex items-center justify-end overflow-hidden bg-white"
+          className="pointer-events-none absolute z-[12] flex items-center justify-end overflow-hidden"
           style={gradeStyle}
           aria-hidden
         >
@@ -396,17 +479,6 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
               onClick={() => handleActivateSettingsRow(row)}
             />
           ))}
-          {/* 회원탈퇴 — Figma `회원탈퇴.svg` 오버레이 + 투명 히트 */}
-          <img
-            src={SETTINGS_DELETE_ASSET}
-            alt=""
-            aria-hidden
-            draggable={false}
-            className="pointer-events-none absolute z-[11] select-none"
-            style={settingsContentRectStyle(
-              settingsCanvasToCropRect(SETTINGS_DELETE_IMAGE),
-            )}
-          />
           <button
             type="button"
             aria-label="회원탈퇴"

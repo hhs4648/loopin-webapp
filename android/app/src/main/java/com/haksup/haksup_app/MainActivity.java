@@ -1,5 +1,6 @@
 package com.haksup.haksup_app;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.WindowManager;
 import androidx.activity.EdgeToEdge;
@@ -16,6 +17,9 @@ import com.getcapacitor.BridgeActivity;
  *   평소엔 숨기고, 아래에서 위로 쓸면 잠깐 나타났다 사라짐
  *   ({@link WindowInsetsControllerCompat#BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE})
  *
+ * Capacitor {@code SystemBars.show()}가 내비까지 다시 켤 수 있어,
+ * 포커스·resume 때마다 내비만 다시 숨긴다. (상태바는 유지)
+ *
  * 앱 하단 탭(홈·복습·헬스장·전체)은 시안 NAV_H만 쓰고, 시스템 내비 자리만큼
  * 콘텐츠를 올리지 않는다.
  */
@@ -27,6 +31,12 @@ public class MainActivity extends BridgeActivity {
 
         EdgeToEdge.enable(this);
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+
+        // SystemBars.setStyle()이 theme windowBackground로 덮어쓰기도 해서
+        // 레터박스 띠가 회색으로 보이던 걸 막는다.
+        getWindow().setStatusBarColor(Color.TRANSPARENT);
+        getWindow().setNavigationBarColor(Color.TRANSPARENT);
+        getWindow().getDecorView().setBackgroundColor(Color.WHITE);
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             getWindow().setNavigationBarContrastEnforced(false);
@@ -58,6 +68,7 @@ public class MainActivity extends BridgeActivity {
             WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
         if (controller == null) return;
 
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         controller.setSystemBarsBehavior(
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         );

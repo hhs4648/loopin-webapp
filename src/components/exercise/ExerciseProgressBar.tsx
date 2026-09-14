@@ -13,8 +13,10 @@ export const EXERCISE_PROGRESS_BAR_BAKED = { x: 12, y: 118, w: 370, h: 56 }
 /**
  * 헤더 게이지 바깥 링(`#F0F5FA`) — 시안 스트로크 자리.
  * 안쪽 트랙은 이보다 4px 안(원래 막대 18px + 링 4px).
+ *
+ * 오른쪽으로 콤보 자리까지 늘림(우측 여백 14). 콤보 배지는 한 줄 아래(`ComboOverlay`).
  */
-export const EXERCISE_PROGRESS_BAR = { x: 62, y: 78, w: 218, h: 26 }
+export const EXERCISE_PROGRESS_BAR = { x: 62, y: 78, w: 317, h: 26 }
 
 const TRACK_INSET = {
   top: `${(4 / EXERCISE_PROGRESS_BAR.h) * 100}%`,

@@ -83,7 +83,8 @@ type CurrentCastleFocus = {
 /**
  * 맵 캐릭터 위치.
  * 1) 재도전 중(`retryingAssignmentId`) → 그 성 (시작 깃발로 돌아가면 안 됨)
- * 2) `in_progress`(이미 풀기 시작한 성) → 그 성
+ * 2) `in_progress` 중 **가장 최근에 들어간(풀이한) 성** → 그 성
+ *    (여러 성이 도중에 남아 있어도 「진행중」·현재 위치는 하나만)
  * 3) 그 외 → 완료된 성 중 가장 먼 곳
  * 4) 없으면 null → 시작 깃발
  */
@@ -102,6 +103,7 @@ function resolveCurrentCastleFocus(
   }
 
   let inProgressIndex: number | null = null
+  let inProgressActivityMs = -Infinity
   let inProgressOrder = Infinity
   let completedIndex: number | null = null
   let completedOrder = -Infinity
@@ -109,7 +111,16 @@ function resolveCurrentCastleFocus(
   for (let i = 0; i < limit; i++) {
     const a = assignments[i]!
     if (a.status === 'in_progress') {
-      if (a.order < inProgressOrder) {
+      const activityMs = a.latestActivityAt
+        ? Date.parse(a.latestActivityAt)
+        : Number.NaN
+      const activity = Number.isFinite(activityMs) ? activityMs : -Infinity
+                  // 활동 시각이 같거나 없으면 order가 빠른 쪽(기존과 동일)
+                  if (
+        activity > inProgressActivityMs ||
+        (activity === inProgressActivityMs && a.order < inProgressOrder)
+      ) {
+        inProgressActivityMs = activity
         inProgressOrder = a.order
         inProgressIndex = i
       }
@@ -725,7 +736,11 @@ export function AssignmentReceivedScreen({
                       </Fragment>
                     )
                   }
-                  if (assignment.status === 'in_progress') {
+                  // 「진행중」은 최근 들어간 성(현재 포커스)에만. 다른 in_progress는 필 없음.
+                  if (
+                    assignment.status === 'in_progress' &&
+                    index === currentCastleIndex
+                  ) {
                     return (
                       <Fragment key={`progress-${assignment.assignmentId}`}>
                         <CastleRetryingPill
@@ -734,6 +749,9 @@ export function AssignmentReceivedScreen({
                         />
                       </Fragment>
                     )
+                  }
+                  if (assignment.status === 'in_progress') {
+                    return null
                   }
                   return (
                     <Fragment key={`assigned-${assignment.assignmentId}`}>

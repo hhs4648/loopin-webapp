@@ -522,6 +522,9 @@ export async function fetchStudentAssignments(
         ? { openAt: row.open_at }
         : {}),
       latestAttemptId: latest?.id,
+      ...(latest
+        ? { latestActivityAt: latest.updatedAt || latest.startedAt }
+        : {}),
       latestScore: latestCompleted?.score ?? latest?.score ?? null,
       firstScore: firstCompleted?.score ?? null,
       // 점수와 같은 회차를 봐야 한다 — 완료 회차가 없으면 진행 중 회차의 값
@@ -552,7 +555,20 @@ export async function startOrResumeAttempt(params: {
       .limit(1)
       .maybeSingle()
 
-    if (existing) return mapAttempt(existing as Record<string, unknown>)
+    if (existing) {
+      // 맵「진행중」포커스용 — 답 없이 들어갔다 나와도 이 성이 최근이 되게
+      const now = new Date().toISOString()
+      const { data: touched, error: touchError } = await supabase
+        .from('attempts')
+        .update({ updated_at: now })
+        .eq('id', existing.id)
+        .select('*')
+        .maybeSingle()
+      if (touchError) {
+        console.warn('[sync] touch resume updated_at failed', touchError.message)
+      }
+      return mapAttempt((touched ?? existing) as Record<string, unknown>)
+    }
   }
 
   const { data, error } = await supabase
