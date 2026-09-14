@@ -12,16 +12,16 @@ import com.getcapacitor.BridgeActivity;
 /**
  * 화면은 끝까지 채운다(edge-to-edge). 웹뷰를 시스템 바 높이만큼 줄이지 않는다.
  *
+ * - Play/Studio 권장: {@link EdgeToEdge#enable} (SDK 35+ 호환 경로)
  * - 상태바(시계·배터리): 항상 보임 — 콘텐츠 위에 겹침
- * - 하단 시스템 내비(뒤로가기·홈·최근 / 제스처 바):
- *   평소엔 숨기고, 아래에서 위로 쓸면 잠깐 나타났다 사라짐
+ * - 하단 시스템 내비: 평소엔 숨기고, 아래에서 위로 쓸면 잠깐 표시
  *   ({@link WindowInsetsControllerCompat#BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE})
  *
  * Capacitor {@code SystemBars.show()}가 내비까지 다시 켤 수 있어,
  * 포커스·resume 때마다 내비만 다시 숨긴다. (상태바는 유지)
  *
- * 앱 하단 탭(홈·복습·헬스장·전체)은 시안 NAV_H만 쓰고, 시스템 내비 자리만큼
- * 콘텐츠를 올리지 않는다.
+ * {@code Window#setStatusBarColor}/{@code setNavigationBarColor}는 Android 15에서
+ * deprecated라 Play가 다시 경고한다 — 투명 바는 {@link EdgeToEdge#enable}에 맡긴다.
  */
 public class MainActivity extends BridgeActivity {
 
@@ -33,9 +33,7 @@ public class MainActivity extends BridgeActivity {
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
 
         // SystemBars.setStyle()이 theme windowBackground로 덮어쓰기도 해서
-        // 레터박스 띠가 회색으로 보이던 걸 막는다.
-        getWindow().setStatusBarColor(Color.TRANSPARENT);
-        getWindow().setNavigationBarColor(Color.TRANSPARENT);
+        // 레터박스 띠가 회색으로 보이던 걸 막는다. (바 색 API는 쓰지 않음)
         getWindow().getDecorView().setBackgroundColor(Color.WHITE);
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
@@ -50,7 +48,6 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        // 다이얼로그·잠깐 표시 후 포커스가 돌아오면 다시 숨김(스티키)
         if (hasFocus) {
             hideSystemNavigationBars();
         }
@@ -72,7 +69,6 @@ public class MainActivity extends BridgeActivity {
         controller.setSystemBarsBehavior(
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         );
-        // 상태바는 유지 — 내비(제스처 바·3버튼)만 숨김
         controller.hide(WindowInsetsCompat.Type.navigationBars());
     }
 }

@@ -45,7 +45,6 @@ import {
   castleCompleteMarkerCenter,
   FRAME_H,
   FRAME_W,
-  MAIN_HOME_SKY,
   MAIN_HOME_SKY_GRADIENT,
   castleRetryingPillStyle,
   castleWrongOnlyPillStyle,
@@ -475,7 +474,6 @@ export function AssignmentReceivedScreen({
     ? serverList.length
     : FREE_MAP_CASTLE_COUNT
   const mapScrollH = resolveMapScrollContentHeight(assignedCount)
-  const scrollContentH = SKY_FIXED_H + mapScrollH
   const visibleSlots = MAP_CASTLE_SLOTS.slice(
     0,
     useServerAssignments ? assignedCount : FREE_MAP_CASTLE_COUNT,
@@ -588,19 +586,19 @@ export function AssignmentReceivedScreen({
   return (
     <div
       className="flex h-full min-h-full w-full justify-center"
-      style={{ background: MAIN_HOME_SKY }}
+      style={{ background: MAIN_HOME_GRASS }}
     >
       <PhoneCanvas
         className="isolate"
-        style={{ background: MAIN_HOME_SKY }}
-        topBleedClassName="bg-[#C5EBFE]"
+        style={{ background: MAIN_HOME_GRASS }}
+        topBleedClassName="bg-[#ADE4DE]"
         bottomBleedClassName="bg-[#F4F6FA]"
       >
-        {/* 복습·설정과 동일 — 왼쪽 18:00 · 오른쪽 신호/와이파이/배터리 */}
-
         {/*
-          하늘+풀맵 같이 스크롤. 뷰포트 고정은 미션 카드·칭찬 캘린더·하단 내비만.
-          연속 학습 배지는 하늘 밴드에 두어 배경과 함께 움직인다.
+          하늘·풀맵은 **문서 흐름으로 쌓아** 같이 스크롤한다.
+          (한 박스 absolute+% 높이는 Android WebView에서 하늘이 안 움직이거나
+           부모 하늘색만 남는 경우가 있었다.)
+          뷰포트 고정: 오늘의 미션 · 칭찬 캘린더 · 하단 내비만.
         */}
         <div
           ref={scrollRef}
@@ -616,27 +614,17 @@ export function AssignmentReceivedScreen({
             background: MAIN_HOME_GRASS,
           }}
         >
+          {/* 하늘 밴드 — 맵 위 블록. 스크롤과 함께 화면 밖으로 나간다 */}
           <div
-            className="relative w-full"
+            className="relative w-full shrink-0"
             style={{
-              aspectRatio: `393 / ${scrollContentH}`,
-              background: MAIN_HOME_GRASS,
+              aspectRatio: `393 / ${SKY_FIXED_H}`,
+              background: MAIN_HOME_SKY_GRADIENT,
             }}
           >
-            {/* 하늘 — 맵과 함께 스크롤 */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-0 top-0 z-0"
-              style={{
-                height: `${(SKY_FIXED_H / scrollContentH) * 100}%`,
-                background: MAIN_HOME_SKY_GRADIENT,
-              }}
-            />
-
-            {/* 연속 학습 배지 — 하늘 위(프레임 y≈65), 스크롤과 함께 이동 */}
             <StudyStreakBadge
               streak={studyStreak}
-              contentFrameH={scrollContentH}
+              contentFrameH={SKY_FIXED_H}
               onClick={
                 onOpenStreakCalendar
                   ? () => {
@@ -646,15 +634,16 @@ export function AssignmentReceivedScreen({
                   : undefined
               }
             />
+          </div>
 
-            {/* 풀맵 — 하늘 아래 */}
-            <div
-              className="absolute inset-x-0 bottom-0 overflow-hidden"
-              style={{
-                height: `${(mapScrollH / scrollContentH) * 100}%`,
-                background: MAIN_HOME_GRASS,
-              }}
-            >
+          {/* 풀맵 */}
+          <div
+            className="relative w-full shrink-0 overflow-hidden"
+            style={{
+              aspectRatio: `393 / ${mapScrollH}`,
+              background: MAIN_HOME_GRASS,
+            }}
+          >
             {/* 풀밭 + 길 (벡터). 성·자물쇠·장식은 더 이상 배경에 구워져 있지 않고 아래에서 그린다 */}
             <MainHomeMapCanvas />
             <MainHomeMapDecor />
@@ -867,7 +856,6 @@ export function AssignmentReceivedScreen({
                   />
                 ))}
             </div>
-          </div>
         </div>
 
         <div className="pointer-events-none absolute inset-0 z-10">
