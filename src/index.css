@@ -58,7 +58,8 @@
   시안은 393×852. 실기기는 edge-to-edge로 채운다.
   `PhoneCanvas`가 시안을 **cover**(비율 유지·화면 덮기)·**상단 정렬**로 맞춘다.
   OS 상태바(시계·배터리)는 웹뷰를 줄이지 않고 **맨 앞에 겹친다**.
-  하단 탭은 `--phone-overflow-bottom` + `safe-area-inset-bottom`으로 뷰포트 바닥에 붙인다.
+  하단 탭은 `--phone-overflow-bottom`으로 뷰포트 바닥에 붙인다
+  (시안 NAV_H에 홈 인디케이터 여백이 있어 safe-area를 높이로 또 더하지 않는다).
 
   높이는 `100dvh`가 아니라 `--app-vh`(visualViewport)다. 카카오 인앱처럼 주소창·툴바가
   얹힌 웹뷰에서는 dvh가 실제보다 커서 아래가 잘렸다.
@@ -109,11 +110,7 @@
 .app-phone-stage {
   position: absolute;
   z-index: 1;
-  /*
-    내비는 safe-area만큼 아래로 살짝 연장될 수 있다.
-    stage overflow hidden이면 잘리므로 visible — 바깥 canvas가 자른다.
-  */
-  overflow: visible;
+  overflow: hidden;
 }
 
 .screen {

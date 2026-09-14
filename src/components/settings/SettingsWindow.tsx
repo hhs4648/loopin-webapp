@@ -32,26 +32,44 @@ import { SettingsDeleteSheet } from './SettingsDeleteSheet'
 import { SettingsGradeSheet } from './SettingsGradeSheet'
 import { SettingsNameSheet } from './SettingsNameSheet'
 import {
+  SETTINGS_ACCOUNT_LABELS,
   SETTINGS_ACCOUNT_VALUE_CLASS,
+  SETTINGS_CONTACT_EMAIL,
   SETTINGS_DELETE_ASSET,
   SETTINGS_DELETE_HIT,
   SETTINGS_DELETE_IMAGE,
   SETTINGS_DISPLAY_NAME_MAX,
   SETTINGS_DOC_URLS,
+  SETTINGS_EMAIL_CLASS,
   SETTINGS_GRADE_HIT,
   SETTINGS_GRADE_OPTIONS,
   SETTINGS_GRADE_VALUE,
+  SETTINGS_GUIDE_LABELS,
+  SETTINGS_INQUIRY_EMAIL,
   SETTINGS_LINKED_HIT,
   SETTINGS_LINKED_VALUE,
   SETTINGS_LIST_ROWS,
+  SETTINGS_LOGOUT_LABEL,
+  SETTINGS_LOGOUT_LABEL_CLASS,
   SETTINGS_NICKNAME_HIT,
   SETTINGS_NICKNAME_VALUE,
+  SETTINGS_PAGE_TITLE,
+  SETTINGS_PAGE_TITLE_CLASS,
   SETTINGS_PROFILE_BADGE,
   SETTINGS_PROFILE_BADGE_CLASS,
+  SETTINGS_PROFILE_EMOJI,
+  SETTINGS_PROFILE_EMOJI_ASSET,
   SETTINGS_PROFILE_NAME,
   SETTINGS_PROFILE_NAME_CLASS,
   SETTINGS_PROFILE_STRIP,
   SETTINGS_PROFILE_STRIP_BG,
+  SETTINGS_PROFILE_TAGLINE,
+  SETTINGS_PROFILE_TAGLINE_TEXT,
+  SETTINGS_ROW_LABEL_CLASS,
+  SETTINGS_SECTION_ACCOUNT,
+  SETTINGS_SECTION_GUIDE,
+  SETTINGS_SECTION_TITLE_CLASS,
+  SETTINGS_TAGLINE_CLASS,
   SETTINGS_WINDOW_ASSET,
   formatSettingsGradeLabel,
   openSettingsContactMail,
@@ -83,7 +101,8 @@ function providerBadgeClass(provider: SocialProvider): string {
 
 /**
  * Figma `설정 창` 오버레이.
- * 이름·연동 = 온보딩/로그인 값 · 그 외 문구는 에셋 베이크 · 하단=`MainHomeBottomNav`.
+ * 이름·연동·행 라벨·섹션 제목 = React Pretendard(선명).
+ * 배경 카드·구분선만 에셋. 하단=`MainHomeBottomNav`.
  */
 export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindowProps) {
   const bodyBottomPct = (NAV_H / FRAME_H) * 100
@@ -292,6 +311,21 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
           }}
           aria-hidden
         />
+        {/* 프로필 아이콘 — 통짜 SVG 안 비트맵 대신 분리 에셋 (`설정 아이콘`) */}
+        <div
+          className="pointer-events-none absolute z-[12] overflow-hidden rounded-full bg-[#DCEBFF]"
+          style={settingsContentRectStyle(
+            settingsCanvasToCropRect(SETTINGS_PROFILE_EMOJI),
+          )}
+          aria-hidden
+        >
+          <img
+            src={SETTINGS_PROFILE_EMOJI_ASSET}
+            alt=""
+            draggable={false}
+            className="h-full w-full object-cover object-center"
+          />
+        </div>
         <div
           className="pointer-events-none absolute z-[12] flex items-center justify-end overflow-hidden"
           style={nameStyle}
@@ -307,6 +341,96 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
           <span className={`${SETTINGS_PROFILE_BADGE_CLASS} ${providerBadgeClass(provider)}`}>
             {providerLabel}
           </span>
+        </div>
+        {/* 태그라인 — 구운 회색 글자 가림 */}
+        <div
+          className="pointer-events-none absolute z-[12] flex items-center overflow-hidden"
+          style={{
+            ...settingsContentRectStyle(
+              settingsCanvasToCropRect(SETTINGS_PROFILE_TAGLINE),
+            ),
+            background: SETTINGS_PROFILE_STRIP_BG,
+          }}
+          aria-hidden
+        >
+          <span className={SETTINGS_TAGLINE_CLASS}>
+            {SETTINGS_PROFILE_TAGLINE_TEXT}
+          </span>
+        </div>
+
+        {/* 페이지 제목 「설정」 */}
+        <div
+          className="pointer-events-none absolute z-[12] flex items-center justify-center bg-white"
+          style={settingsContentRectStyle(
+            settingsCanvasToCropRect(SETTINGS_PAGE_TITLE),
+          )}
+          aria-hidden
+        >
+          <span className={SETTINGS_PAGE_TITLE_CLASS}>설정</span>
+        </div>
+
+        {/* 섹션 제목 */}
+        <div
+          className="pointer-events-none absolute z-[12] flex items-center bg-[#F4F6FA]"
+          style={settingsContentRectStyle(
+            settingsCanvasToCropRect(SETTINGS_SECTION_ACCOUNT),
+          )}
+          aria-hidden
+        >
+          <span className={SETTINGS_SECTION_TITLE_CLASS}>계정</span>
+        </div>
+        <div
+          className="pointer-events-none absolute z-[12] flex items-center bg-[#F4F6FA]"
+          style={settingsContentRectStyle(
+            settingsCanvasToCropRect(SETTINGS_SECTION_GUIDE),
+          )}
+          aria-hidden
+        >
+          <span className={SETTINGS_SECTION_TITLE_CLASS}>이용 안내</span>
+        </div>
+
+        {/* 행 왼쪽 라벨 — 구운 글자 가리고 React */}
+        {SETTINGS_ACCOUNT_LABELS.map((row) => (
+          <div
+            key={row.text}
+            className="pointer-events-none absolute z-[12] flex items-center overflow-hidden bg-white"
+            style={settingsContentRectStyle(
+              settingsCanvasToCropRect(row.canvas),
+            )}
+            aria-hidden
+          >
+            <span className={SETTINGS_ROW_LABEL_CLASS}>{row.text}</span>
+          </div>
+        ))}
+        {SETTINGS_GUIDE_LABELS.map((row) => (
+          <div
+            key={row.text}
+            className="pointer-events-none absolute z-[12] flex items-center overflow-hidden bg-white"
+            style={settingsContentRectStyle(
+              settingsCanvasToCropRect(row.canvas),
+            )}
+            aria-hidden
+          >
+            <span className={SETTINGS_ROW_LABEL_CLASS}>{row.text}</span>
+          </div>
+        ))}
+        <div
+          className="pointer-events-none absolute z-[12] flex items-center justify-end overflow-hidden bg-white"
+          style={settingsContentRectStyle(
+            settingsCanvasToCropRect(SETTINGS_INQUIRY_EMAIL),
+          )}
+          aria-hidden
+        >
+          <span className={SETTINGS_EMAIL_CLASS}>{SETTINGS_CONTACT_EMAIL}</span>
+        </div>
+        <div
+          className="pointer-events-none absolute z-[12] flex items-center justify-center overflow-hidden bg-white"
+          style={settingsContentRectStyle(
+            settingsCanvasToCropRect(SETTINGS_LOGOUT_LABEL),
+          )}
+          aria-hidden
+        >
+          <span className={SETTINGS_LOGOUT_LABEL_CLASS}>로그아웃</span>
         </div>
 
         {/* 계정 행 우측 값 — 닉네임·연동·학년. `>` 왼쪽만 쓰고 넘치면 자른다. */}

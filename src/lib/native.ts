@@ -18,6 +18,15 @@ export function isNativeApp(): boolean {
   }
 }
 
+/** Android WebView / 네이티브 앱인지 (시스템 내비·제스처 바 inset 처리용) */
+export function isAndroidApp(): boolean {
+  try {
+    return Capacitor.getPlatform() === 'android'
+  } catch {
+    return false
+  }
+}
+
 /**
  * 앱으로 돌아오는 딥링크 주소.
  *

@@ -4,12 +4,20 @@ import android.os.Bundle;
 import android.view.WindowManager;
 import androidx.activity.EdgeToEdge;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 /**
- * Android 15+(SDK 35) edge-to-edge 권장 경로.
- * `EdgeToEdge.enable()`로 콘텐츠를 화면 끝까지 그리고, OS 상태바·내비 아이콘만 위에 겹친다.
- * 상태바 높이만큼 웹뷰를 줄이면 레터박스가 생긴다 — 하지 않는다.
+ * 화면은 끝까지 채운다(edge-to-edge). 웹뷰를 시스템 바 높이만큼 줄이지 않는다.
+ *
+ * - 상태바(시계·배터리): 항상 보임 — 콘텐츠 위에 겹침
+ * - 하단 시스템 내비(뒤로가기·홈·최근 / 제스처 바):
+ *   평소엔 숨기고, 아래에서 위로 쓸면 잠깐 나타났다 사라짐
+ *   ({@link WindowInsetsControllerCompat#BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE})
+ *
+ * 앱 하단 탭(홈·복습·헬스장·전체)은 시안 NAV_H만 쓰고, 시스템 내비 자리만큼
+ * 콘텐츠를 올리지 않는다.
  */
 public class MainActivity extends BridgeActivity {
 
@@ -17,7 +25,6 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Play/Studio 권장 API — setDecorFitsSystemWindows(false) + 투명 시스템 바
         EdgeToEdge.enable(this);
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
 
@@ -25,7 +32,36 @@ public class MainActivity extends BridgeActivity {
             getWindow().setNavigationBarContrastEnforced(false);
             getWindow().setStatusBarContrastEnforced(false);
         }
-        // 키보드가 웹뷰 높이를 줄이지 않게 (manifest adjustNothing 과 맞춤)
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
+
+        hideSystemNavigationBars();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        // 다이얼로그·잠깐 표시 후 포커스가 돌아오면 다시 숨김(스티키)
+        if (hasFocus) {
+            hideSystemNavigationBars();
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        hideSystemNavigationBars();
+    }
+
+    /** 하단 시스템 내비만 숨기고, 스와이프로 일시 표시 */
+    private void hideSystemNavigationBars() {
+        final WindowInsetsControllerCompat controller =
+            WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        if (controller == null) return;
+
+        controller.setSystemBarsBehavior(
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        );
+        // 상태바는 유지 — 내비(제스처 바·3버튼)만 숨김
+        controller.hide(WindowInsetsCompat.Type.navigationBars());
     }
 }

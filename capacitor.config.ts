@@ -4,6 +4,10 @@ const config: CapacitorConfig = {
   appId: 'com.haksup.haksup_app',
   appName: '학습',
   webDir: 'dist',
+  ios: {
+    // 웹뷰를 홈 인디케이터 위에서 줄이지 않는다 — CSS viewport-fit=cover + 시안 NAV로 맞춘다.
+    contentInset: 'never',
+  },
   plugins: {
     Keyboard: {
       // iOS 전용. Android는 AndroidManifest `windowSoftInputMode=adjustNothing`.

@@ -16,6 +16,7 @@ import {
   getCellLayout,
   monthCursorValue,
   LEGEND_FACE_RECTS,
+  LEGEND_LABEL_RECTS,
   MONTH_NEXT_BTN,
   MONTH_PREV_BTN,
   MONTH_TITLE_MASK,
@@ -24,6 +25,7 @@ import {
   PRAISE_CALENDAR_BAKED_NAV_COVER,
   PRAISE_CALENDAR_HOME_INDICATOR_COVER,
   PRAISE_STATUS_FACE_ASSETS,
+  PRAISE_STATUS_LABEL_ASSETS,
   PROGRESS_HERO_FACE,
   PROGRESS_SUBTITLE,
   PROGRESS_TITLE,
@@ -364,24 +366,42 @@ export function PraiseCalendarScreen({
       })}
 
       {/*
-        범례 얼굴 — SVG pattern 임베드가 흐려서 흰 덮개 후 선명 PNG로 교체.
-        라벨(통과·아쉬움·미제출) 글자는 SVG 유지.
+        범례 얼굴·이름 — 통짜 SVG pattern/글자가 흐려서 분리 SVG로 교체.
       */}
       {(Object.keys(LEGEND_FACE_RECTS) as PraiseDayStatus[]).map((status) => {
-        const rect = LEGEND_FACE_RECTS[status]
+        const face = LEGEND_FACE_RECTS[status]
+        const label = LEGEND_LABEL_RECTS[status]
         const meta = STATUS_META[status]
         return (
-          <div
-            key={status}
-            className="pointer-events-none absolute z-[4] overflow-hidden rounded-[8px] bg-white"
-            style={figmaRectStyle(rect)}
-            aria-hidden
-          >
-            <StatusFaceImg
-              status={status}
-              alt={meta.label}
-              className="h-full w-full"
-            />
+          <div key={status}>
+            <div
+              className="pointer-events-none absolute z-[4] overflow-hidden rounded-[8px] bg-white"
+              style={figmaRectStyle(face)}
+              aria-hidden
+            >
+              <StatusFaceImg
+                status={status}
+                alt={meta.label}
+                className="h-full w-full"
+              />
+            </div>
+            <div
+              className="pointer-events-none absolute z-[4] flex items-center bg-white"
+              style={figmaRectStyle({
+                x: label.x - 2,
+                y: label.y - 2,
+                w: label.w + 4,
+                h: label.h + 4,
+              })}
+              aria-hidden
+            >
+              <img
+                src={PRAISE_STATUS_LABEL_ASSETS[status]}
+                alt=""
+                draggable={false}
+                className="pointer-events-none h-full w-full select-none object-contain object-left"
+              />
+            </div>
           </div>
         )
       })}

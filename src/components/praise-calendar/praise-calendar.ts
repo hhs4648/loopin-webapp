@@ -44,10 +44,21 @@ export const PRAISE_CALENDAR_HOME_INDICATOR_COVER = {
   h: 25,
 } as const
 
+/**
+ * 상태 얼굴·이름 — Figma에서 분리한 SVG.
+ * 아이콘은 개별 파일이라 통짜 캘린더 SVG pattern보다 iOS에서 선명하다.
+ * 이름(라벨)은 path만 있는 벡터.
+ */
 export const PRAISE_STATUS_FACE_ASSETS = {
-  pass: '/assets/praise-status-pass.png',
-  regrettable: '/assets/praise-status-regrettable.png',
-  incomplete: '/assets/praise-status-incomplete.png',
+  pass: '/assets/praise-status-pass-icon.svg?v=1',
+  regrettable: '/assets/praise-status-regrettable-icon.svg?v=1',
+  incomplete: '/assets/praise-status-incomplete-icon.svg?v=1',
+} as const
+
+export const PRAISE_STATUS_LABEL_ASSETS = {
+  pass: '/assets/praise-status-pass-label.svg?v=1',
+  regrettable: '/assets/praise-status-regrettable-label.svg?v=1',
+  incomplete: '/assets/praise-status-incomplete-label.svg?v=1',
 } as const
 
 /** 선생님이 설정에서 바꾸지 않았을 때 쓰는 기본 통과 기준 점수 */
@@ -98,8 +109,8 @@ export const CALENDAR_CARD = { x: 20, y: 299, w: 353, h: 331.9 }
 export const CARD_BORDER_COLOR = '#EEF1F5'
 
 /**
- * 범례(통과·아쉬움·미제출) 얼굴 — SVG `pattern` 임베드가 흐려서
- * React PNG(`PRAISE_STATUS_FACE_ASSETS`)로 덮어 그린다. 시안 실측.
+ * 범례(통과·아쉬움·미완료) 얼굴 — 통짜 SVG pattern이 흐려서
+ * React 분리 아이콘으로 덮어 그린다. 시안 실측.
  */
 export const LEGEND_FACE_RECTS: Record<
   PraiseDayStatus,
@@ -108,6 +119,19 @@ export const LEGEND_FACE_RECTS: Record<
   pass: { x: 75, y: 663.9, w: 29.85, h: 29.85 },
   regrettable: { x: 161, y: 663.9, w: 29.85, h: 29.85 },
   incomplete: { x: 248.84, y: 664.36, w: 29.62, h: 28.93 },
+}
+
+/**
+ * 범례 이름 라벨 — 얼굴 오른쪽. 구운 글자 가린 뒤 벡터 SVG.
+ * (통과 24×13 · 아쉬움 36×13 · 미완료 35×13)
+ */
+export const LEGEND_LABEL_RECTS: Record<
+  PraiseDayStatus,
+  { x: number; y: number; w: number; h: number }
+> = {
+  pass: { x: 108, y: 672, w: 24, h: 13 },
+  regrettable: { x: 195, y: 672, w: 36, h: 13 },
+  incomplete: { x: 282, y: 672.4, w: 35, h: 13 },
 }
 
 /** 그리드 하단 여백 — Today 라벨(`-bottom-3`)·카드 라운드 */
@@ -177,7 +201,7 @@ export const STATUS_META: Record<
     dayColor: '#B07B08',
   },
   incomplete: {
-    label: '미제출',
+    label: '미완료',
     cellBg: '#E8E9E9',
     cellBorder: '#C5CAD3',
     dayColor: '#808BA6',
