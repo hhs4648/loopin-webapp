@@ -14,29 +14,31 @@ type PhoneCanvasProps = {
   children?: ReactNode
   className?: string
   style?: CSSProperties
-  /** 세로가 남을 때 위쪽 밴드 배경 (하늘·흰 등) */
+  /**
+   * 예전 레터박스 밴드용. cover 방식에서는 화면이 이미 꽉 차서 쓰지 않지만,
+   * 호출부 호환을 위해 남겨 둔다(배경 fallback).
+   */
   topBleedClassName?: string
-  /** 세로가 남을 때 아래 밴드 배경 — 내비 연장 색 */
   bottomBleedClassName?: string
 }
 
 type StageBox = {
   stageW: number
   stageH: number
+  left: number
   top: number
-  bottom: number
+  overflowBottom: number
 }
 
 /**
- * 시안 393×852 **비율을 유지한 채** 화면을 채운다.
+ * 시안 393×852를 **cover**로 기기에 맞춘다.
  *
- * 예전에 `height:100%` + `object-fill`로 세로만 늘리면 입력칸·버튼·캐릭터가
- * 위아래로 찌그러지고, 내비만 상대적으로 작아 보였다. 이제는
- * - 가로는 프레임에 맞추고
- * - 세로는 비율대로 잡고
- * - 남는 세로는 위·아래 밴드에 나눠 내비·하늘이 같이 커지게 한다.
- *
- * 글꼴 px는 그대로 두고, 레이아웃 박스만 맞춘다.
+ * - 가로·세로 모두 화면을 덮는다 (좌우 흰 여백 없음)
+ * - 비율 유지 — 웹뷰 크기를 줄여 상태바 자리를 비우지 않는다
+ * - **상단 정렬**: 화면 맨 위(상태바 아래 겹침 영역)까지 시안 상단을 채운다
+ * - OS 시계·배터리는 네이티브 상태바가 맨 앞에 그린다 (`system-bars.ts`)
+ * - 짧아서 세로가 넘치면 아래를 자르고, 내비는 `--phone-overflow-bottom`으로
+ *   뷰포트 하단에 붙인다
  */
 export function PhoneCanvas({
   children,
@@ -49,8 +51,9 @@ export function PhoneCanvas({
   const [box, setBox] = useState<StageBox>({
     stageW: 0,
     stageH: 0,
+    left: 0,
     top: 0,
-    bottom: 0,
+    overflowBottom: 0,
   })
 
   useLayoutEffect(() => {
@@ -62,28 +65,14 @@ export function PhoneCanvas({
       const fh = el.clientHeight
       if (fw <= 0 || fh <= 0) return
 
-      const scaleByWidth = fw / PHONE_FRAME_W
-      const naturalH = PHONE_FRAME_H * scaleByWidth
-
-      if (naturalH <= fh + 0.5) {
-        const extra = Math.max(0, fh - naturalH)
-        /*
-          남는 높이의 대부분을 하단(내비 연장)에, 일부는 상단(상태바·하늘)에.
-          내비만 작고 가운데만 커 보이던 느낌을 맞춘다.
-        */
-        const top = Math.round(extra * 0.28)
-        const bottom = extra - top
-        setBox({ stageW: fw, stageH: naturalH, top, bottom })
-        return
-      }
-
-      const scale = fh / PHONE_FRAME_H
-      setBox({
-        stageW: PHONE_FRAME_W * scale,
-        stageH: fh,
-        top: 0,
-        bottom: 0,
-      })
+      const scale = Math.max(fw / PHONE_FRAME_W, fh / PHONE_FRAME_H)
+      const stageW = PHONE_FRAME_W * scale
+      const stageH = PHONE_FRAME_H * scale
+      const left = (fw - stageW) / 2
+      /* 위를 맞춘다 — 상태바 뒤로 콘텐츠가 들어가고, OS 아이콘이 앞에 남는다 */
+      const top = 0
+      const overflowBottom = Math.max(0, stageH - fh)
+      setBox({ stageW, stageH, left, top, overflowBottom })
     }
 
     const ro = new ResizeObserver(measure)
@@ -95,35 +84,33 @@ export function PhoneCanvas({
   const cssVars = {
     '--phone-stage-w': `${box.stageW}px`,
     '--phone-stage-h': `${box.stageH}px`,
-    '--phone-bleed-top': `${box.top}px`,
-    '--phone-bleed-bottom': `${box.bottom}px`,
+    '--phone-bleed-top': '0px',
+    '--phone-bleed-bottom': '0px',
+    /* 스테이지가 아래로 넘친 만큼 — 내비 bottom 보상에 쓴다 */
+    '--phone-overflow-bottom': `${box.overflowBottom}px`,
   } as CSSProperties
+
+  const fallbackBg =
+    [topBleedClassName, bottomBleedClassName].find((c) => c.includes('bg-')) ??
+    'bg-white'
 
   return (
     <div
       ref={rootRef}
-      className={`app-phone-canvas ${className}`.trim()}
+      className={`app-phone-canvas ${fallbackBg} ${className}`.trim()}
       style={{ ...cssVars, ...style }}
     >
-      <div
-        className={`app-phone-top-bleed ${topBleedClassName}`.trim()}
-        style={{ height: box.top }}
-        aria-hidden
-      />
       <div
         className="app-phone-stage"
         style={{
           width: box.stageW || '100%',
           height: box.stageH || '100%',
+          left: box.stageW ? box.left : 0,
+          top: box.stageH ? box.top : 0,
         }}
       >
         {children}
       </div>
-      <div
-        className={`app-phone-bottom-bleed ${bottomBleedClassName}`.trim()}
-        style={{ height: box.bottom }}
-        aria-hidden
-      />
     </div>
   )
 }

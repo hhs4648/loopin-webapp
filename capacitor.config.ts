@@ -11,12 +11,12 @@ const config: CapacitorConfig = {
       resize: 'none',
     },
     SystemBars: {
-      // LIGHT = 어두운 아이콘 (흰 화면에서 보이게). DARK는 밝은 아이콘이라
-      // 로그인·온보딩·설정에서 시계·배터리가 안 보였던 원인이다.
-      // 프레임 안에 가짜 시계·상태 아이콘을 그리지 않는다 — OS 상태바만 쓴다.
+      // LIGHT = 어두운 아이콘 (흰 화면에서 보이게).
+      // 콘텐츠는 상태바 뒤까지 그리고, OS 아이콘만 맨 앞에 둔다.
+      // 웹뷰를 상태바 높이만큼 줄이지 않는다(레터박스 원인).
       style: 'LIGHT',
       hidden: false,
-      // WebView에 --safe-area-inset-* 를 넣어 하단 3버튼/제스처와 탭바 겹침을 막는다.
+      // --safe-area-inset-* 만 CSS로 전달. 패딩으로 웹뷰를 줄이지 않음(viewport-fit=cover).
       insetsHandling: 'css',
     },
   },

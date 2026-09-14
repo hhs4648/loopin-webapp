@@ -4,8 +4,9 @@
  *
  * 히트 영역은 탭 칸 전체가 아니라 아이콘·라벨 근처(칸 폭의 ~52%)만.
  *
- * 높이는 시안 `NAV_H` + `PhoneCanvas` 하단 블리드 + `safe-area-inset-bottom`.
- * 긴 폰에서 스테이지 비율을 지키면 남는 세로가 블리드로 오고, 내비가 같이 커진다.
+ * PhoneCanvas는 상단 정렬 cover라 스테이지가 아래로 넘칠 수 있다.
+ * `bottom: var(--phone-overflow-bottom)` 으로 뷰포트 하단에 붙이고,
+ * `safe-area-inset-bottom`까지 칠해 기기 홈 인디케이터/3버튼과 맞춘다.
  */
 import type { MainHomeNavTabId } from './assignment-home'
 import {
@@ -32,8 +33,8 @@ export function MainHomeBottomNav({
     <div
       className="absolute inset-x-0 z-[60] overflow-hidden bg-[#F4F6FA]"
       style={{
-        bottom: 'calc(-1 * var(--phone-bleed-bottom, 0px))',
-        height: `calc(${(NAV_H / FRAME_H) * 100}% + var(--phone-bleed-bottom, 0px) + env(safe-area-inset-bottom, 0px))`,
+        bottom: 'var(--phone-overflow-bottom, 0px)',
+        height: `calc(${(NAV_H / FRAME_H) * 100}% + env(safe-area-inset-bottom, 0px))`,
       }}
     >
       <div className="absolute inset-x-0 top-0 bottom-[env(safe-area-inset-bottom,0px)]">

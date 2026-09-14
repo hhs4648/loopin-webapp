@@ -410,25 +410,33 @@ export async function fetchStudentAssignments(
   const userId = await ensureStudentSession()
   if (!supabase || !userId) return []
 
-  const { data: rows, error } = await supabase
-    .from('class_assignments')
-    .select('*')
-    /*
-      **아직 공개 전인 과제는 빼고 받는다.**
-      `open_at`은 「수업일 + 그 반의 수업 종료 시각」이다(교사 웹이 계산해서 박아 둔다).
-      서버 정책(마이그레이션 009)이 이미 같은 조건으로 막고 있어서 이 줄이 없어도
-      안 내려오지만, 여기서도 걸러 두면 정책이 아직 안 올라간 프로젝트에서도 동작이
-      같다. 컬럼이 없던 시절 과제는 `null` — 이미 공개로 본다.
-    */
-    .or(`open_at.is.null,open_at.lte.${new Date().toISOString()}`)
-    .eq('class_id', classId)
-    .order('sort_order', { ascending: true })
-    .order('assigned_at', { ascending: true })
+  const [{ data: rows, error }, { data: classRow }] = await Promise.all([
+    supabase
+      .from('class_assignments')
+      .select('*')
+      /*
+        **아직 공개 전인 과제는 빼고 받는다.**
+        `open_at`은 「수업일 + 그 반의 수업 종료 시각」이다(교사 웹이 계산해서 박아 둔다).
+        서버 정책(마이그레이션 009)이 이미 같은 조건으로 막고 있어서 이 줄이 없어도
+        안 내려오지만, 여기서도 걸러 두면 정책이 아직 안 올라간 프로젝트에서도 동작이
+        같다. 컬럼이 없던 시절 과제는 `null` — 이미 공개로 본다.
+      */
+      .or(`open_at.is.null,open_at.lte.${new Date().toISOString()}`)
+      .eq('class_id', classId)
+      .order('sort_order', { ascending: true })
+      .order('assigned_at', { ascending: true }),
+    supabase.from('classes').select('name').eq('id', classId).maybeSingle(),
+  ])
 
   if (error || !rows) {
     if (error) console.warn('[sync] fetch assignments failed', error.message)
     return []
   }
+
+  const className =
+    typeof classRow?.name === 'string' && classRow.name.trim()
+      ? classRow.name.trim()
+      : undefined
 
   const assignmentIds = rows.map((r) => r.id as string)
   const { data: attempts } = assignmentIds.length
@@ -489,8 +497,9 @@ export async function fetchStudentAssignments(
     return {
       assignmentId: row.id as string,
       classId: row.class_id as string,
+      ...(className ? { className } : {}),
       order: Number(row.sort_order ?? index),
-      title: displayAssignmentTitle(snapshot),
+      title: displayAssignmentTitle(snapshot, { className }),
       status,
       progressPercent,
       lessonDate: String(row.lesson_date),

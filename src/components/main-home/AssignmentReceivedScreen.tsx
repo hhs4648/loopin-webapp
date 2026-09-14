@@ -56,7 +56,6 @@ import {
   MAIN_HOME_ASSETS,
   MAIN_HOME_GRASS,
   MAP_CASTLE_SLOTS,
-  MAP_SCROLL_H,
   MAP_SKY_CROP,
   MASCOT_WAVE_RECT,
   NAV_H,
@@ -465,6 +464,7 @@ export function AssignmentReceivedScreen({
     ? serverList.length
     : FREE_MAP_CASTLE_COUNT
   const mapScrollH = resolveMapScrollContentHeight(assignedCount)
+  const scrollContentH = SKY_FIXED_H + mapScrollH
   const visibleSlots = MAP_CASTLE_SLOTS.slice(
     0,
     useServerAssignments ? assignedCount : FREE_MAP_CASTLE_COUNT,
@@ -585,18 +585,12 @@ export function AssignmentReceivedScreen({
         topBleedClassName="bg-[#C5EBFE]"
         bottomBleedClassName="bg-[#F4F6FA]"
       >
-        {/* 고정 하늘 — 스크롤/드래그 없음 */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 z-[1]"
-          style={{
-            height: `${(SKY_FIXED_H / FRAME_H) * 100}%`,
-            background: MAIN_HOME_SKY_GRADIENT,
-          }}
-        />
-
         {/* 복습·설정과 동일 — 왼쪽 18:00 · 오른쪽 신호/와이파이/배터리 */}
 
+        {/*
+          하늘+풀맵 같이 스크롤. 뷰포트 고정은 미션 카드·칭찬 캘린더·하단 내비만.
+          연속 학습 배지는 하늘 밴드에 두어 배경과 함께 움직인다.
+        */}
         <div
           ref={scrollRef}
           onScroll={(event) => {
@@ -605,21 +599,51 @@ export function AssignmentReceivedScreen({
             const scale = el.clientWidth > 0 ? el.clientWidth / FRAME_W : 1
             setMapScrollFrame(el.scrollTop / scale)
           }}
-          className="absolute inset-x-0 overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="absolute inset-x-0 top-0 overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           style={{
-            top: `${(SKY_FIXED_H / FRAME_H) * 100}%`,
             bottom: `${(NAV_H / FRAME_H) * 100}%`,
             background: MAIN_HOME_GRASS,
           }}
         >
-          {/* 풀맵 배경 유지 — 드래그만 부여 성 상한으로 클램프 */}
           <div
-            className="relative w-full overflow-hidden"
+            className="relative w-full"
             style={{
-              aspectRatio: `393 / ${MAP_SCROLL_H}`,
+              aspectRatio: `393 / ${scrollContentH}`,
               background: MAIN_HOME_GRASS,
             }}
           >
+            {/* 하늘 — 맵과 함께 스크롤 */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 z-0"
+              style={{
+                height: `${(SKY_FIXED_H / scrollContentH) * 100}%`,
+                background: MAIN_HOME_SKY_GRADIENT,
+              }}
+            />
+
+            {/* 연속 학습 배지 — 하늘 위(프레임 y≈65), 스크롤과 함께 이동 */}
+            <StudyStreakBadge
+              streak={studyStreak}
+              contentFrameH={scrollContentH}
+              onClick={
+                onOpenStreakCalendar
+                  ? () => {
+                      playTapSfx()
+                      onOpenStreakCalendar()
+                    }
+                  : undefined
+              }
+            />
+
+            {/* 풀맵 — 하늘 아래 */}
+            <div
+              className="absolute inset-x-0 bottom-0 overflow-hidden"
+              style={{
+                height: `${(mapScrollH / scrollContentH) * 100}%`,
+                background: MAIN_HOME_GRASS,
+              }}
+            >
             {/* 풀밭 + 길 (벡터). 성·자물쇠·장식은 더 이상 배경에 구워져 있지 않고 아래에서 그린다 */}
             <MainHomeMapCanvas />
             <MainHomeMapDecor />
@@ -824,31 +848,19 @@ export function AssignmentReceivedScreen({
                     }
                   />
                 ))}
+            </div>
           </div>
         </div>
 
         <div className="pointer-events-none absolute inset-0 z-10">
           {/*
-            오늘의 미션 카드(y 70~186) 위 빈 밴드. 고정 헤더 안이라 맵을 스크롤해도 따라다닌다.
-            absolute라 스트릭이 늦게 도착해도 카드가 밀리지 않는다.
+            오늘의 미션 카드만 뷰포트 고정. 맵·하늘·연속 학습 배지는 스크롤된다.
           */}
-          {/* 연속 학습 배지 — Figma 기준 (12, 65). 좌표는 `StudyStreakBadge`의 BADGE 상수 */}
-          <StudyStreakBadge
-            streak={studyStreak}
-            onClick={
-              onOpenStreakCalendar
-                ? () => {
-                    playTapSfx()
-                    onOpenStreakCalendar()
-                  }
-                : undefined
-            }
-          />
           <TodayMissionCard
             assignments={serverList}
             retryingAssignmentId={retryingAssignmentId}
             onOpen={(assignment) => {
-              // 카드는 고정 헤더에 있어 팝오버를 붙일 성이 없다 — 처음부터 바로 진입
+              // 카드는 고정 오버레이라 팝오버를 붙일 성이 없다 — 처음부터 바로 진입
               playTapSfx()
               onOpenAssignment?.(assignment, {
                 isRetry: retryingAssignmentId === assignment.assignmentId,

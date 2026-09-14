@@ -302,7 +302,7 @@ Figma export `current-learning-cta-card.svg`(392×156)를 그대로 따른다.
 | 위치 | 기존 미션 카드 자리 (맵 상단 고정 헤더) |
 | 과제 선택 | 배정 과제 중 **미완료(`completed` 아님) & `order` 오름차순 최우선** 1건만 표시 |
 | 배지 (좌상단 파란 필) | `progressPercent === 0` → **오늘의 미션** / 그 외 → **현재 학습 중** |
-| 제목 | 선택된 과제 표시명(학년·반 제외, `displayAssignmentTitle`) |
+| 제목 | 선택된 과제 표시명 — 반 이름 · 단원 (`displayAssignmentTitle`) |
 | 부제 | `약 n분 소요`만 표시(「n문제 남음」 없음). 문제당 10초 계산 후 분 단위 반올림 |
 | 진행률 바 | 트랙 `#D9E3F7` · 채움 `#4F91EB`, 폭 = `progressPercent` + 우측 `%` 라벨 |
 | 버튼 (우측 사각 CTA) | `progressPercent === 0` → **시작하기 →** / 그 외 → **이어서 학습하기 →** |

@@ -52,15 +52,21 @@ function streakBadgeAriaLabel(streak: StudyStreak): string {
 export function StudyStreakBadge({
   streak,
   onClick,
+  /**
+   * 배지가 앉는 부모의 디자인 높이(프레임 px).
+   * 맵 스크롤 콘텐츠처럼 852보다 길면 그 높이를 넘겨 y%를 맞춘다.
+   */
+  contentFrameH = 852,
 }: {
   streak: StudyStreak
   onClick?: () => void
+  contentFrameH?: number
 }) {
   if (streak.days < 1) return null
 
   const positionStyle = {
     left: `${(BADGE.x / 393) * 100}%`,
-    top: `${(BADGE.y / 852) * 100}%`,
+    top: `${(BADGE.y / contentFrameH) * 100}%`,
     width: `${(BADGE.w / 393) * 100}%`,
     aspectRatio: `${BADGE.w} / ${BADGE.h}`,
   }

@@ -34,15 +34,25 @@ export function stripGradeClassFromTitle(title: string): string {
   return stripped || raw
 }
 
-/** content_snapshot 기준 표시 제목 — 교재·단원이 있으면 학년 없이 조합 */
-export function displayAssignmentTitle(snapshot: {
-  title?: string
-  grade?: string
-  textbook?: string
-  unit?: string
-}): string {
-  const textbook = snapshot.textbook?.trim() ?? ''
+/**
+ * content_snapshot 기준 표시 제목 (오늘의 미션 카드 등).
+ * 반 이름이 있으면 `반 이름 · 단원`, 없으면 예전처럼 `교재 · 단원`.
+ */
+export function displayAssignmentTitle(
+  snapshot: {
+    title?: string
+    grade?: string
+    textbook?: string
+    unit?: string
+  },
+  options?: { className?: string },
+): string {
+  const className = options?.className?.trim() ?? ''
   const unit = snapshot.unit?.trim() ?? ''
+  if (className) {
+    return [className, unit].filter(Boolean).join(' · ')
+  }
+  const textbook = snapshot.textbook?.trim() ?? ''
   if (textbook || unit) {
     return [textbook, unit].filter(Boolean).join(' · ')
   }
@@ -52,20 +62,27 @@ export function displayAssignmentTitle(snapshot: {
 /**
  * 헬스장 시작 카드 큰 제목.
  *
- * - 단원 출제: 교재 · 단원 (`YBM(송) · 5단원`)
+ * - 단원 출제: 반 이름 · 단원 (`중3-1반 · 5단원`). 반 이름 없으면 교재 · 단원
  * - 직접 출제(단원 없음): 선생님이 붙인 과제 이름
  * - 이름도 없으면 「선생님이 만든 문제」
  *
  * 복습 탭의 「기타」는 쓰지 않는다. 그쪽은 분류가 안 묶일 때 모아 두는
  * 쓰레기통 라벨이라, 시작 화면에 그대로 올리면 「무슨 오답인지」가 안 보인다.
  */
-export function gymStartHeading(snapshot: {
-  title?: string
-  textbook?: string
-  unit?: string
-}): string {
-  const textbook = snapshot.textbook?.trim() ?? ''
+export function gymStartHeading(
+  snapshot: {
+    title?: string
+    textbook?: string
+    unit?: string
+  },
+  options?: { className?: string },
+): string {
+  const className = options?.className?.trim() ?? ''
   const unit = snapshot.unit?.trim() ?? ''
+  if (className) {
+    return [className, unit].filter(Boolean).join(' · ')
+  }
+  const textbook = snapshot.textbook?.trim() ?? ''
   if (textbook || unit) {
     return [textbook, unit].filter(Boolean).join(' · ')
   }
@@ -78,12 +95,15 @@ export function gymStartHeading(snapshot: {
  * 헬스장 완료 화면 큰 제목. 시안 「1단원 연습 완료!」자리에 올린다.
  * 단원이 있으면 그 이름만, 없으면 시작 카드와 같은 제목에 「연습 완료!」를 붙인다.
  */
-export function gymCompleteHeading(snapshot: {
-  title?: string
-  textbook?: string
-  unit?: string
-}): string {
+export function gymCompleteHeading(
+  snapshot: {
+    title?: string
+    textbook?: string
+    unit?: string
+  },
+  options?: { className?: string },
+): string {
   const unit = snapshot.unit?.trim() ?? ''
   if (unit) return `${unit} 연습 완료!`
-  return `${gymStartHeading(snapshot)} 연습 완료!`
+  return `${gymStartHeading(snapshot, options)} 연습 완료!`
 }

@@ -153,7 +153,9 @@ export function GymScreen({
             style={gymRectStyle(GYM_START_TITLE)}
           >
             <p className="line-clamp-2 text-[22px] font-bold leading-tight text-white">
-              {gymStartHeading(next.contentSnapshot)}
+              {gymStartHeading(next.contentSnapshot, {
+                className: next.className,
+              })}
             </p>
           </div>
           <div

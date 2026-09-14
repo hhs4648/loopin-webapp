@@ -21,12 +21,13 @@
     <link rel="manifest" href="/manifest.webmanifest" />
 
     <!--
-      iOS 홈화면/전체화면. `default` = 어두운 상태바 아이콘(밝은 화면용).
-      `black-translucent`는 아이콘이 흰색이라 로그인·온보딩 등 흰 화면에서
-      시계·배터리가 안 보였다.
+      iOS 홈화면/전체화면.
+      `black-translucent` = 콘텐츠가 상태바 뒤까지 그려지고, OS 아이콘이 맨 앞.
+      (웹뷰를 상태바만큼 줄이지 않는다.) 아이콘 색은 Capacitor SystemBars LIGHT
+      (어두운 아이콘)로 맞춰 흰 화면에서도 시계·배터리가 보인다.
     -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="학습" />
 
     <!--

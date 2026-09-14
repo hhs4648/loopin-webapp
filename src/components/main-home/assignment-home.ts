@@ -133,8 +133,8 @@ export const MAIN_HOME_SKY_TOP = '#FFFFFF'
 export const MAIN_HOME_SKY_BOTTOM = '#C5EBFE'
 
 /**
- * 고정 하늘 밴드(`SKY_FIXED_H`)에 쓰는 그라데이션.
- * 위→아래, 중간 스톱은 밴딩 완화용.
+ * 맵 상단 하늘 밴드(`SKY_FIXED_H`)에 쓰는 그라데이션.
+ * 위→아래, 중간 스톱은 밴딩 완화용. 맵과 함께 스크롤된다.
  */
 export const MAIN_HOME_SKY_GRADIENT = `linear-gradient(180deg, ${MAIN_HOME_SKY_TOP} 0%, #E4F5FF 50%, ${MAIN_HOME_SKY_BOTTOM} 100%)`
 
@@ -189,12 +189,12 @@ export const MAP_SCROLL_H = MAP_CONTENT_H - MAP_SKY_CROP
 export const MAIN_HOME_GRASS = '#ADE4DE'
 
 /**
- * 뷰포트 고정 하늘 — 드래그/스크롤 불가. 연속 학습 배지·오늘의 미션 카드가 여기 들어간다.
- * 풀은 이 아래부터 바로 시작(위로 당김).
+ * 맵 상단 하늘 밴드 높이(프레임 px). 풀·길과 **같이 스크롤**된다.
+ * 뷰포트에 고정인 것은 오늘의 미션 카드·칭찬 캘린더 버튼뿐이다.
  *
- * **풀밭 높이를 Figma 지정값 477로 맞춘 값이다** (2026-08-08).
+ * **초기 뷰포트에서 풀밭 높이를 Figma 지정값 477로 맞춘 값이다** (2026-08-08).
  * `852(프레임) − 81(하단 내비) − 477(풀밭) = 294`
- * 그래서 이 값을 바꾸면 풀밭 높이가 같이 바뀐다 — `MAP_GRASS_VISIBLE_H`로 검산할 것.
+ * 그래서 이 값을 바꾸면 첫 화면 풀밭 높이가 같이 바뀐다 — `MAP_GRASS_VISIBLE_H`로 검산할 것.
  * 오늘의 미션 카드 아랫변(y=250)도 이 안에 들어와야 한다.
  */
 export const SKY_FIXED_H = 294
@@ -208,12 +208,13 @@ export const MAP_GRASS_VISIBLE_H = FRAME_H - SKY_FIXED_H - 81
 export const FULL_MAP_H = MAP_CONTENT_H
 export const FULL_MAP_SKY_CROP = MAP_SKY_CROP
 export const FULL_MAP_CONTENT_H = MAP_SCROLL_H
-/** Sky / header — fixed, no scroll */
+/** @deprecated 이름만 남김 — 하늘도 스크롤됨. `SKY_FIXED_H` 사용 */
 export const SKY_H = SKY_FIXED_H
 /** Bottom navigation — fixed, always on top */
 export const NAV_H = 81
-/** Grass map — scrollable region in design coordinates */
+/** Grass map — scrollable region in design coordinates (하늘 아래) */
 export const GRASS_SCROLL_H = MAP_SCROLL_H
+/** 스크롤 콘텐츠 전체 높이(하늘 + 풀맵) */
 export const TOTAL_MAP_H = SKY_FIXED_H + MAP_SCROLL_H
 
 /**
@@ -518,7 +519,8 @@ function startMascotBox() {
 export const MASCOT_WAVE_RECT = startMascotBox()
 
 /**
- * 스크롤 콘텐츠 높이 — 풀맵 배경 유지(`MAP_SCROLL_H`).
+ * 풀맵(하늘 크롭 후) 높이 — `MAP_SCROLL_H`.
+ * 실제 스크롤 콘텐츠는 `SKY_FIXED_H +` 이 값(`TOTAL_MAP_H`).
  * 드래그 상한은 `resolveMapScrollLimitY` / `resolveMapMaxScrollTop`.
  */
 export function resolveMapScrollContentHeight(_assignedCount: number): number {
@@ -526,7 +528,7 @@ export function resolveMapScrollContentHeight(_assignedCount: number): number {
 }
 
 /**
- * 드래그 허용 하단(하늘 크롭 후 프레임 px).
+ * 드래그 허용 하단(하늘 크롭 후 **풀맵** 프레임 px, 0 = 풀 윗변).
  * 부여된 마지막 성 + 룩어헤드(`MAP_SCROLL_LOOKAHEAD_CASTLES`) 밑변 + 여유 —
  * 이보다 아래로 스크롤하지 않음.
  */
@@ -551,7 +553,7 @@ export function resolveMapScrollLimitY(assignedCount: number): number {
   return Math.min(MAP_SCROLL_H, Math.max(limitY, 200))
 }
 
-/** 스크롤 컨테이너 기준 maxScrollTop (풀맵 유지 + 상한 클램프) */
+/** 스크롤 컨테이너 기준 maxScrollTop (하늘+풀맵 유지 + 상한 클램프) */
 export function resolveMapMaxScrollTop(
   assignedCount: number,
   scrollEl: HTMLElement,
@@ -559,12 +561,14 @@ export function resolveMapMaxScrollTop(
   const limitY = resolveMapScrollLimitY(assignedCount)
   const contentH = scrollEl.scrollHeight
   if (contentH <= 0) return 0
-  const allowedPx = (limitY / MAP_SCROLL_H) * contentH
+  // limitY는 풀맵 로컬 Y. 스크롤 콘텐츠 = 하늘 + 풀맵.
+  const allowedDesignY = SKY_FIXED_H + limitY
+  const allowedPx = (allowedDesignY / TOTAL_MAP_H) * contentH
   return Math.max(0, allowedPx - scrollEl.clientHeight)
 }
 
 /**
- * 현재 위치(프레임 Y)가 스크롤 뷰포트 세로 중앙에 오도록 하는 scrollTop.
+ * 현재 위치(LONG 프레임 Y)가 스크롤 뷰포트 세로 중앙에 오도록 하는 scrollTop.
  * 부여 성 드래그 상한 안으로 클램프.
  */
 export function resolveMapCenterScrollTop(
@@ -574,8 +578,9 @@ export function resolveMapCenterScrollTop(
 ): number {
   const contentH = scrollEl.scrollHeight
   if (contentH <= 0) return 0
-  const focusInScroll = focusFrameY - MAP_SKY_CROP
-  const focusPx = (focusInScroll / MAP_SCROLL_H) * contentH
+  // LONG 프레임 Y → 스크롤 콘텐츠 Y(하늘이 크롭된 하늘을 대체)
+  const focusInScroll = SKY_FIXED_H + (focusFrameY - MAP_SKY_CROP)
+  const focusPx = (focusInScroll / TOTAL_MAP_H) * contentH
   const target = focusPx - scrollEl.clientHeight / 2
   const maxScroll = resolveMapMaxScrollTop(assignedCount, scrollEl)
   return Math.min(maxScroll, Math.max(0, target))

@@ -94,6 +94,8 @@ export type ContentSnapshot = {
 export type StudentAssignment = {
   assignmentId: string
   classId: string
+  /** 반 표시명 — 미션·헬스장 제목(`반 이름 · 단원`)용 */
+  className?: string
   order: number
   title: string
   status: CastleStatus

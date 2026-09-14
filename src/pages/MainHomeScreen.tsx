@@ -1620,6 +1620,7 @@ export function MainHomeScreen() {
         <GymCompleteScreen
           perfect={gymWrongCount === 0}
           snapshot={completedCastleSource.assignment.contentSnapshot}
+          className={completedCastleSource.assignment.className}
           correctCount={gymCorrectCount}
           totalCount={gymTotalCount}
           wrongCount={gymWrongCount}

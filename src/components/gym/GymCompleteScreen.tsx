@@ -31,6 +31,7 @@ import {
 export function GymCompleteScreen({
   perfect,
   snapshot,
+  className,
   correctCount,
   totalCount,
   wrongCount,
@@ -41,6 +42,8 @@ export function GymCompleteScreen({
 }: {
   perfect: boolean
   snapshot: ContentSnapshot
+  /** 반 이름 — 시작 카드와 같은 `반 · 단원` 제목용 */
+  className?: string
   correctCount: number
   totalCount: number
   wrongCount: number
@@ -52,7 +55,7 @@ export function GymCompleteScreen({
   onDone?: () => void
 }) {
   const asset = perfect ? GYM_COMPLETE_PERFECT_ASSET : GYM_COMPLETE_ASSET
-  const heading = gymCompleteHeading(snapshot)
+  const heading = gymCompleteHeading(snapshot, { className })
   const summary = formatCorrectSummary(correctCount, totalCount)
 
   return (
