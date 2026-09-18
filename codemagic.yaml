@@ -18,7 +18,7 @@ workflows:
       groups:
         - haksup_vite
       vars:
-        APP_VERSION: "1.2"
+        APP_VERSION: "1.2.1"
         APP_STORE_APPLE_ID: "6754501427"
         XCODE_PROJECT: "App.xcodeproj"
         XCODE_SCHEME: "App"
