@@ -1,7 +1,10 @@
 import { framePx } from './assignment-home'
 import type { PartCompleteKind } from '../part-complete/part-complete'
 import { resolvePartLabel } from '../part-complete/part-complete'
-import type { AssignmentPartSummary } from '../../features/assignments/assignment-parts'
+import {
+  formatPartCountLabel,
+  type AssignmentPartSummary,
+} from '../../features/assignments/assignment-parts'
 
 /**
  * 성을 탭하면 그 위에 뜨는 **파트별 입장** 카드.
@@ -10,8 +13,8 @@ import type { AssignmentPartSummary } from '../../features/assignments/assignmen
  * 시안은 글자가 전부 벡터 path로 아웃라인화돼 있어(`<text>` 0개) 파트명·문항수를 바꿔 넣을 수
  * 없고, 이미지 위에 글씨를 덧그리면 `docs/uiux.md`의 「이미지 위 텍스트 중복 렌더 금지」에 걸린다.
  *
- * 크기는 시안보다 키웠다(글씨가 작았다). 다만 한 줄에 「단어 1파트 · 12문항」을 다 넣으려면
- * 카드가 210은 돼야 해서, **파트명과 문항수를 두 줄로 쌓아** 폭을 172까지 줄였다.
+ * 크기는 시안보다 키웠다(글씨가 작았다). 다만 한 줄에 「단어 1파트 · 12개」를 다 넣으려면
+ * 카드가 210은 돼야 해서, **파트명과 개수(단어/본문 n개·문법 n문항)를 두 줄로 쌓아** 폭을 줄였다.
 
  */
 
@@ -49,7 +52,7 @@ const fs = framePx
  * 393px 기준 크기 — `fs()`가 화면 폭에 맞춰 키운다.
  *
  * - 마감: 12px
- * - 파트명·문항수·알약 글자: 10px (2026-08-10 — 기존 대비 2px 축소)
+ * - 파트명·개수·알약 글자: 10px (2026-08-10 — 기존 대비 2px 축소)
  */
 const FONT = { deadline: 12, label: 10, sub: 10, pill: 10 } as const
 
@@ -149,7 +152,7 @@ export function CastlePartMenu({
             index={index}
             totalHeight={totalHeight}
             label={resolvePartLabel(item.summary.part, assignmentTitle)}
-            sub={`${item.summary.questionTotal}문항`}
+            sub={formatPartCountLabel(item.summary)}
             actionLabel={item.completed ? '완료' : '입장하기'}
             disabled={item.completed}
             onPress={() => onEnterPart(item.summary.part)}

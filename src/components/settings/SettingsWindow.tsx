@@ -253,7 +253,7 @@ export function SettingsWindow({ onClose: _onClose, onSelectNav }: SettingsWindo
 
         {/*
           상태바 밴드를 크롭했으므로 뒤로가기도 설정 패널 좌표로 둔다.
-          (공통 BackButtonOverlay 의 y=56 은 크롭 전 기준이라 어긋난다.)
+          (공통 BACK_BUTTON_HIT y=74 → 크롭 후 y≈20. 예전 y=56은 크롭 후 거의 0에 붙어 보였다.)
         */}
         {backVisible ? (
           <>

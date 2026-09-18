@@ -56,10 +56,13 @@ export const GYM_COMPLETE_WRONG_HINT_MASK = {
 } as const
 
 /**
- * 시작 화면 구운 `<`(M37 68 → 28.5 76.5 → 37 85). 투명 히트만 얹는다 —
- * 다시 그리면 화살표가 두 개가 된다.
+ * 시작 화면 뒤로가기 — 공통 `BACK_BUTTON_HIT`와 같은 자리.
+ * 구운 `<`는 마스크로 가리고 React 화살표를 다시 그린다.
  */
-export const GYM_START_BACK_HIT = { x: 16, y: 56, w: 44, h: 44 } as const
+export const GYM_START_BACK_HIT = { x: 6, y: 74, w: 44, h: 44 } as const
+
+/** 시안 구운 `<`(≈y68–85) 가림 */
+export const GYM_START_BACK_MASK = { x: 22, y: 62, w: 28, h: 32 } as const
 
 /**
  * 시작 화면 파란 카드 전체 — 시안 실측 353×294 @ (20, 138).

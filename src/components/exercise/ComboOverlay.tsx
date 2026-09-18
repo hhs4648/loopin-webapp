@@ -23,8 +23,9 @@ export function ComboOverlay() {
   )
 }
 
-/** 우측 상단 작은 알약 — 3콤보부터 계속 떠 있는다.
- * 진행 게이지가 오른쪽까지 늘어나서, 게이지 한 줄 아래(≈ pill 높이)에 둔다.
+/**
+ * 우측 작은 알약 — 3콤보부터 계속 떠 있는다.
+ * 게이지(y126–152) **한 줄 아래** 오른쪽에 두어 막대와 겹치지 않게 한다.
  */
 function ComboBadge({ combo }: { combo: number }) {
   const tone = COMBO_TONE_COLORS[comboTone(combo)]
@@ -34,7 +35,7 @@ function ComboBadge({ combo }: { combo: number }) {
       className="pointer-events-none absolute z-30 flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[13px] leading-none font-bold whitespace-nowrap"
       style={{
         right: `${(14 / 393) * 100}%`,
-        top: `${(112 / 852) * 100}%`,
+        top: `${(156 / 852) * 100}%`,
         color: tone.text,
         boxShadow: `0 2px 10px ${tone.glow}`,
       }}

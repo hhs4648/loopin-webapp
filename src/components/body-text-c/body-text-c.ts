@@ -363,13 +363,13 @@ export const BODY_TEXT_C_PROGRESS_LABEL = { x: 168, y: 146, w: 60, h: 18 }
  * 헤더 아래~제출 위 SVG 데모(빈칸·점선·잔글씨) 전부 가림.
  * 제시문·입력 박스는 이 위에 React로 다시 그림.
  */
-export const BODY_TEXT_C_CONTENT_BAKE_MASK = { x: 0, y: 108, w: 393, h: 540 }
+export const BODY_TEXT_C_CONTENT_BAKE_MASK = { x: 0, y: 158, w: 393, h: 490 }
 
-/** Figma — 문제(예문 뜻 · 한국어). 헤더 바로 아래. 짧으면 낮게, 길면 박스가 자람 */
-export const BODY_TEXT_C_PASSAGE = { x: 16, y: 118, w: 361, h: 72 }
+/** Figma — 문제(예문 뜻 · 한국어). 게이지 바로 아래. 짧으면 낮게, 길면 박스가 자람 */
+export const BODY_TEXT_C_PASSAGE = { x: 16, y: 160, w: 361, h: 72 }
 
 /** 문장 완성 입력 박스 — 제시문 바로 아래. 긴 영작은 아래로 자람 */
-export const BODY_TEXT_C_SENTENCE_BOX = { x: 24, y: 198, w: 345, h: 240 }
+export const BODY_TEXT_C_SENTENCE_BOX = { x: 24, y: 240, w: 345, h: 240 }
 
 /** Figma — 제출하기 버튼 */
 export const BODY_TEXT_C_SUBMIT_BTN = { x: 30, y: 751, w: 333, h: 60 }

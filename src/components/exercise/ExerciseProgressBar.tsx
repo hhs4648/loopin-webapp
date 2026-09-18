@@ -14,9 +14,10 @@ export const EXERCISE_PROGRESS_BAR_BAKED = { x: 12, y: 118, w: 370, h: 56 }
  * 헤더 게이지 바깥 링(`#F0F5FA`) — 시안 스트로크 자리.
  * 안쪽 트랙은 이보다 4px 안(원래 막대 18px + 링 4px).
  *
- * 오른쪽으로 콤보 자리까지 늘림(우측 여백 14). 콤보 배지는 한 줄 아래(`ComboOverlay`).
+ * 뒤로가기(`BACK_BUTTON_HIT` y74–118) **아래**에 두어 가로를 거의 풀폭으로 쓴다.
+ * 콤보 배지는 게이지 **아래** 오른쪽에 둔다(`ComboOverlay`) — 같은 줄에 두면 겹친다.
  */
-export const EXERCISE_PROGRESS_BAR = { x: 62, y: 78, w: 317, h: 26 }
+export const EXERCISE_PROGRESS_BAR = { x: 16, y: 126, w: 361, h: 26 }
 
 const TRACK_INSET = {
   top: `${(4 / EXERCISE_PROGRESS_BAR.h) * 100}%`,
@@ -34,8 +35,7 @@ const HALO_OUTSET = {
 
 /**
  * 에셋에 구워진 유형 제목(「짝맞추기」 등, 실측 x≈72~320 / y≈82~98).
- * 뒤로가기 다음~오른쪽 끝까지, **제목 줄만** 덮는다. 높이 52로 내리면
- * 헤더 아래 문제(스피커·카드, y 108~)를 지운다.
+ * 뒤로가기 옆 제목 줄만 덮는다. 게이지는 그 아래 줄이라 여기와 겹치지 않는다.
  */
 export const EXERCISE_BAKED_TITLE_MASK = { x: 50, y: 76, w: 329, h: 26 }
 

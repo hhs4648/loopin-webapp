@@ -39,12 +39,37 @@ const PART_ORDER: PartCompleteKind[] = ['word', 'sentence', 'grammar']
 
 export type AssignmentPartSummary = {
   part: PartCompleteKind
-  /** 이 파트의 전체 출제 문항 수 */
+  /** 이 파트의 전체 출제 문항 수(유형 펼친 뒤) — 완료 판정·진행률용 */
   questionTotal: number
+  /**
+   * 화면에 보여줄 개수.
+   * 단어/문장(본문)은 원본 n개(유형×세트 펼침 전), 문법은 문항 수.
+   */
+  displayCount: number
   /** 이 파트에 속한 문항 id — 「이미 다 풀었나」 판정용 */
   questionIds: string[]
   /** 러너에서 이 파트가 시작되는 섹션 인덱스 */
   startSectionIndex: number
+}
+
+/**
+ * `${id}:match` / `${id}:translate` / `${id}:ox-fix:0:…` 에서 원본 id만 뽑는다.
+ * 단어·본문은 유형마다 문항이 불어나니, 메뉴에는 원본 개수만 보여 주기 위함.
+ */
+function uniqueBaseContentCount(questionIds: string[]): number {
+  const bases = new Set(
+    questionIds.map((id) => {
+      const colon = id.indexOf(':')
+      return colon === -1 ? id : id.slice(0, colon)
+    }),
+  )
+  return bases.size
+}
+
+/** 맵 파트 메뉴용 — 단어/본문 `n개`, 문법 `n문항` */
+export function formatPartCountLabel(summary: AssignmentPartSummary): string {
+  if (summary.part === 'grammar') return `${summary.displayCount}문항`
+  return `${summary.displayCount}개`
 }
 
 /**
@@ -72,16 +97,26 @@ export function listAssignmentParts(
     byPart.set(part, {
       part,
       questionTotal,
+      // displayCount는 아래에서 questionIds 모은 뒤 한 번에 채운다
+      displayCount: 0,
       questionIds,
       // 섹션 배열에서 이 파트가 처음 나오는 자리 = 러너의 시작 인덱스
       startSectionIndex: index,
     })
   })
 
-  return PART_ORDER.map((part) => byPart.get(part)).filter(
-    (item): item is AssignmentPartSummary =>
-      item != null && item.questionTotal > 0,
-  )
+  return PART_ORDER.map((part) => byPart.get(part))
+    .filter(
+      (item): item is AssignmentPartSummary =>
+        item != null && item.questionTotal > 0,
+    )
+    .map((item) => ({
+      ...item,
+      displayCount:
+        item.part === 'grammar'
+          ? item.questionTotal
+          : uniqueBaseContentCount(item.questionIds),
+    }))
 }
 
 /**

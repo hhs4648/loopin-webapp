@@ -56,25 +56,25 @@ export const BODY_TEXT_A_PROGRESS_BAR = { x: 33, y: 142, w: 326, h: 18 }
 export const BODY_TEXT_A_PROGRESS_LABEL = { x: 168, y: 146, w: 60, h: 18 }
 
 /** Figma — 예문(영어). 스피커 바로 아래. 짧은 문장은 낮게, 길면 박스가 자람 */
-export const BODY_TEXT_A_PASSAGE = { x: 24, y: 160, w: 345, h: 72 }
+export const BODY_TEXT_A_PASSAGE = { x: 24, y: 212, w: 345, h: 72 }
 
-/** 에셋에 박힌 예문·스피커·옛 문장박스 자리까지 가림. 청크(y 396)는 덮지 않음 */
-export const BODY_TEXT_A_PASSAGE_BAKE_MASK = { x: 16, y: 108, w: 361, h: 288 }
+/** 에셋에 박힌 예문·스피커·옛 문장박스 자리까지 가림. 청크는 덮지 않음 */
+export const BODY_TEXT_A_PASSAGE_BAKE_MASK = { x: 16, y: 158, w: 361, h: 258 }
 
 /** 「단어를…」등 에셋 안내 — 문장박스 직전까지 */
-export const BODY_TEXT_A_HINT_GAP_MASK = { x: 16, y: 236, w: 361, h: 12 }
+export const BODY_TEXT_A_HINT_GAP_MASK = { x: 16, y: 288, w: 361, h: 12 }
 
 /**
- * 예문 듣기 스피커 — 헤더 바로 아래.
+ * 예문 듣기 스피커 — 게이지(뒤로가기 아래) 바로 아래.
  * 가운데 정렬 예문과 겹치지 않도록 제시문 박스 밖에 둠.
  */
-export const BODY_TEXT_A_SPEAKER_HIT = { x: 24, y: 108, w: 48, h: 48 }
+export const BODY_TEXT_A_SPEAKER_HIT = { x: 24, y: 160, w: 48, h: 48 }
 
 /** 문장 완성 박스 — 제시문 바로 아래. 조각이 많으면 아래로 자람 */
-export const BODY_TEXT_A_SENTENCE_BOX = { x: 24, y: 240, w: 345, h: 148 }
+export const BODY_TEXT_A_SENTENCE_BOX = { x: 24, y: 292, w: 345, h: 148 }
 
 /** 하단 예문 뜻 버튼. 문장 박스 바로 아래부터 코치·제출 직전까지 덮음 */
-export const BODY_TEXT_A_TILES_MASK = { x: 18, y: 396, w: 355, h: 349 }
+export const BODY_TEXT_A_TILES_MASK = { x: 18, y: 448, w: 355, h: 297 }
 
 /** Figma — 제출하기 버튼 */
 export const BODY_TEXT_A_SUBMIT_BTN = { x: 30, y: 751, w: 333, h: 60 }

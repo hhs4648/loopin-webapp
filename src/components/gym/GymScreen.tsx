@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { playTapSfx } from '../exercise/answer-sfx'
 import {
+  BACK_CHEVRON,
+  BACK_CHEVRON_COLOR,
+} from '../navigation/figma-navigation'
+import {
   FRAME_H,
   type MainHomeNavTabId,
 } from '../main-home/assignment-home'
@@ -21,6 +25,7 @@ import {
   GYM_EMPTY_HOME_HIT,
   GYM_EMPTY_STATUS_BAR_H,
   GYM_START_BACK_HIT,
+  GYM_START_BACK_MASK,
   GYM_START_BADGE,
   GYM_START_CARD_BLUE,
   GYM_START_CTA_HIT,
@@ -110,6 +115,11 @@ export function GymScreen({
 
       {next && readyToStart ? (
         <>
+          <span
+            aria-hidden
+            className="pointer-events-none absolute z-[19] bg-white"
+            style={gymRectStyle(GYM_START_BACK_MASK)}
+          />
           <button
             type="button"
             aria-label="뒤로가기"
@@ -117,9 +127,24 @@ export function GymScreen({
               playTapSfx()
               setReadyToStart(false)
             }}
-            className="absolute z-20 cursor-pointer bg-transparent"
+            className="absolute z-20 cursor-pointer bg-transparent p-0"
             style={gymRectStyle(GYM_START_BACK_HIT)}
-          />
+          >
+            <svg
+              aria-hidden
+              viewBox={`0 0 ${GYM_START_BACK_HIT.w} ${GYM_START_BACK_HIT.h}`}
+              className="h-full w-full"
+              fill="none"
+            >
+              <path
+                d={`M${GYM_START_BACK_HIT.w / 2 + BACK_CHEVRON.w / 2} ${GYM_START_BACK_HIT.h / 2 - BACK_CHEVRON.h / 2}L${GYM_START_BACK_HIT.w / 2 - BACK_CHEVRON.w / 2} ${GYM_START_BACK_HIT.h / 2}L${GYM_START_BACK_HIT.w / 2 + BACK_CHEVRON.w / 2} ${GYM_START_BACK_HIT.h / 2 + BACK_CHEVRON.h / 2}`}
+                stroke={BACK_CHEVRON_COLOR}
+                strokeWidth={BACK_CHEVRON.strokeWidth}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
           <button
             type="button"
             aria-label={`지금 시작하기 · 틀린 문항 ${startStats.wrongCount}문제 · 예상 시간 ${startStats.estimatedMinutes}분`}

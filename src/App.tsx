@@ -79,6 +79,12 @@ function CrashProbe(): never {
   throw new Error('에러 경계 확인용 예외 (/__boom)')
 }
 
+const BackButtonPreviewScreen = lazy(() =>
+  import('./pages/BackButtonPreviewScreen').then((m) => ({
+    default: m.BackButtonPreviewScreen,
+  })),
+)
+
 function RoutedErrorBoundary({ children }: { children: ReactNode }) {
   const location = useLocation()
   return <ErrorBoundary resetKey={location.pathname}>{children}</ErrorBoundary>
@@ -121,7 +127,13 @@ export function App() {
                   element={<Navigate to="/student/home" replace />}
                 />
                 {import.meta.env.DEV ? (
-                  <Route path="/__boom" element={<CrashProbe />} />
+                  <>
+                    <Route path="/__boom" element={<CrashProbe />} />
+                    <Route
+                      path="/__back-button-preview"
+                      element={<BackButtonPreviewScreen />}
+                    />
+                  </>
                 ) : null}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

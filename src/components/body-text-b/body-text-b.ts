@@ -55,23 +55,23 @@ export const BODY_TEXT_B_PROGRESS_BAR = { x: 33, y: 142, w: 326, h: 18 }
 /** Figma — 진행률 텍스트 */
 export const BODY_TEXT_B_PROGRESS_LABEL = { x: 168, y: 146, w: 60, h: 18 }
 
-/** Figma — 문제(예문 뜻 · 한국어). 헤더 바로 아래. 짧으면 낮게, 길면 박스가 자람 */
-export const BODY_TEXT_B_PASSAGE = { x: 16, y: 118, w: 361, h: 80 }
+/** Figma — 문제(예문 뜻 · 한국어). 게이지 바로 아래. 짧으면 낮게, 길면 박스가 자람 */
+export const BODY_TEXT_B_PASSAGE = { x: 16, y: 160, w: 361, h: 80 }
 
-/** 에셋 예문·옛 스피커·옛 문장박스 자리까지 가림. 청크(y 362)는 덮지 않음 */
-export const BODY_TEXT_B_PASSAGE_BAKE_MASK = { x: 16, y: 108, w: 361, h: 254 }
-
-/** @deprecated 베이크 마스크로 통합 — 호환용 */
-export const BODY_TEXT_B_HINT_GAP_MASK = { x: 16, y: 202, w: 361, h: 12 }
+/** 에셋 예문·옛 스피커·옛 문장박스 자리까지 가림 */
+export const BODY_TEXT_B_PASSAGE_BAKE_MASK = { x: 16, y: 158, w: 361, h: 224 }
 
 /** @deprecated 베이크 마스크로 통합 — 호환용 */
-export const BODY_TEXT_B_SPEAKER_MASK = { x: 16, y: 118, w: 52, h: 54 }
+export const BODY_TEXT_B_HINT_GAP_MASK = { x: 16, y: 244, w: 361, h: 12 }
+
+/** @deprecated 베이크 마스크로 통합 — 호환용 */
+export const BODY_TEXT_B_SPEAKER_MASK = { x: 16, y: 160, w: 52, h: 54 }
 
 /** 문장 완성 박스 — 제시문 바로 아래. 조각이 많으면 아래로 자람 */
-export const BODY_TEXT_B_SENTENCE_BOX = { x: 24, y: 206, w: 345, h: 148 }
+export const BODY_TEXT_B_SENTENCE_BOX = { x: 24, y: 248, w: 345, h: 148 }
 
 /** 하단 영어 버튼. 문장 박스 바로 아래부터 코치·제출 직전까지 덮음 */
-export const BODY_TEXT_B_TILES_MASK = { x: 18, y: 362, w: 355, h: 383 }
+export const BODY_TEXT_B_TILES_MASK = { x: 18, y: 404, w: 355, h: 341 }
 
 /** Figma — 제출하기 버튼 */
 export const BODY_TEXT_B_SUBMIT_BTN = { x: 30, y: 751, w: 333, h: 60 }
