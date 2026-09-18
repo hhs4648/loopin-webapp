@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { OnboardingFigmaFrame } from '../../components/onboarding/OnboardingFigmaFrame'
 import { useBackNavigation } from '../../components/navigation/BackNavigationProvider'
-import { BirthdatePicker } from '../../components/onboarding/BirthdatePicker'
 import {
   CircleCheckbox,
   NextStepButton,
@@ -25,7 +24,6 @@ import { upsertStudentProfile } from '../../lib/sync/student-api'
 
 const ASSETS = {
   terms: '/assets/onboarding-teacher-01-terms.svg?v=2',
-  birthdate: '/assets/onboarding-student-03-birthdate.svg?v=2',
   grade: '/assets/onboarding-student-04-grade.svg?v=2',
 } as const
 
@@ -50,15 +48,13 @@ const GRADE_ROWS: ReadonlyArray<{
  * 학생 온보딩.
  *
  * 이름은 받지 않는다(Guideline 4). 소셜이 준 값 → 없으면 `학생`.
- * 나중에 설정에서 바꿀 수 있다.
+ * 생년월일도 받지 않는다(Guideline 5.1.1(v) — 핵심 기능에 불필요).
+ * 나중에 설정에서 이름을 바꿀 수 있다.
  */
 export function StudentOnboardingScreen() {
   const navigate = useNavigate()
 
-  const steps = useMemo(
-    (): StudentStep[] => ['terms', 'birthdate', 'grade'],
-    [],
-  )
+  const steps = useMemo((): StudentStep[] => ['terms', 'grade'], [])
 
   const [stepIndex, setStepIndex] = useState(0)
   const [terms, setTerms] = useState<TermState>({
@@ -66,9 +62,6 @@ export function StudentOnboardingScreen() {
     privacy: false,
     marketing: false,
   })
-  const [birthYear, setBirthYear] = useState('')
-  const [birthMonth, setBirthMonth] = useState('')
-  const [birthDay, setBirthDay] = useState('')
   const [grade, setGrade] = useState<SettingsMiddleGradeId | null>(null)
 
   const step = steps[stepIndex] ?? 'terms'
@@ -99,17 +92,12 @@ export function StudentOnboardingScreen() {
     }
   }, [navigate])
 
-  const birthdateComplete =
-    birthYear.length > 0 && birthMonth.length > 0 && birthDay.length > 0
-
   const canProceed =
     step === 'terms'
       ? terms.service && terms.privacy
-      : step === 'birthdate'
-        ? birthdateComplete
-        : step === 'grade'
-          ? grade !== null
-          : false
+      : step === 'grade'
+        ? grade !== null
+        : false
 
   const toggleTerm = (id: TermId) => {
     setTerms((prev) => ({ ...prev, [id]: !prev[id] }))
@@ -140,10 +128,6 @@ export function StudentOnboardingScreen() {
       navigate('/login', { replace: true })
       return
     }
-    const birthdate =
-      birthYear && birthMonth && birthDay
-        ? `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
-        : undefined
     const gradeLabel = SETTINGS_GRADE_OPTIONS.find(
       (option) => option.id === grade,
     )?.value
@@ -154,7 +138,6 @@ export function StudentOnboardingScreen() {
       await upsertStudentProfile({
         displayName,
         grade: gradeLabel,
-        birthdate,
       })
       completeOnboarding(user, { displayName })
       navigate('/student/home', {
@@ -177,20 +160,6 @@ export function StudentOnboardingScreen() {
           onToggleAgreeAll={toggleAgreeAll}
           onNext={goNext}
         />
-      )}
-
-      {step === 'birthdate' && (
-        <>
-          <BirthdatePicker
-            birthYear={birthYear}
-            birthMonth={birthMonth}
-            birthDay={birthDay}
-            onChangeYear={setBirthYear}
-            onChangeMonth={setBirthMonth}
-            onChangeDay={setBirthDay}
-          />
-          <NextStepButton enabled={canProceed} onClick={goNext} />
-        </>
       )}
 
       {step === 'grade' && (

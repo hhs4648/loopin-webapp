@@ -4,20 +4,22 @@
 |------|-----|
 | 경로 | `/onboarding/student` |
 | 구현 | `src/pages/onboarding/StudentOnboardingScreen.tsx` |
-| 플로우 | 약관 → 생년월일 → 학년 → 완료(`/student/home` 초대코드) |
+| 플로우 | 약관 → 학년 → 완료(`/student/home` 초대코드) |
 
 > **2026-09-11:** 온보딩에서 **이름 입력을 받지 않는다**(Guideline 4 / Sign in with Apple).
 > 소셜이 준 이름을 쓰고, 없으면 `학생`. 설정에서 변경 가능.
+>
+> **2026-09-18:** 온보딩에서 **생년월일 단계를 삭제**했다(Guideline 5.1.1(v)).
+> 핵심 학습 기능에 불필요한 필수 개인정보로 심사에서 지적됨.
 
 ## Export 에셋
 
 | 단계 | Figma Export (원본) | 코드 파일명 |
 |------|---------------------|-------------|
 | 1. 약관 | `온보딩_회원가입 1(교사 선택).svg` | `onboarding-teacher-01-terms.svg` (교사와 공유) |
-| 2. 생년월일 | `온보딩_생년월일_선택전.svg` | `onboarding-student-03-birthdate.svg` |
-| 3. 학년 | `온보딩_학년선택_선택전.svg` | `onboarding-student-04-grade.svg` |
+| 2. 학년 | `온보딩_학년선택_선택전.svg` | `onboarding-student-04-grade.svg` |
 
-공통: `birthdate-dropdown-container.svg`
+> 예전 생년월일 에셋(`onboarding-student-03-birthdate.svg`)은 온보딩에서 더 이상 쓰지 않는다.
 
 > **변경 (2026-08-11):** 학습목적 선택(`온보딩_학습목적선택` / `onboarding-student-06-purpose.svg`)
 > 단계를 **삭제**했다. 학년 다음으로 온보딩을 끝내고 `/student/home`(초대코드)로 보낸다.
@@ -31,11 +33,11 @@
 | 단계 | 동작 |
 |------|------|
 | 약관 | 체크/라벨로 동의 · `>` 로 전문 보기. `[필수]` 개인정보·이용약관, `[선택]` 마케팅. 필수 2개 동의 후 다음. |
-| 생년월일 | `BirthdatePicker` |
 | 학년 | 학년 카테고리 선택 → **다음**으로 온보딩 완료 → `/student/home`(초대코드부터) |
 
-> **현재:** 표시 이름은 소셜 `user_metadata`(없으면 `학생`) + 생년월일·학년을 온보딩 완료 시
+> **현재:** 표시 이름은 소셜 `user_metadata`(없으면 `학생`) + 학년을 온보딩 완료 시
 > `AuthUser.displayName` + `upsertStudentProfile`에 저장한다. 설정에서 이름·학년을 바꿀 수 있다.
+> 생년월일은 온보딩에서 받지 않는다.
 > 연동 뱃지/행은 로그인 provider(`kakao`/`apple`/`google`). 학년 시트는 **중1·중2·중3**.
 > 학습목적 선택 화면은 제거됨 — 완료 후 항상 학원/학교 메인. 화면 구분은 [INDEX.md 학생 메인 2종](../INDEX.md).
 
