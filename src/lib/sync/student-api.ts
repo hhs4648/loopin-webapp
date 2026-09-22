@@ -111,6 +111,9 @@ export async function upsertStudentProfile(input: {
   displayName: string
   grade?: string
   birthdate?: string
+  isUnder14?: boolean
+  parentalConsentAt?: string
+  parentPhoneLast4?: string
 }): Promise<StudentProfile | null> {
   const previous = getCachedStudentProfile()
   const now = new Date().toISOString()
@@ -120,6 +123,10 @@ export async function upsertStudentProfile(input: {
     displayName: input.displayName,
     grade: input.grade ?? previous?.grade,
     birthdate: input.birthdate ?? previous?.birthdate,
+    isUnder14: input.isUnder14 ?? previous?.isUnder14,
+    parentalConsentAt:
+      input.parentalConsentAt ?? previous?.parentalConsentAt,
+    parentPhoneLast4: input.parentPhoneLast4 ?? previous?.parentPhoneLast4,
     createdAt: previous?.createdAt ?? now,
     updatedAt: now,
   }
@@ -134,35 +141,81 @@ export async function upsertStudentProfile(input: {
   const userId = await ensureStudentSession()
   if (!supabase || !userId) return localCached
 
-  const { data, error } = await supabase
+  /*
+    학부모 동의 컬럼은 마이그레이션 후에만 있다. 없으면 기본 필드만 올리고
+    동의 기록은 localStorage에 남긴다(개인정보 보호법 증빙용 최소 기록).
+  */
+  const baseRow: Record<string, unknown> = {
+    id: userId,
+    role: 'student',
+    display_name: input.displayName,
+    grade: input.grade ?? null,
+    birthdate: input.birthdate ?? null,
+    updated_at: now,
+  }
+  if (input.isUnder14 !== undefined) baseRow.is_under_14 = input.isUnder14
+  if (input.parentalConsentAt !== undefined) {
+    baseRow.parental_consent_at = input.parentalConsentAt
+  }
+  if (input.parentPhoneLast4 !== undefined) {
+    baseRow.parent_phone_last4 = input.parentPhoneLast4
+  }
+
+  let { data, error } = await supabase
     .from('profiles')
-    .upsert(
-      {
-        id: userId,
-        role: 'student',
-        display_name: input.displayName,
-        grade: input.grade ?? null,
-        birthdate: input.birthdate ?? null,
-        updated_at: now,
-      },
-      { onConflict: 'id' },
-    )
+    .upsert(baseRow, { onConflict: 'id' })
     .select('*')
     .single()
+
+  if (error && /is_under_14|parental_consent|parent_phone/i.test(error.message)) {
+    const fallback = await supabase
+      .from('profiles')
+      .upsert(
+        {
+          id: userId,
+          role: 'student',
+          display_name: input.displayName,
+          grade: input.grade ?? null,
+          birthdate: input.birthdate ?? null,
+          updated_at: now,
+        },
+        { onConflict: 'id' },
+      )
+      .select('*')
+      .single()
+    data = fallback.data
+    error = fallback.error
+  }
 
   if (error || !data) {
     console.warn('[sync] student profile upsert failed', error?.message)
     return localCached
   }
 
+  const row = data as Record<string, unknown>
   const profile: StudentProfile = {
-    id: data.id,
+    id: String(row.id),
     role: 'student',
-    displayName: data.display_name ?? input.displayName,
-    grade: data.grade ?? input.grade ?? previous?.grade,
-    birthdate: data.birthdate ?? input.birthdate ?? previous?.birthdate,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
+    displayName: String(row.display_name ?? input.displayName),
+    grade: (row.grade as string | null) ?? input.grade ?? previous?.grade,
+    birthdate:
+      (row.birthdate as string | null) ??
+      input.birthdate ??
+      previous?.birthdate,
+    isUnder14:
+      (row.is_under_14 as boolean | undefined) ??
+      input.isUnder14 ??
+      previous?.isUnder14,
+    parentalConsentAt:
+      (row.parental_consent_at as string | undefined) ??
+      input.parentalConsentAt ??
+      previous?.parentalConsentAt,
+    parentPhoneLast4:
+      (row.parent_phone_last4 as string | undefined) ??
+      input.parentPhoneLast4 ??
+      previous?.parentPhoneLast4,
+    createdAt: String(row.created_at ?? now),
+    updatedAt: String(row.updated_at ?? now),
   }
   localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile))
   return profile

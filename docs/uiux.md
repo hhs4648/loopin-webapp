@@ -51,7 +51,7 @@ flowchart TD
 | 스플래시 | `/` | 1.8초 후 `localStorage` auth로 분기. 에셋 `splash-screen.svg`(학습 워드마크) · **가짜 시계·상태 아이콘은 표시하지 않음** |
 | 로그인 | `/login` | 학습 시안 · Apple / 카카오 / 구글 투명 히트 · **심사용 데모 로그인**(로컬·심사 빌드) → 비밀번호 `1234` 후 온보딩 생략·데모 반 입장 · **임시 로그인 (개발용)**은 비밀번호 없이 온보딩으로 감 |
 | 회원 유형 | `/onboarding/member-type` | 학생 / 교사 선택 |
-| 학생 온보딩 | `/onboarding/student` | 약관 → 학년 → 완료(`/student/home`). **이름·생년월일 입력 없음**(소셜 이름 또는 `학생`) |
+| 학생 온보딩 | `/onboarding/student` | 약관 → 나이(만 14세?) → (미만 시) 보호자 SMS 동의 → 학년 → `/student/home`. **이름·생년월일 입력 없음** |
 | 교사 온보딩 | `/onboarding/teacher` | 약관 → 학교명 → 완료 → `/student/home`. **이름 입력 없음**(소셜 이름 또는 `선생님`) |
 
 > 이름·생년월일·학년·학교명은 온보딩 완료 시 로컬 auth + `upsertStudentProfile`에 저장된다.

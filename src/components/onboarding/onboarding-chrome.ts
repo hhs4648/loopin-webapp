@@ -24,10 +24,10 @@ export const ONBOARDING_TITLE_TOP = 105
 export const ONBOARDING_CONTENT_X = 20
 
 /**
- * 뒤로가기 히트 — **공통값을 그대로 쓴다** (`navigation/figma-navigation.ts`).
- * 화면마다 좌표를 따로 두다가 세 갈래로 갈렸던 이력이 있어(2026-08-08 통일) 재정의하지 않는다.
+ * 온보딩 뒤로가기 — 공통 `BACK_BUTTON_HIT`(y74)보다 위.
+ * 제목과 간격 확보용. y54(상태바 바로 아래) — 더 올리면 OS 시계와 붙는다.
  */
-export { BACK_BUTTON_HIT as ONBOARDING_BACK_HIT } from '../navigation/figma-navigation'
+export const ONBOARDING_BACK_HIT = { x: 6, y: 54, w: 44, h: 44 } as const
 
 export function onboardingHeaderMaskStyle() {
   return {

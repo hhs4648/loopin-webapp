@@ -21,3 +21,6 @@ apple-client-secret.txt
 
 # 미리 만든 TTS 음성 — 저장소가 아니라 공유 버킷에 둔다 (scripts/upload-tts-audio.mjs)
 tts-audio/
+
+# Solapi 키 실값 — 예제(.example)는 커밋해도 됨
+.env.solapi.local

@@ -1,6 +1,5 @@
 import { useCurrentBackNavigation } from '../navigation/BackNavigationProvider'
 import {
-  BACK_BUTTON_HIT,
   BACK_CHEVRON,
   BACK_CHEVRON_COLOR,
 } from '../navigation/figma-navigation'
@@ -11,15 +10,15 @@ import {
 
 /** 온보딩도 공통 뒤로가기와 같은 획·색을 쓴다(가시성 통일). */
 function BackChevronIcon() {
-  const cx = BACK_BUTTON_HIT.w / 2
-  const cy = BACK_BUTTON_HIT.h / 2
+  const cx = ONBOARDING_BACK_HIT.w / 2
+  const cy = ONBOARDING_BACK_HIT.h / 2
   const halfW = BACK_CHEVRON.w / 2
   const halfH = BACK_CHEVRON.h / 2
 
   return (
     <svg
       aria-hidden
-      viewBox={`0 0 ${BACK_BUTTON_HIT.w} ${BACK_BUTTON_HIT.h}`}
+      viewBox={`0 0 ${ONBOARDING_BACK_HIT.w} ${ONBOARDING_BACK_HIT.h}`}
       className="h-full w-full"
       fill="none"
     >
@@ -34,7 +33,7 @@ function BackChevronIcon() {
   )
 }
 
-/** 온보딩 공통 — 뒤로가기 (모든 온보딩 화면 동일 좌표 = `BACK_BUTTON_HIT`) */
+/** 온보딩 공통 — 뒤로가기 (`ONBOARDING_BACK_HIT`, 학습 화면보다 살짝 위) */
 export function OnboardingChrome() {
   const { visible, onBack } = useCurrentBackNavigation()
 

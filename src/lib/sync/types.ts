@@ -15,6 +15,12 @@ export type StudentProfile = {
   displayName: string
   grade?: string
   birthdate?: string
+  /** 만 14세 미만 자가 신고(생년월일 아님) */
+  isUnder14?: boolean
+  /** 학부모 SMS 동의 완료 시각 */
+  parentalConsentAt?: string
+  /** 학부모 휴대폰 끝 4자리(전체 번호는 저장하지 않음) */
+  parentPhoneLast4?: string
   createdAt: string
   updatedAt: string
 }

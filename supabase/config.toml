@@ -6,3 +6,7 @@ enabled = true
 
 [functions.haksup-tts]
 verify_jwt = false
+
+# 학부모 OTP — 요청 Authorization의 사용자 JWT를 함수 안에서 검증한다.
+[functions.parental-consent-otp]
+verify_jwt = false
